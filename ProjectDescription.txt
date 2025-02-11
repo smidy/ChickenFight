@@ -1,0 +1,1 @@
+This is a video game server solution using the actor model to model game interactions and mechanics.

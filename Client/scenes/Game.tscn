@@ -1,0 +1,33 @@
+[gd_scene load_steps=3 format=3 uid="uid://d4q8g0rg6p5gz"]
+
+[ext_resource type="Script" path="res://scripts/Game.cs" id="1_4k4r5"]
+
+[node name="Game" type="Node2D"]
+script = ExtResource("1_4k4r5")
+
+[node name="TileMap" type="TileMap" parent="."]
+format = 2
+layer_0/name = "Ground"
+
+[node name="Player" type="Sprite2D" parent="."]
+modulate = Color(0.0, 0.6, 1, 1)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = true
+position_smoothing_speed = 5.0
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StatusLabel" type="Label" parent="UI"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 248.0
+offset_bottom = 34.0
+text = "Connected to map"
