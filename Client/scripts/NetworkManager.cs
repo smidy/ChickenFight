@@ -119,7 +119,7 @@ public partial class NetworkManager : Node
                     {
                         ["Width"] = msg.TilemapData.Width,
                         ["Height"] = msg.TilemapData.Height,
-                        ["TileData"] = new Godot.Collections.Array(msg.TilemapData.TileData)
+                        ["TileData"] = new Godot.Collections.Array<int>(msg.TilemapData.TileData)
                     };
                     EmitSignal(SignalName.JoinMapCompleted, tilemapDict);
                     break;

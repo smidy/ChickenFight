@@ -3,6 +3,8 @@ using GameServer.Application.Models;
 using GameServer.Application.Messages.Internal;
 using GameServer.Shared.Messages;
 using GameServer.Shared.Models;
+using Google.Protobuf.WellKnownTypes;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GameServer.Application.Actors
 {
@@ -62,13 +64,13 @@ namespace GameServer.Application.Actors
         {
             if (currentMap != null)
             {
-                context.Send(context.Sender, new JoinMapResponse(false, null, "Already in a map"));
+                context.Send(context.Sender, new GameServer.Application.Messages.Internal.JoinMapFailed(msg.MapId, "Already in a map"));
                 return Task.CompletedTask;
             }
 
             pendingMapJoin = msg.MapId;
             context.Send(context.Parent, new GetMapPid(msg.MapId, context.Self));
-            context.Send(context.Sender, new JoinMapInitiated(msg.MapId));
+            context.Send(context.Sender, new GameServer.Application.Messages.Internal.JoinMapInitiated(msg.MapId));
             return Task.CompletedTask;
         }
 
@@ -76,7 +78,7 @@ namespace GameServer.Application.Actors
         {
             if (msg.MapId != pendingMapJoin || msg.MapPid == null)
             {
-                context.Send(context.Sender, new JoinMapFailed(msg.MapId, "Map not found"));
+                context.Send(context.Sender, new Messages.Internal.JoinMapFailed(msg.MapId, "Map not found"));
                 pendingMapJoin = null;
                 return Task.CompletedTask;
             }
@@ -89,7 +91,7 @@ namespace GameServer.Application.Actors
         {
             if (msg.MapId == pendingMapJoin)
             {
-                context.Send(context.Sender, new JoinMapFailed(msg.MapId, "Map not found"));
+                context.Send(context.Sender, new Messages.Internal.JoinMapFailed(msg.MapId, "Map not found"));
                 pendingMapJoin = null;
             }
             return Task.CompletedTask;
@@ -101,7 +103,7 @@ namespace GameServer.Application.Actors
             {
                 currentMap = context.Sender;
                 player.JoinMap(pendingMapJoin, msg.StartPosition);
-                context.Send(context.Parent, new JoinMapCompleted(pendingMapJoin, msg.TilemapData));
+                context.Send(context.Parent, new Messages.Internal.JoinMapCompleted(pendingMapJoin, msg.TilemapData));
                 pendingMapJoin = null;
             }
             return Task.CompletedTask;
@@ -111,7 +113,7 @@ namespace GameServer.Application.Actors
         {
             if (pendingMapJoin != null)
             {
-                context.Send(context.Parent, new JoinMapFailed(pendingMapJoin, msg.Error));
+                context.Send(context.Parent, new Messages.Internal.JoinMapFailed(pendingMapJoin, msg.Error));
                 pendingMapJoin = null;
             }
             return Task.CompletedTask;
@@ -122,12 +124,12 @@ namespace GameServer.Application.Actors
             // If mapId is null, force leave from current map (used for disconnection)
             if (currentMap == null || (msg.MapId != null && msg.MapId != player.CurrentMapId))
             {
-                context.Send(context.Sender, new LeaveMapResponse(true));
+                context.Send(context.Sender, new Messages.Internal.LeaveMapFailed(msg.MapId, "Invalid MapId"));
                 return Task.CompletedTask;
             }
 
             context.Send(currentMap, new RemovePlayer(player.Id, context.Self));
-            context.Send(context.Sender, new LeaveMapInitiated(player.CurrentMapId));
+            context.Send(context.Sender, new Messages.Internal.LeaveMapInitiated(player.CurrentMapId));
             return Task.CompletedTask;
         }
 
@@ -137,7 +139,7 @@ namespace GameServer.Application.Actors
             {
                 player.LeaveMap();
                 currentMap = null;
-                context.Send(context.Parent, new LeaveMapCompleted(msg.PlayerId));
+                context.Send(context.Parent, new Messages.Internal.LeaveMapCompleted(msg.PlayerId));
             }
             return Task.CompletedTask;
         }
@@ -146,7 +148,7 @@ namespace GameServer.Application.Actors
         {
             if (msg.PlayerId == player.Id)
             {
-                context.Send(context.Parent, new LeaveMapFailed(msg.PlayerId, msg.Error));
+                context.Send(context.Parent, new Messages.Internal.LeaveMapFailed(msg.PlayerId, msg.Error));
             }
             return Task.CompletedTask;
         }
@@ -155,13 +157,13 @@ namespace GameServer.Application.Actors
         {
             if (currentMap == null)
             {
-                context.Send(context.Sender, new MoveResponse(false, "Not in a map"));
+                context.Send(context.Sender, new Messages.Internal.MoveFailed(msg.NewPosition, "Not in a map"));
                 return Task.CompletedTask;
             }
 
             pendingMove = msg.NewPosition;
             context.Send(currentMap, new ValidateMove(player.Id, msg.NewPosition, context.Self));
-            context.Send(context.Sender, new MoveInitiated(msg.NewPosition));
+            context.Send(context.Sender, new Messages.Internal.MoveInitiated(msg.NewPosition));
             return Task.CompletedTask;
         }
 
@@ -173,7 +175,7 @@ namespace GameServer.Application.Actors
             {
                 player.UpdatePosition(msg.NewPosition);
                 await _sendToClient(new PlayerInfo(new PlayerState(player.Id, player.Name, player.Position)));
-                context.Send(context.Parent, new MoveCompleted(msg.NewPosition));
+                context.Send(context.Parent, new Messages.Internal.MoveCompleted(msg.NewPosition));
                 pendingMove = null;
             }
         }
@@ -184,7 +186,7 @@ namespace GameServer.Application.Actors
                 pendingMove?.X == msg.AttemptedPosition.X && 
                 pendingMove?.Y == msg.AttemptedPosition.Y)
             {
-                context.Send(context.Parent, new MoveFailed(msg.AttemptedPosition, msg.Error));
+                context.Send(context.Parent, new Messages.Internal.MoveFailed(msg.AttemptedPosition, msg.Error));
                 pendingMove = null;
             }
             return Task.CompletedTask;

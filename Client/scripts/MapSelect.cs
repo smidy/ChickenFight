@@ -62,7 +62,6 @@ public partial class MapSelect : Node2D
     private void OnJoinMapInitiated(string mapId)
     {
         _statusLabel.Text = "Joining map...";
-        _mapList.Disabled = true;
         _refreshButton.Disabled = true;
     }
 
@@ -76,7 +75,6 @@ public partial class MapSelect : Node2D
     private void OnJoinMapFailed(string error)
     {
         _statusLabel.Text = $"Failed to join map: {error}";
-        _mapList.Disabled = false;
         _refreshButton.Disabled = false;
     }
 
