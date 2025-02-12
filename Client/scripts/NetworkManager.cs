@@ -39,7 +39,7 @@ public partial class NetworkManager : Node
         }
     }
 
-    public async Task Connect(string url = "ws://localhost:8080")
+    public async Task Connect(string url = "ws://127.0.0.1:8080")
     {
         _webSocket = new WebSocketPeer();
         var error = _webSocket.ConnectToUrl(url);

@@ -105,6 +105,7 @@ namespace GameServer.Application.Actors
             if (currentMap == null)
             {
                 await _sendToClient(new ExtLeaveMapFailed(msg.MapId, "Player has not joined a map"));
+                return;
             }
             if (msg.MapId != null && msg.MapId != player.CurrentMapId)
             {

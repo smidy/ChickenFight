@@ -5,7 +5,7 @@ using GameServer.Shared.Models;
 
 public partial class Game : Node2D
 {
-    private TileMap _tileMap = null!;
+    private TileMapLayer _tileMap = null!;
     private Sprite2D _player = null!;
     private NetworkManager _network = null!;
     private GameState _gameState = null!;
@@ -22,7 +22,7 @@ public partial class Game : Node2D
 
     public override void _Ready()
     {
-        _tileMap = GetNode<TileMap>("TileMap");
+        _tileMap = GetNode<TileMapLayer>("Ground");
         _player = GetNode<Sprite2D>("Player");
         _camera = GetNode<Camera2D>("Camera2D");
         _statusLabel = GetNode<Label>("UI/StatusLabel");
@@ -62,7 +62,7 @@ public partial class Game : Node2D
             for (int x = 0; x < width; x++)
             {
                 var tileId = tileData[y * width + x].AsInt32();
-                _tileMap.SetCell(0, new Vector2I(x, y), 0, new Vector2I(tileId, 0));
+                _tileMap.SetCell(new Vector2I(x, y), 0, new Vector2I(tileId, 0));
             }
         }
     }
