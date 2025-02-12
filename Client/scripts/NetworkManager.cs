@@ -89,7 +89,7 @@ public partial class NetworkManager : Node
 
             switch (typedMessage)
             {
-                case ConnectionConfirmed connectionConfirmed:
+                case ExtConnectionConfirmed connectionConfirmed:
                     EmitSignal(SignalName.ConnectionConfirmed, connectionConfirmed.SessionId);
                     break;
 
@@ -111,10 +111,10 @@ public partial class NetworkManager : Node
                     break;
 
                 // Map join messages
-                case JoinMapInitiated msg:
+                case ExtJoinMapInitiated msg:
                     EmitSignal(SignalName.JoinMapInitiated, msg.MapId);
                     break;
-                case JoinMapCompleted msg:
+                case ExtJoinMapCompleted msg:
                     var tilemapDict = new Dictionary
                     {
                         ["Width"] = msg.TilemapData.Width,
@@ -123,23 +123,23 @@ public partial class NetworkManager : Node
                     };
                     EmitSignal(SignalName.JoinMapCompleted, tilemapDict);
                     break;
-                case JoinMapFailed msg:
+                case ExtJoinMapFailed msg:
                     EmitSignal(SignalName.JoinMapFailed, msg.Error);
                     break;
 
                 // Movement messages
-                case MoveInitiated msg:
+                case ExtMoveInitiated msg:
                     EmitSignal(SignalName.MoveInitiated, new Vector2I(msg.NewPosition.X, msg.NewPosition.Y));
                     break;
-                case MoveCompleted msg:
+                case ExtMoveCompleted msg:
                     EmitSignal(SignalName.MoveCompleted, new Vector2I(msg.NewPosition.X, msg.NewPosition.Y));
                     break;
-                case MoveFailed msg:
+                case ExtMoveFailed msg:
                     EmitSignal(SignalName.MoveFailed, msg.Error);
                     break;
 
                 // Player state messages
-                case PlayerInfo playerInfo:
+                case ExtPlayerInfo playerInfo:
                     if (playerInfo.State != null)
                     {
                         EmitSignal(SignalName.PlayerStateUpdated, 

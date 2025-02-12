@@ -6,12 +6,12 @@ namespace GameServer.Application.Messages.Internal
 {
     // Player management messages
     public record AddPlayer(PID PlayerActor, Player Player, PID Requester);
-    public record PlayerAddedToMap(PID PlayerActor, Position StartPosition, GameServer.Shared.Messages.TilemapData TilemapData);
-    public record PlayerAddFailure(PID PlayerActor, string Error);
+    public record PlayerAddedToMap(PID PlayerActor, PID MapPID, string MapId, Position StartPosition, GameServer.Shared.Messages.TilemapData TilemapData);
+    public record PlayerAddFailure(PID PlayerActor, string MapId, string Error);
     
     public record RemovePlayer(string PlayerId, PID Requester);
-    public record PlayerRemovedFromMap(string PlayerId);
-    public record PlayerRemoveFailure(string PlayerId, string Error);
+    public record PlayerRemovedFromMap(string MapId, string PlayerId);
+    public record PlayerRemoveFailure(string MapId, string PlayerId, string Error);
     
     // Movement messages
     public record ValidateMove(string PlayerId, Position NewPosition, PID Requester);

@@ -53,15 +53,15 @@ public partial class Game : Node2D
 
         // Set the tilemap layer 0 with the received tile data
         var data = _gameState.CurrentTilemapData;
-        var width = Convert.ToInt32(data["Width"]);
-        var height = Convert.ToInt32(data["Height"]);
+        var width = data["Width"].AsInt32();
+        var height = data["Height"].AsInt32();
         var tileData = (Godot.Collections.Array)data["TileData"];
 
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
             {
-                var tileId = Convert.ToInt32(tileData[y * width + x]);
+                var tileId = tileData[y * width + x].AsInt32();
                 _tileMap.SetCell(0, new Vector2I(x, y), 0, new Vector2I(tileId, 0));
             }
         }
@@ -95,7 +95,7 @@ public partial class Game : Node2D
         if (movement != Vector2I.Zero)
         {
             var newPos = (_player.Position / 32).Round() + movement;
-            _network.SendMessage(new Move(new Position((int)newPos.X, (int)newPos.Y)));
+            _network.SendMessage(new ExtMove(new Position((int)newPos.X, (int)newPos.Y)));
         }
     }
 

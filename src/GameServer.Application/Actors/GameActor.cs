@@ -22,7 +22,6 @@ namespace GameServer.Application.Actors
                 Started => OnStarted(context),
                 CreatePlayer msg => OnCreatePlayer(context, msg),
                 GetMapList => OnGetMapList(context),
-                GetMapPid msg => OnGetMapPid(context, msg),
                 _ => Task.CompletedTask
             };
         }
@@ -57,7 +56,7 @@ namespace GameServer.Application.Actors
 
             var map = new Map(id, name, width, height, tileData);
             var props = Props.FromProducer(() => new MapActor(id, name, width, height, tileData));
-            var pid = context.Spawn(props);
+            var pid = context.SpawnNamed(props, id);
             maps[id] = (map, pid);
         }
 
@@ -76,19 +75,6 @@ namespace GameServer.Application.Actors
         private Task OnGetMapList(IContext context)
         {
             context.Respond(new MapList(maps.Values.Select(m => m.Map).ToList()));
-            return Task.CompletedTask;
-        }
-
-        private Task OnGetMapPid(IContext context, GetMapPid msg)
-        {
-            if (maps.TryGetValue(msg.MapId, out var mapInfo))
-            {
-                context.Send(msg.Requester, new MapPidResolved(msg.MapId, mapInfo.Actor, context.Self));
-            }
-            else
-            {
-                context.Send(msg.Requester, new MapPidNotFound(msg.MapId, context.Self));
-            }
             return Task.CompletedTask;
         }
     }

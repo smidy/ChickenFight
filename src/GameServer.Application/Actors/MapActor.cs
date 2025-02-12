@@ -38,11 +38,11 @@ namespace GameServer.Application.Actors
                 subscribers.Add(msg.PlayerActor);
                 BroadcastMapUpdate(context);
                 var tilemapData = new GameServer.Shared.Messages.TilemapData(map.Width, map.Height, map.TileData);
-                context.Send(msg.Requester, new PlayerAddedToMap(msg.PlayerActor, startPosition, tilemapData));
+                context.Send(msg.Requester, new PlayerAddedToMap(msg.PlayerActor, context.Self, map.Id, startPosition, tilemapData));
             }
             else
             {
-                context.Send(msg.Requester, new PlayerAddFailure(msg.PlayerActor, "Map is full"));
+                context.Send(msg.Requester, new PlayerAddFailure(msg.PlayerActor, this.map.Id, "Map is full"));
             }
             return Task.CompletedTask;
         }
@@ -53,11 +53,11 @@ namespace GameServer.Application.Actors
             {
                 subscribers.Remove(context.Sender);
                 BroadcastMapUpdate(context);
-                context.Send(msg.Requester, new PlayerRemovedFromMap(msg.PlayerId));
+                context.Send(msg.Requester, new PlayerRemovedFromMap(this.map.Id, msg.PlayerId));
             }
             else
             {
-                context.Send(msg.Requester, new PlayerRemoveFailure(msg.PlayerId, "Player not found in map"));
+                context.Send(msg.Requester, new PlayerRemoveFailure(this.map.Id, msg.PlayerId, "Player not found in map"));
             }
             return Task.CompletedTask;
         }

@@ -52,12 +52,12 @@ namespace GameServer.Presentation
             // Create player actor immediately on connection
             var createResponse = await actorSystem.Root.RequestAsync<PlayerCreated>(
                 server.gameActor,
-                new CreatePlayer(sessionId, $"Player_{sessionId}", (object msg) => SendResponse((dynamic)msg))
+                new CreatePlayer(sessionId, $"Player_{sessionId}", (BaseMessage msg) => SendResponse((dynamic)msg))
             );
             playerActor = createResponse.PlayerActor;
             
             // Send connection confirmation to client
-            await SendResponse(new ConnectionConfirmed(sessionId));
+            await SendResponse(new ExtConnectionConfirmed(sessionId));
         }
 
         public override async void OnWsDisconnected()
@@ -84,19 +84,19 @@ namespace GameServer.Presentation
 
                 switch (baseMessage?.Type)
                 {
-                    case nameof(RequestMapList):
+                    case nameof(ExtRequestMapList):
                         HandleRequestMapList();
                         break;
-                    case nameof(JoinMap):
-                        var joinMap = JsonConfig.Deserialize<JoinMap>(message);
+                    case nameof(ExtJoinMap):
+                        var joinMap = JsonConfig.Deserialize<ExtJoinMap>(message);
                         HandleJoinMap(joinMap);
                         break;
-                    case nameof(LeaveMap):
-                        var leaveMap = JsonConfig.Deserialize<LeaveMap>(message);
+                    case nameof(ExtLeaveMap):
+                        var leaveMap = JsonConfig.Deserialize<ExtLeaveMap>(message);
                         HandleLeaveMap(leaveMap);
                         break;
-                    case nameof(Move):
-                        var move = JsonConfig.Deserialize<Move>(message);
+                    case nameof(ExtMove):
+                        var move = JsonConfig.Deserialize<ExtMove>(message);
                         HandleMove(move);
                         break;
                 }
@@ -127,33 +127,33 @@ namespace GameServer.Presentation
             await SendResponse(new RequestMapListResponse(mapInfos.ToList()));
         }
 
-        private async void HandleJoinMap(JoinMap joinMap)
+        private async void HandleJoinMap(ExtJoinMap joinMap)
         {
             if (playerActor == null)
             {
-                await SendResponse(new GameServer.Shared.Messages.JoinMapFailed(joinMap.MapId, "Player not connected"));
+                await SendResponse(new GameServer.Shared.Messages.ExtJoinMapFailed(joinMap.MapId, "Player not connected"));
                 return;
             }
 
             actorSystem.Root.Send(playerActor, new JoinMapRequest(joinMap.MapId));
         }
 
-        private async void HandleLeaveMap(LeaveMap leaveMap)
+        private async void HandleLeaveMap(ExtLeaveMap leaveMap)
         {
             if (playerActor == null)
             {
-                await SendResponse(new GameServer.Shared.Messages.LeaveMapFailed(leaveMap.MapId, "Not connected to any map"));
+                await SendResponse(new GameServer.Shared.Messages.ExtLeaveMapFailed(leaveMap.MapId, "Not connected to any map"));
                 return;
             }
 
             actorSystem.Root.Send(playerActor, new LeaveMapRequest(leaveMap.MapId));
         }
 
-        private async void HandleMove(Move move)
+        private async void HandleMove(ExtMove move)
         {
             if (playerActor == null)
             {
-                await SendResponse(new PlayerInfo(null));
+                await SendResponse(new ExtPlayerInfo(null));
                 return;
             }
 
@@ -170,40 +170,40 @@ namespace GameServer.Presentation
 
                 // Map join messages
                 case Application.Messages.Internal.JoinMapInitiated msg:
-                    SendResponse(new GameServer.Shared.Messages.JoinMapInitiated(msg.MapId));
+                    SendResponse(new GameServer.Shared.Messages.ExtJoinMapInitiated(msg.MapId));
                     break;
                 case Application.Messages.Internal.JoinMapCompleted msg:
-                    SendResponse(new GameServer.Shared.Messages.JoinMapCompleted(msg.MapId, msg.TilemapData));
+                    SendResponse(new GameServer.Shared.Messages.ExtJoinMapCompleted(msg.MapId, msg.TilemapData));
                     break;
                 case Application.Messages.Internal.JoinMapFailed msg:
-                    SendResponse(new GameServer.Shared.Messages.JoinMapFailed(msg.MapId, msg.Error));
+                    SendResponse(new GameServer.Shared.Messages.ExtJoinMapFailed(msg.MapId, msg.Error));
                     break;
 
                 // Map leave messages
                 case Application.Messages.Internal.LeaveMapInitiated msg:
-                    SendResponse(new GameServer.Shared.Messages.LeaveMapInitiated(msg.MapId));
+                    SendResponse(new GameServer.Shared.Messages.ExtLeaveMapInitiated(msg.MapId));
                     break;
                 case Application.Messages.Internal.LeaveMapCompleted msg:
-                    SendResponse(new GameServer.Shared.Messages.LeaveMapCompleted(msg.MapId));
+                    SendResponse(new GameServer.Shared.Messages.ExtLeaveMapCompleted(msg.MapId));
                     break;
                 case Application.Messages.Internal.LeaveMapFailed msg:
-                    SendResponse(new GameServer.Shared.Messages.LeaveMapFailed(msg.MapId, msg.Error));
+                    SendResponse(new GameServer.Shared.Messages.ExtLeaveMapFailed(msg.MapId, msg.Error));
                     break;
 
                 // Movement messages
                 case Application.Messages.Internal.MoveInitiated msg:
-                    SendResponse(new GameServer.Shared.Messages.MoveInitiated(msg.NewPosition));
+                    SendResponse(new GameServer.Shared.Messages.ExtMoveInitiated(msg.NewPosition));
                     break;
                 case Application.Messages.Internal.MoveCompleted msg:
-                    SendResponse(new GameServer.Shared.Messages.MoveCompleted(msg.NewPosition));
+                    SendResponse(new GameServer.Shared.Messages.ExtMoveCompleted(msg.NewPosition));
                     break;
                 case Application.Messages.Internal.MoveFailed msg:
-                    SendResponse(new GameServer.Shared.Messages.MoveFailed(msg.AttemptedPosition, msg.Error));
+                    SendResponse(new GameServer.Shared.Messages.ExtMoveFailed(msg.AttemptedPosition, msg.Error));
                     break;
 
                 // Player state messages
                 case Application.Messages.Internal.PlayerStateUpdate msg:
-                    SendResponse(new PlayerInfo(new PlayerState(msg.Player.Id, msg.Player.Name, msg.Player.Position)));
+                    SendResponse(new ExtPlayerInfo(new PlayerState(msg.Player.Id, msg.Player.Name, msg.Player.Position)));
                     break;
             }
 
