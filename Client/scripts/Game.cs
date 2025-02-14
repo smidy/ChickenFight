@@ -12,6 +12,10 @@ public partial class Game : Node2D
     private Camera2D _camera = null!;
     private Label _statusLabel = null!;
 
+    // Other players
+    private Dictionary<string, Sprite2D> _otherPlayers = new();
+    private Dictionary<string, Vector2> _otherPlayersTargetPositions = new();
+
     // Tile IDs in the tileset
     private const int GRASS_TILE = 0;
     private const int PATH_TILE = 1;
@@ -35,6 +39,11 @@ public partial class Game : Node2D
         _network.MoveFailed += OnMoveFailed;
         _network.PlayerStateUpdated += OnPlayerStateUpdated;
         _network.ConnectionLost += OnConnectionLost;
+
+        // Connect other player signals
+        _network.PlayerJoinedMap += OnPlayerJoined;
+        _network.PlayerPositionChanged += OnPlayerPositionChanged;
+        _network.PlayerLeftMap += OnPlayerLeft;
 
         SetupTilemap();
         SetupPlayer();
@@ -112,9 +121,62 @@ public partial class Game : Node2D
             _player.Position = _targetPosition;
         }
 
+        // Smooth other players movement
+        foreach (var (playerId, sprite) in _otherPlayers)
+        {
+            if (_otherPlayersTargetPositions.TryGetValue(playerId, out var targetPos))
+            {
+                if (sprite.Position.DistanceTo(targetPos) > 1)
+                {
+                    sprite.Position = sprite.Position.Lerp(targetPos, (float)delta * MOVE_SPEED);
+                }
+                else if (sprite.Position != targetPos)
+                {
+                    sprite.Position = targetPos;
+                }
+            }
+        }
+
         // Smooth camera follow
         var targetCameraPos = _player.Position;
         _camera.Position = _camera.Position.Lerp(targetCameraPos, (float)delta * 5.0f);
+    }
+
+    private void OnPlayerJoined(string playerId, Vector2I position)
+    {
+        if (_gameState.SessionId == playerId) return;
+
+        var sprite = new Sprite2D
+        {
+            Texture = _player.Texture,
+            Position = position * 32
+        };
+        AddChild(sprite);
+        _otherPlayers[playerId] = sprite;
+        _otherPlayersTargetPositions[playerId] = position * 32;
+        _gameState.AddPlayer(playerId, position);
+    }
+
+    private void OnPlayerPositionChanged(string playerId, Vector2I position)
+    {
+        if (_gameState.SessionId == playerId) return;
+
+        if (_otherPlayers.ContainsKey(playerId))
+        {
+            _otherPlayersTargetPositions[playerId] = position * 32;
+            _gameState.UpdatePlayerPosition(playerId, position);
+        }
+    }
+
+    private void OnPlayerLeft(string playerId)
+    {
+        if (_otherPlayers.TryGetValue(playerId, out var sprite))
+        {
+            sprite.QueueFree();
+            _otherPlayers.Remove(playerId);
+            _otherPlayersTargetPositions.Remove(playerId);
+            _gameState.RemovePlayer(playerId);
+        }
     }
 
     private void OnMoveInitiated(Vector2I newPosition)
@@ -173,5 +235,15 @@ public partial class Game : Node2D
         _network.MoveFailed -= OnMoveFailed;
         _network.PlayerStateUpdated -= OnPlayerStateUpdated;
         _network.ConnectionLost -= OnConnectionLost;
+        _network.PlayerJoinedMap -= OnPlayerJoined;
+        _network.PlayerPositionChanged -= OnPlayerPositionChanged;
+        _network.PlayerLeftMap -= OnPlayerLeft;
+
+        foreach (var sprite in _otherPlayers.Values)
+        {
+            sprite.QueueFree();
+        }
+        _otherPlayers.Clear();
+        _otherPlayersTargetPositions.Clear();
     }
 }

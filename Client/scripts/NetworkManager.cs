@@ -156,6 +156,20 @@ public partial class NetworkManager : Node
                     }
                     break;
 
+                case ExtPlayerJoinedMap msg:
+                    EmitSignal(SignalName.PlayerJoinedMap, msg.PlayerId, 
+                        new Vector2I(msg.Position.X, msg.Position.Y));
+                    break;
+
+                case ExtPlayerPositionChange msg:
+                    EmitSignal(SignalName.PlayerPositionChanged, msg.PlayerId,
+                        new Vector2I(msg.Position.X, msg.Position.Y));
+                    break;
+
+                case ExtPlayerLeftMap msg:
+                    EmitSignal(SignalName.PlayerLeftMap, msg.PlayerId);
+                    break;
+
                 default:
                     GD.PrintErr($"Unknown message type: {message.GetType().Name}");
                     break;
@@ -192,6 +206,14 @@ public partial class NetworkManager : Node
     // Player state signals
     [Signal]
     public delegate void PlayerStateUpdatedEventHandler(Vector2I position);
+
+    // Other player signals
+    [Signal]
+    public delegate void PlayerJoinedMapEventHandler(string playerId, Vector2I position);
+    [Signal]
+    public delegate void PlayerPositionChangedEventHandler(string playerId, Vector2I position);
+    [Signal]
+    public delegate void PlayerLeftMapEventHandler(string playerId);
 
     [Signal]
     public delegate void ConnectionLostEventHandler();
