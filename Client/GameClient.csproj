@@ -9,6 +9,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <ProjectReference Include="..\src\GameServer.Shared\GameServer.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Server\src\GameServer.Shared\GameServer.Shared.csproj" />
   </ItemGroup>
 </Project>
