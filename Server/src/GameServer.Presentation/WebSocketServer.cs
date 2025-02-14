@@ -52,7 +52,7 @@ namespace GameServer.Presentation
             // Create player actor immediately on connection
             var createResponse = await actorSystem.Root.RequestAsync<PlayerCreated>(
                 server.gameActor,
-                new CreatePlayer(sessionId, $"Player_{sessionId}", (BaseMessage msg) => SendResponse((dynamic)msg))
+                new CreatePlayer(sessionId, $"Player_{sessionId}", (BaseExternalMessage msg) => SendResponse((dynamic)msg))
             );
             playerActor = createResponse.PlayerActor;
             
@@ -80,7 +80,7 @@ namespace GameServer.Presentation
             try
             {
                 var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
-                var baseMessage = JsonConfig.Deserialize<BaseMessage>(message);
+                var baseMessage = JsonConfig.Deserialize<BaseExternalMessage>(message);
 
                 switch (baseMessage?.Type)
                 {

@@ -5,7 +5,7 @@ using GameServer.Shared.Messages;
 namespace GameServer.Application.Messages.Internal
 {
     // Creation messages
-    public record CreatePlayer(string ConnectionId, string PlayerName, SendToClientDelegate<BaseMessage> SendToClient);
+    public record CreatePlayer(string ConnectionId, string PlayerName, SendToClientDelegate<BaseExternalMessage> SendToClient);
     public record PlayerCreated(PID PlayerActor, Player Player);
     
     // Map listing messages

@@ -10,12 +10,12 @@ namespace GameServer.Application.Actors
     {
         private readonly string connectionId;
         private readonly Player player;
-        private readonly SendToClientDelegate<BaseMessage> _sendToClient;
+        private readonly SendToClientDelegate<BaseExternalMessage> _sendToClient;
         private PID? currentMap;
         private string? pendingMapJoin;
         private Position? pendingMove;
 
-        public PlayerActor(string connectionId, string playerName, SendToClientDelegate<BaseMessage> sendToClient)
+        public PlayerActor(string connectionId, string playerName, SendToClientDelegate<BaseExternalMessage> sendToClient)
         {
             this.connectionId = connectionId;
             this.player = new Player(connectionId, playerName);
@@ -47,7 +47,10 @@ namespace GameServer.Application.Actors
                 MapStateUpdate msg => OnMapStateUpdate(context, msg),
                 MapUpdateSubscribed msg => OnMapUpdateSubscribed(context, msg),
                 MapUpdateUnsubscribed msg => OnMapUpdateUnsubscribed(context, msg),
-                
+
+                //Send external messages to client
+                BaseExternalMessage msg => _sendToClient(msg),
+
                 _ => Task.CompletedTask
             };
         }

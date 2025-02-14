@@ -1,6 +1,7 @@
 using Proto;
 using GameServer.Application.Models;
 using GameServer.Application.Messages.Internal;
+using GameServer.Shared.Messages;
 
 namespace GameServer.Application.Actors
 {
@@ -36,7 +37,7 @@ namespace GameServer.Application.Actors
             if (map.TryAddPlayer(msg.Player, out var startPosition))
             {
                 subscribers.Add(msg.PlayerActor);
-                BroadcastMapUpdate(context);
+                BroadcastToAllPlayers(context, new ExtPlayerJoinedMap(msg.Player.Id, startPosition));
                 var tilemapData = new GameServer.Shared.Messages.TilemapData(map.Width, map.Height, map.TileData);
                 context.Send(msg.Requester, new PlayerAddedToMap(msg.PlayerActor, context.Self, map.Id, startPosition, tilemapData));
             }
@@ -52,7 +53,7 @@ namespace GameServer.Application.Actors
             if (map.RemovePlayer(msg.PlayerId))
             {
                 subscribers.Remove(context.Sender);
-                BroadcastMapUpdate(context);
+                BroadcastToAllPlayers(context, new ExtPlayerLeftMap(msg.PlayerId));
                 context.Send(msg.Requester, new PlayerRemovedFromMap(this.map.Id, msg.PlayerId));
             }
             else
@@ -66,7 +67,7 @@ namespace GameServer.Application.Actors
         {
             if (map.TryMovePlayer(msg.PlayerId, msg.NewPosition))
             {
-                BroadcastMapUpdate(context);
+                BroadcastToAllPlayers(context, new ExtPlayerPositionChange(msg.PlayerId, msg.NewPosition));
                 context.Send(msg.Requester, new MoveValidated(msg.PlayerId, msg.NewPosition));
             }
             else
@@ -91,12 +92,11 @@ namespace GameServer.Application.Actors
             return Task.CompletedTask;
         }
 
-        private void BroadcastMapUpdate(IContext context)
+        private void BroadcastToAllPlayers(IContext context, object message)
         {
-            var update = new MapStateUpdate(map);
             foreach (var subscriber in subscribers)
             {
-                context.Send(subscriber, update);
+                context.Send(subscriber, message);
             }
         }
     }

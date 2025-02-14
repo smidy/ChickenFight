@@ -75,7 +75,7 @@ public partial class NetworkManager : Node
         GD.Print("Connected to WebSocket server");
     }
 
-    public void SendMessage<T>(T message) where T : BaseMessage
+    public void SendMessage<T>(T message) where T : BaseExternalMessage
     {
         if (!IsConnected) return;
 
@@ -89,7 +89,7 @@ public partial class NetworkManager : Node
     {
         try
         {
-            var message = JsonConfig.Deserialize<BaseMessage>(json);
+            var message = JsonConfig.Deserialize<BaseExternalMessage>(json);
             if (message == null) return;
 
             // Re-deserialize with concrete type based on Type property
