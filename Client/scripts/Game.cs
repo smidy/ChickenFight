@@ -34,6 +34,7 @@ public partial class Game : Node2D
         _network.MoveCompleted += OnMoveCompleted;
         _network.MoveFailed += OnMoveFailed;
         _network.PlayerStateUpdated += OnPlayerStateUpdated;
+        _network.ConnectionLost += OnConnectionLost;
 
         SetupTilemap();
         SetupPlayer();
@@ -159,6 +160,11 @@ public partial class Game : Node2D
         }
     }
 
+    private void OnConnectionLost()
+    {
+        GetTree().ChangeSceneToFile("res://scenes/Title.tscn");
+    }
+
     public override void _ExitTree()
     {
         base._ExitTree();
@@ -166,5 +172,6 @@ public partial class Game : Node2D
         _network.MoveCompleted -= OnMoveCompleted;
         _network.MoveFailed -= OnMoveFailed;
         _network.PlayerStateUpdated -= OnPlayerStateUpdated;
+        _network.ConnectionLost -= OnConnectionLost;
     }
 }

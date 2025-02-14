@@ -29,7 +29,16 @@ public partial class NetworkManager : Node
     {
         if (_webSocket == null) return;
 
+        var previousState = _webSocket.GetReadyState();
         _webSocket.Poll();
+        var currentState = _webSocket.GetReadyState();
+        
+        // Check if connection was lost
+        if (previousState == WebSocketPeer.State.Open && currentState != WebSocketPeer.State.Open)
+        {
+            EmitSignal(SignalName.ConnectionLost);
+            GD.Print("WebSocket connection lost");
+        }
         
         while (_webSocket.GetAvailablePacketCount() > 0)
         {
@@ -183,4 +192,16 @@ public partial class NetworkManager : Node
     // Player state signals
     [Signal]
     public delegate void PlayerStateUpdatedEventHandler(Vector2I position);
+
+    [Signal]
+    public delegate void ConnectionLostEventHandler();
+
+    public void Disconnect()
+    {
+        if (_webSocket != null)
+        {
+            _webSocket.Close();
+            _webSocket = null;
+        }
+    }
 }

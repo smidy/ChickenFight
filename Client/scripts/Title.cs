@@ -15,7 +15,14 @@ public partial class Title : Node2D
         _network = GetNode<NetworkManager>("/root/NetworkManager");
 
         _network.ConnectionConfirmed += OnConnectionConfirmed;
+        _network.ConnectionLost += OnConnectionLost;
         _connectButton.Pressed += OnConnectPressed;
+    }
+
+    private void OnConnectionLost()
+    {
+        _statusLabel.Text = "Connection lost!";
+        _connectButton.Disabled = false;
     }
 
     private async void OnConnectPressed()
@@ -45,5 +52,6 @@ public partial class Title : Node2D
     {
         base._ExitTree();
         _network.ConnectionConfirmed -= OnConnectionConfirmed;
+        _network.ConnectionLost -= OnConnectionLost;
     }
 }

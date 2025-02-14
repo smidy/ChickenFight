@@ -22,6 +22,7 @@ public partial class MapSelect : Node2D
         _network.JoinMapInitiated += OnJoinMapInitiated;
         _network.JoinMapCompleted += OnJoinMapCompleted;
         _network.JoinMapFailed += OnJoinMapFailed;
+        _network.ConnectionLost += OnConnectionLost;
         _mapList.ItemSelected += OnMapSelected;
         _refreshButton.Pressed += RequestMapList;
 
@@ -78,6 +79,11 @@ public partial class MapSelect : Node2D
         _refreshButton.Disabled = false;
     }
 
+    private void OnConnectionLost()
+    {
+        GetTree().ChangeSceneToFile("res://scenes/Title.tscn");
+    }
+
     public override void _ExitTree()
     {
         base._ExitTree();
@@ -85,5 +91,6 @@ public partial class MapSelect : Node2D
         _network.JoinMapInitiated -= OnJoinMapInitiated;
         _network.JoinMapCompleted -= OnJoinMapCompleted;
         _network.JoinMapFailed -= OnJoinMapFailed;
+        _network.ConnectionLost -= OnConnectionLost;
     }
 }
