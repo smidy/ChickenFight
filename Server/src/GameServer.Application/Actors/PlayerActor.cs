@@ -78,7 +78,7 @@ namespace GameServer.Application.Actors
                 context.Send(context.Sender, new GameServer.Application.Messages.Internal.JoinMapFailed(msg.MapId, "Invalid Map Id"));
             }
 
-            context.Send(foundMap, new AddPlayer(context.Self, player, context.Self));
+            context.Send(foundMap, new AddPlayer(context.Self, player.Id, player.Name, context.Self));
             await _sendToClient(new ExtJoinMapInitiated(msg.MapId));
         }
 
@@ -205,10 +205,14 @@ namespace GameServer.Application.Actors
             }
         }
 
-        private Task OnMapStateUpdate(IContext context, MapStateUpdate msg)
+        private async Task OnMapStateUpdate(IContext context, MapStateUpdate msg)
         {
-            // Handle map state updates, potentially update local state or forward to client
-            return Task.CompletedTask;
+            // Update player position if it exists in the map
+            if (msg.PlayerPositions.TryGetValue(player.Id, out var position))
+            {
+                player.UpdatePosition(position);
+                await _sendToClient(new ExtPlayerInfo(new PlayerState(player.Id, player.Name, player.Position)));
+            }
         }
 
         private Task OnMapUpdateSubscribed(IContext context, MapUpdateSubscribed msg)

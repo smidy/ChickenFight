@@ -5,7 +5,7 @@ using GameServer.Shared.Models;
 namespace GameServer.Application.Messages.Internal
 {
     // Player management messages
-    public record AddPlayer(PID PlayerActor, Player Player, PID Requester);
+    public record AddPlayer(PID PlayerActor, string PlayerId, string PlayerName, PID Requester);
     public record PlayerAddedToMap(PID PlayerActor, PID MapPID, string MapId, Position StartPosition, Shared.ExternalMessages.TilemapData TilemapData);
     public record PlayerAddFailure(PID PlayerActor, string MapId, string Error);
     
@@ -19,7 +19,7 @@ namespace GameServer.Application.Messages.Internal
     public record MoveRejected(string PlayerId, Position AttemptedPosition, string Error);
     
     // Map state messages
-    public record MapStateUpdate(Map Map);
+    public record MapStateUpdate(string MapId, string MapName, int Width, int Height, int[] TileData, IReadOnlyDictionary<string, Position> PlayerPositions);
     public record SubscribeToMapUpdates(PID Subscriber);
     public record UnsubscribeFromMapUpdates(PID Subscriber);
     public record MapUpdateSubscribed(PID Subscriber);

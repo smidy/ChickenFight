@@ -9,7 +9,8 @@ namespace GameServer.Application.Models
         public string Name { get; }
         public int Width { get; }
         public int Height { get; }
-        private readonly Dictionary<string, Player> players;
+        private readonly Dictionary<string, Position> playerPositions;
+        private readonly Dictionary<string, string> playerFightIds;
         private readonly int[] tileData;
 
         public Map(string id, string name, int width, int height, int[]? tileData = null)
@@ -18,17 +19,40 @@ namespace GameServer.Application.Models
             Name = name;
             Width = width;
             Height = height;
-            players = new Dictionary<string, Player>();
+            playerPositions = new Dictionary<string, Position>();
+            playerFightIds = new Dictionary<string, string>();
             this.tileData = tileData ?? new int[width * height];
         }
 
-        public IReadOnlyCollection<Player> Players => players.Values;
+        public IReadOnlyDictionary<string, Position> PlayerPositions => playerPositions;
         
         public int[] TileData => tileData;
 
-        public Player? GetPlayer(string playerId)
+        public Position? GetPlayerPosition(string playerId)
         {
-            return players.TryGetValue(playerId, out var player) ? player : null;
+            return playerPositions.TryGetValue(playerId, out var position) ? position : null;
+        }
+
+        public bool IsPlayerInFight(string playerId)
+        {
+            return playerFightIds.ContainsKey(playerId);
+        }
+
+        public string? GetPlayerFightId(string playerId)
+        {
+            return playerFightIds.TryGetValue(playerId, out var fightId) ? fightId : null;
+        }
+
+        public void SetPlayerFightId(string playerId, string? fightId)
+        {
+            if (fightId == null)
+            {
+                playerFightIds.Remove(playerId);
+            }
+            else
+            {
+                playerFightIds[playerId] = fightId;
+            }
         }
 
         public void SetTile(int x, int y, int tileId)
@@ -48,10 +72,10 @@ namespace GameServer.Application.Models
             return -1;
         }
 
-        public bool TryAddPlayer(Player player, out Position? startPosition)
+        public bool TryAddPlayer(string playerId, out Position? startPosition)
         {
             startPosition = null;
-            if (players.ContainsKey(player.Id))
+            if (playerPositions.ContainsKey(playerId))
                 return false;
 
             // Find a free position for the player
@@ -63,7 +87,7 @@ namespace GameServer.Application.Models
                     if (!IsPositionOccupied(position))
                     {
                         startPosition = position;
-                        players[player.Id] = player;
+                        playerPositions[playerId] = position;
                         return true;
                     }
                 }
@@ -74,12 +98,13 @@ namespace GameServer.Application.Models
 
         public bool RemovePlayer(string playerId)
         {
-            return players.Remove(playerId);
+            playerFightIds.Remove(playerId);
+            return playerPositions.Remove(playerId);
         }
 
         public bool TryMovePlayer(string playerId, Position newPosition)
         {
-            if (!players.TryGetValue(playerId, out var player))
+            if (!playerPositions.TryGetValue(playerId, out var currentPosition))
                 return false;
 
             if (!newPosition.IsValid(Width, Height))
@@ -88,17 +113,18 @@ namespace GameServer.Application.Models
             if (IsPositionOccupied(newPosition))
                 return false;
 
-            if (player.Position == null || !player.Position.IsAdjacent(newPosition))
+            if (!currentPosition.IsAdjacent(newPosition))
                 return false;
 
+            playerPositions[playerId] = newPosition;
             return true;
         }
 
         private bool IsPositionOccupied(Position position)
         {
-            foreach (var player in players.Values)
+            foreach (var playerPosition in playerPositions.Values)
             {
-                if (player.Position?.X == position.X && player.Position?.Y == position.Y)
+                if (playerPosition.X == position.X && playerPosition.Y == position.Y)
                     return true;
             }
             return false;
