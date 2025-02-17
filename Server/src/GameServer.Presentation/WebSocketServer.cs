@@ -91,11 +91,9 @@ namespace GameServer.Presentation
                         HandleJoinMap(joinMap);
                         break;
                     case ExtLeaveMap leaveMap:
-                        //var leaveMap = JsonConfig.Deserialize<ExtLeaveMap>(message);
                         HandleLeaveMap(leaveMap);
                         break;
                     case ExtMove move:
-                        //var move = JsonConfig.Deserialize<ExtMove>(message);
                         HandleMove(move);
                         break;
                 }
