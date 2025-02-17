@@ -48,6 +48,11 @@ namespace GameServer.Application.Actors
                 MapUpdateSubscribed msg => OnMapUpdateSubscribed(context, msg),
                 MapUpdateUnsubscribed msg => OnMapUpdateUnsubscribed(context, msg),
 
+                // Fight messages
+                ExtFightChallengeReceived msg => OnFightChallengeReceived(context, msg),
+                ExtFightStarted msg => OnFightStarted(context, msg),
+                ExtFightEnded msg => OnFightEnded(context, msg),
+
                 //Send external messages to client
                 BaseExternalMessage msg => _sendToClient(msg),
 
@@ -115,9 +120,34 @@ namespace GameServer.Application.Actors
                 await _sendToClient(new ExtLeaveMapFailed(msg.MapId, "Invalid map id specified"));
                 return;
             }
+            if (player.IsInFight && msg.MapId != null) // Allow force disconnect even in fight
+            {
+                await _sendToClient(new ExtLeaveMapFailed(msg.MapId, "Cannot leave map while in a fight"));
+                return;
+            }
 
             context.Send(currentMap, new RemovePlayer(player.Id, context.Self));
             await _sendToClient(new ExtLeaveMapInitiated(msg.MapId));
+        }
+
+        private async Task OnFightChallengeReceived(IContext context, ExtFightChallengeReceived msg)
+        {
+            if (currentMap == null)
+                return;
+
+            // Auto-accept for now - in a real implementation, you'd wait for player input
+            context.Send(currentMap, new FightChallengeResponse(msg.ChallengerId, player.Id, true));
+            await _sendToClient(new ExtFightChallengeAccepted(msg.ChallengerId));
+        }
+
+        private async Task OnFightStarted(IContext context, ExtFightStarted msg)
+        {
+            await _sendToClient(msg);
+        }
+
+        private async Task OnFightEnded(IContext context, ExtFightEnded msg)
+        {
+            await _sendToClient(msg);
         }
 
         private async Task OnPlayerRemovedFromMap(IContext context, PlayerRemovedFromMap msg)

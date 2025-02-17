@@ -26,6 +26,11 @@ namespace GameServer.Application.Models
         
         public int[] TileData => tileData;
 
+        public Player? GetPlayer(string playerId)
+        {
+            return players.TryGetValue(playerId, out var player) ? player : null;
+        }
+
         public void SetTile(int x, int y, int tileId)
         {
             if (x >= 0 && x < Width && y >= 0 && y < Height)

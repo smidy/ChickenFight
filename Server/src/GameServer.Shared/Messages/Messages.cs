@@ -181,4 +181,47 @@ namespace GameServer.Shared.Messages
 
     // Map data
     public record TilemapData(int Width, int Height, int[] TileData);
+
+    // External messages for client communication
+    public record ExtFightChallengeReceived : BaseExternalMessage
+    {
+        public ExtFightChallengeReceived(string ChallengerId) : base(nameof(ExtFightChallengeReceived))
+        {
+            this.ChallengerId = ChallengerId;
+        }
+
+        public string ChallengerId { get; }
+    }
+
+    public record ExtFightChallengeAccepted : BaseExternalMessage
+    {
+        public ExtFightChallengeAccepted(string TargetId) : base(nameof(ExtFightChallengeAccepted))
+        {
+            this.TargetId = TargetId;
+        }
+
+        public string TargetId { get; }
+    }
+
+    public record ExtFightStarted : BaseExternalMessage
+    {
+        public ExtFightStarted(string OpponentId) : base(nameof(ExtFightStarted))
+        {
+            this.OpponentId = OpponentId;
+        }
+
+        public string OpponentId { get; }
+    }
+
+    public record ExtFightEnded : BaseExternalMessage
+    {
+        public ExtFightEnded(string WinnerId, string Reason) : base(nameof(ExtFightEnded))
+        {
+            this.WinnerId = WinnerId;
+            this.Reason = Reason;
+        }
+
+        public string WinnerId { get; }
+        public string Reason { get; }
+    }
 }

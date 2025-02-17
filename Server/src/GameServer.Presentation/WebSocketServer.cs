@@ -82,21 +82,20 @@ namespace GameServer.Presentation
                 var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
                 var baseMessage = JsonConfig.Deserialize<BaseExternalMessage>(message);
 
-                switch (baseMessage?.Type)
+                switch (baseMessage)
                 {
-                    case nameof(ExtRequestMapList):
+                    case ExtRequestMapList:
                         HandleRequestMapList();
                         break;
-                    case nameof(ExtJoinMap):
-                        var joinMap = JsonConfig.Deserialize<ExtJoinMap>(message);
+                    case ExtJoinMap joinMap:
                         HandleJoinMap(joinMap);
                         break;
-                    case nameof(ExtLeaveMap):
-                        var leaveMap = JsonConfig.Deserialize<ExtLeaveMap>(message);
+                    case ExtLeaveMap leaveMap:
+                        //var leaveMap = JsonConfig.Deserialize<ExtLeaveMap>(message);
                         HandleLeaveMap(leaveMap);
                         break;
-                    case nameof(ExtMove):
-                        var move = JsonConfig.Deserialize<ExtMove>(message);
+                    case ExtMove move:
+                        //var move = JsonConfig.Deserialize<ExtMove>(message);
                         HandleMove(move);
                         break;
                 }

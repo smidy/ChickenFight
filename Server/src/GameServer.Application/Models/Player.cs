@@ -8,6 +8,8 @@ namespace GameServer.Application.Models
         public string Name { get; }
         public string? CurrentMapId { get; private set; }
         public Position? Position { get; private set; }
+        public string? CurrentFightId { get; private set; }
+        public bool IsInFight => CurrentFightId != null;
 
         public Player(string id, string name)
         {
@@ -30,6 +32,18 @@ namespace GameServer.Application.Models
         public void UpdatePosition(Position newPosition)
         {
             Position = newPosition;
+        }
+
+        public void EnterFight(string fightId)
+        {
+            if (IsInFight)
+                throw new InvalidOperationException("Player is already in a fight");
+            CurrentFightId = fightId;
+        }
+
+        public void LeaveFight()
+        {
+            CurrentFightId = null;
         }
     }
 }
