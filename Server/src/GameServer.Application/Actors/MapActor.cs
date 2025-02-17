@@ -1,7 +1,7 @@
 using Proto;
 using GameServer.Application.Models;
 using GameServer.Application.Messages.Internal;
-using GameServer.Shared.Messages;
+using GameServer.Shared.ExternalMessages;
 
 namespace GameServer.Application.Actors
 {
@@ -46,7 +46,7 @@ namespace GameServer.Application.Actors
             {
                 subscribers.Add(msg.PlayerActor);
                 BroadcastToAllPlayers(context, new ExtPlayerJoinedMap(msg.Player.Id, startPosition));
-                var tilemapData = new GameServer.Shared.Messages.TilemapData(map.Width, map.Height, map.TileData);
+                var tilemapData = new GameServer.Shared.ExternalMessages.TilemapData(map.Width, map.Height, map.TileData);
                 context.Send(msg.Requester, new PlayerAddedToMap(msg.PlayerActor, context.Self, map.Id, startPosition, tilemapData));
             }
             else

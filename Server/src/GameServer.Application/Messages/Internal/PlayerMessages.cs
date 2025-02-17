@@ -7,7 +7,7 @@ namespace GameServer.Application.Messages.Internal
     // Map join/leave messages
     public record JoinMapRequest(string MapId);
     public record JoinMapInitiated(string MapId);
-    public record JoinMapCompleted(string MapId, GameServer.Shared.Messages.TilemapData TilemapData);
+    public record JoinMapCompleted(string MapId, Shared.ExternalMessages.TilemapData TilemapData);
     public record JoinMapFailed(string MapId, string Error);
     
     public record LeaveMapRequest(string? MapId);

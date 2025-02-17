@@ -1,6 +1,6 @@
 using Godot;
 using System;
-using GameServer.Shared.Messages;
+using GameServer.Shared.ExternalMessages;
 using GameServer.Shared.Models;
 
 public partial class Game : Node2D

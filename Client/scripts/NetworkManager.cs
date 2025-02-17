@@ -3,8 +3,8 @@ using System;
 using System.Threading.Tasks;
 using Godot.Collections;
 using GameServer.Shared;
-using GameServer.Shared.Messages;
 using GameServer.Shared.Models;
+using GameServer.Shared.ExternalMessages;
 
 public partial class NetworkManager : Node
 {

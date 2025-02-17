@@ -11,7 +11,7 @@ using System.Net;
 using Proto;
 using GameServer.Shared;
 using GameServer.Application.Messages.Internal;
-using GameServer.Shared.Messages;
+using GameServer.Shared.ExternalMessages;
 
 namespace GameServer.Presentation
 {
@@ -128,7 +128,7 @@ namespace GameServer.Presentation
         {
             if (playerActor == null)
             {
-                await SendResponse(new GameServer.Shared.Messages.ExtJoinMapFailed(joinMap.MapId, "Player not connected"));
+                await SendResponse(new GameServer.Shared.ExternalMessages.ExtJoinMapFailed(joinMap.MapId, "Player not connected"));
                 return;
             }
 
@@ -139,7 +139,7 @@ namespace GameServer.Presentation
         {
             if (playerActor == null)
             {
-                await SendResponse(new GameServer.Shared.Messages.ExtLeaveMapFailed(leaveMap.MapId, "Not connected to any map"));
+                await SendResponse(new GameServer.Shared.ExternalMessages.ExtLeaveMapFailed(leaveMap.MapId, "Not connected to any map"));
                 return;
             }
 
@@ -167,35 +167,35 @@ namespace GameServer.Presentation
 
                 // Map join messages
                 case Application.Messages.Internal.JoinMapInitiated msg:
-                    SendResponse(new GameServer.Shared.Messages.ExtJoinMapInitiated(msg.MapId));
+                    SendResponse(new GameServer.Shared.ExternalMessages.ExtJoinMapInitiated(msg.MapId));
                     break;
                 case Application.Messages.Internal.JoinMapCompleted msg:
-                    SendResponse(new GameServer.Shared.Messages.ExtJoinMapCompleted(msg.MapId, msg.TilemapData));
+                    SendResponse(new GameServer.Shared.ExternalMessages.ExtJoinMapCompleted(msg.MapId, msg.TilemapData));
                     break;
                 case Application.Messages.Internal.JoinMapFailed msg:
-                    SendResponse(new GameServer.Shared.Messages.ExtJoinMapFailed(msg.MapId, msg.Error));
+                    SendResponse(new GameServer.Shared.ExternalMessages.ExtJoinMapFailed(msg.MapId, msg.Error));
                     break;
 
                 // Map leave messages
                 case Application.Messages.Internal.LeaveMapInitiated msg:
-                    SendResponse(new GameServer.Shared.Messages.ExtLeaveMapInitiated(msg.MapId));
+                    SendResponse(new GameServer.Shared.ExternalMessages.ExtLeaveMapInitiated(msg.MapId));
                     break;
                 case Application.Messages.Internal.LeaveMapCompleted msg:
-                    SendResponse(new GameServer.Shared.Messages.ExtLeaveMapCompleted(msg.MapId));
+                    SendResponse(new GameServer.Shared.ExternalMessages.ExtLeaveMapCompleted(msg.MapId));
                     break;
                 case Application.Messages.Internal.LeaveMapFailed msg:
-                    SendResponse(new GameServer.Shared.Messages.ExtLeaveMapFailed(msg.MapId, msg.Error));
+                    SendResponse(new GameServer.Shared.ExternalMessages.ExtLeaveMapFailed(msg.MapId, msg.Error));
                     break;
 
                 // Movement messages
                 case Application.Messages.Internal.MoveInitiated msg:
-                    SendResponse(new GameServer.Shared.Messages.ExtMoveInitiated(msg.NewPosition));
+                    SendResponse(new GameServer.Shared.ExternalMessages.ExtMoveInitiated(msg.NewPosition));
                     break;
                 case Application.Messages.Internal.MoveCompleted msg:
-                    SendResponse(new GameServer.Shared.Messages.ExtMoveCompleted(msg.NewPosition));
+                    SendResponse(new GameServer.Shared.ExternalMessages.ExtMoveCompleted(msg.NewPosition));
                     break;
                 case Application.Messages.Internal.MoveFailed msg:
-                    SendResponse(new GameServer.Shared.Messages.ExtMoveFailed(msg.AttemptedPosition, msg.Error));
+                    SendResponse(new GameServer.Shared.ExternalMessages.ExtMoveFailed(msg.AttemptedPosition, msg.Error));
                     break;
 
                 // Player state messages

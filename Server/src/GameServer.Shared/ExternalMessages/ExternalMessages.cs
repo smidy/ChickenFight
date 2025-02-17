@@ -1,6 +1,6 @@
 using GameServer.Shared.Models;
 
-namespace GameServer.Shared.Messages
+namespace GameServer.Shared.ExternalMessages
 {
     public delegate Task SendToClientDelegate<in T>(T message) where T : BaseExternalMessage;
 
@@ -19,11 +19,11 @@ namespace GameServer.Shared.Messages
 
     // Map join/leave messages
     public record ExtJoinMap(string MapId) : BaseExternalMessage;
-    
+
     public record ExtJoinMapInitiated(string MapId) : BaseExternalMessage;
-    
+
     public record ExtJoinMapCompleted(string MapId, TilemapData TilemapData) : BaseExternalMessage;
-    
+
     public record ExtJoinMapFailed(string MapId, string Error) : BaseExternalMessage;
 
     public record ExtPlayerJoinedMap(string PlayerId, Position? Position) : BaseExternalMessage;
@@ -33,20 +33,20 @@ namespace GameServer.Shared.Messages
     public record ExtPlayerLeftMap(string PlayerId) : BaseExternalMessage;
 
     public record ExtLeaveMap(string MapId) : BaseExternalMessage;
-    
+
     public record ExtLeaveMapInitiated(string MapId) : BaseExternalMessage;
-    
+
     public record ExtLeaveMapCompleted(string MapId) : BaseExternalMessage;
-    
+
     public record ExtLeaveMapFailed(string MapId, string Error) : BaseExternalMessage;
 
     // Movement messages
     public record ExtMove(Position NewPosition) : BaseExternalMessage;
-    
+
     public record ExtMoveInitiated(Position NewPosition) : BaseExternalMessage;
-    
+
     public record ExtMoveCompleted(Position NewPosition) : BaseExternalMessage;
-    
+
     public record ExtMoveFailed(Position AttemptedPosition, string Error) : BaseExternalMessage;
 
     // State update messages

@@ -1,7 +1,7 @@
 using Godot;
 using System;
 using Godot.Collections;
-using GameServer.Shared.Messages;
+using GameServer.Shared.ExternalMessages;
 
 public partial class MapSelect : Node2D
 {

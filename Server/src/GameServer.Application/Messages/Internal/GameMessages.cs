@@ -1,6 +1,6 @@
 using Proto;
 using GameServer.Application.Models;
-using GameServer.Shared.Messages;
+using GameServer.Shared.ExternalMessages;
 
 namespace GameServer.Application.Messages.Internal
 {

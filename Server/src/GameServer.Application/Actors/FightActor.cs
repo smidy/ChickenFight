@@ -1,7 +1,7 @@
 using Proto;
 using GameServer.Application.Models;
 using GameServer.Application.Messages.Internal;
-using GameServer.Shared.Messages;
+using GameServer.Shared.ExternalMessages;
 
 namespace GameServer.Application.Actors
 {
