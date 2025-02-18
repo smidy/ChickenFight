@@ -11,7 +11,6 @@ public partial class GameState : Node
     public string? CurrentMapId { get; set; }
     
     // Player data
-    public string? SessionId { get; set; }
     public string? PlayerId { get; set; }
     public Vector2I PlayerPosition { get; set; }
     
@@ -62,7 +61,7 @@ public partial class GameState : Node
 
     public void AddPlayer(string playerId, Vector2I position)
     {
-        if (playerId != SessionId)
+        if (playerId != PlayerId)
         {
             OtherPlayers[playerId] = position;
         }
@@ -70,7 +69,7 @@ public partial class GameState : Node
 
     public void UpdatePlayerPosition(string playerId, Vector2I position)
     {
-        if (playerId != SessionId && OtherPlayers.ContainsKey(playerId))
+        if (playerId != PlayerId && OtherPlayers.ContainsKey(playerId))
         {
             OtherPlayers[playerId] = position;
         }
@@ -105,9 +104,9 @@ public partial class GameState : Node
 
     private void OnFightStarted(string opponentId)
     {
-        CurrentFightId = $"fight_{SessionId}_{opponentId}";
+        CurrentFightId = $"fight_{PlayerId}_{opponentId}";
         OpponentId = opponentId;
-        PlayersInFight[SessionId] = true;
+        PlayersInFight[PlayerId] = true;
         PlayersInFight[opponentId] = true;
     }
 
@@ -115,7 +114,7 @@ public partial class GameState : Node
     {
         if (OpponentId != null)
         {
-            PlayersInFight.Remove(SessionId);
+            PlayersInFight.Remove(PlayerId);
             PlayersInFight.Remove(OpponentId);
         }
         CurrentFightId = null;

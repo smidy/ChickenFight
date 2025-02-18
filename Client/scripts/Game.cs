@@ -203,7 +203,7 @@ public partial class Game : Node2D
 
     private void OnPlayerJoined(string playerId, Vector2I position)
     {
-        if (_gameState.SessionId == playerId) return;
+        if (_gameState.PlayerId == playerId) return;
 
         var sprite = new Sprite2D
         {
@@ -218,7 +218,7 @@ public partial class Game : Node2D
 
     private void OnPlayerPositionChanged(string playerId, Vector2I position)
     {
-        if (_gameState.SessionId == playerId) return;
+        if (_gameState.PlayerId == playerId) return;
 
         if (_otherPlayers.ContainsKey(playerId))
         {

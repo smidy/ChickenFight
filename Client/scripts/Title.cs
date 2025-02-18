@@ -39,9 +39,10 @@ public partial class Title : Node2D
         }
     }
 
-    private void OnConnectionConfirmed(string sessionId)
+    private void OnConnectionConfirmed(string playerId)
     {
         _statusLabel.Text = "Connected!";
+        GetNode<GameState>("/root/GameState").PlayerId = playerId;
         GetTree().CreateTimer(1.0).Timeout += () =>
         {
             GetTree().ChangeSceneToFile("res://scenes/MapSelect.tscn");

@@ -10,7 +10,7 @@ namespace GameServer.Shared.ExternalMessages
     }
 
     // Connection messages
-    public record ExtConnectionConfirmed(string SessionId) : BaseExternalMessage;
+    public record ExtConnectionConfirmed(string PlayerId) : BaseExternalMessage;
 
     // Map listing messages
     public record ExtRequestMapList() : BaseExternalMessage;

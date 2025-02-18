@@ -57,7 +57,7 @@ namespace GameServer.Presentation
             playerActor = createResponse.PlayerActor;
             
             // Send connection confirmation to client
-            await SendResponse(new ExtConnectionConfirmed(sessionId));
+            await SendResponse(new ExtConnectionConfirmed(createResponse.Player.Id));
         }
 
         public override async void OnWsDisconnected()

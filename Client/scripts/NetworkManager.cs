@@ -99,7 +99,7 @@ public partial class NetworkManager : Node
             switch (typedMessage)
             {
                 case ExtConnectionConfirmed connectionConfirmed:
-                    EmitSignal(SignalName.ConnectionConfirmed, connectionConfirmed.SessionId);
+                    EmitSignal(SignalName.ConnectionConfirmed, connectionConfirmed.PlayerId);
                     break;
 
                 case RequestMapListResponse mapListResponse:
@@ -197,7 +197,7 @@ public partial class NetworkManager : Node
     }
 
     [Signal]
-    public delegate void ConnectionConfirmedEventHandler(string sessionId);
+    public delegate void ConnectionConfirmedEventHandler(string playerId);
 
     [Signal]
     public delegate void MapListReceivedEventHandler(Godot.Collections.Array maps);

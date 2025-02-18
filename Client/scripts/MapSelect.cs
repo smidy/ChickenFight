@@ -72,8 +72,8 @@ public partial class MapSelect : Node2D
         var gameStateNode = GetNode<GameState>("/root/GameState");
         gameStateNode.CurrentTilemapData = tilemapData;
         gameStateNode.PlayerPosition = playerPosition;
-        gameStateNode.PlayerId = playerId;
         gameStateNode.OtherPlayers = playerPositions;
+        gameStateNode.PlayerId = playerId;
         GetTree().ChangeSceneToFile("res://scenes/Game.tscn");
     }
 
