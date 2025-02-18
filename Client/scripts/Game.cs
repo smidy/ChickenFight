@@ -33,7 +33,7 @@ public partial class Game : Node2D
         _tileMap = GetNode<TileMapLayer>("Ground");
         _player = GetNode<Sprite2D>("Player");
         _camera = GetNode<Camera2D>("Camera2D");
-        _statusLabel = GetNode<Label>("Camera2D/StatusLabel");
+        _statusLabel = GetNode<Label>("UILayer/StatusLabel");
         _network = GetNode<NetworkManager>("/root/NetworkManager");
         _gameState = GetNode<GameState>("/root/GameState");
 

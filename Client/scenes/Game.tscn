@@ -22,11 +22,20 @@ texture = ExtResource("3_hyj14")
 [node name="Camera2D" type="Camera2D" parent="."]
 position_smoothing_enabled = true
 
-[node name="StatusLabel" type="Label" parent="Camera2D"]
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="StatusLabel" type="Label" parent="UILayer"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
 offset_left = -71.0
-offset_top = 81.0
+offset_top = -60.0
 offset_right = 71.0
-offset_bottom = 104.0
+offset_bottom = -37.0
+grow_horizontal = 2
+grow_vertical = 0
 text = "Connected to map"
 horizontal_alignment = 1
 
