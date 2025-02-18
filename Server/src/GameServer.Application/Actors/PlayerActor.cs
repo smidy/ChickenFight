@@ -45,8 +45,6 @@ namespace GameServer.Application.Actors
                 
                 // Map state messages
                 MapStateUpdate msg => OnMapStateUpdate(context, msg),
-                MapUpdateSubscribed msg => OnMapUpdateSubscribed(context, msg),
-                MapUpdateUnsubscribed msg => OnMapUpdateUnsubscribed(context, msg),
 
                 // Fight messages
                 ExtFightChallengeReceived msg => OnFightChallengeReceived(context, msg),
@@ -93,7 +91,7 @@ namespace GameServer.Application.Actors
             {
                 currentMap = msg.MapPID;
                 player.JoinMap(pendingMapJoin, msg.StartPosition);
-                await _sendToClient(new ExtJoinMapCompleted(msg.MapId, msg.TilemapData));
+                await _sendToClient(new ExtJoinMapCompleted(msg.MapId, msg.PlayerId, msg.StartPosition, msg.TilemapData, msg.PlayerPositions));
                 pendingMapJoin = null;
             }
         }
@@ -205,25 +203,8 @@ namespace GameServer.Application.Actors
             }
         }
 
-        private async Task OnMapStateUpdate(IContext context, MapStateUpdate msg)
+        private Task OnMapStateUpdate(IContext context, MapStateUpdate msg)
         {
-            // Update player position if it exists in the map
-            if (msg.PlayerPositions.TryGetValue(player.Id, out var position))
-            {
-                player.UpdatePosition(position);
-                await _sendToClient(new ExtPlayerInfo(new PlayerState(player.Id, player.Name, player.Position)));
-            }
-        }
-
-        private Task OnMapUpdateSubscribed(IContext context, MapUpdateSubscribed msg)
-        {
-            // Handle subscription confirmation
-            return Task.CompletedTask;
-        }
-
-        private Task OnMapUpdateUnsubscribed(IContext context, MapUpdateUnsubscribed msg)
-        {
-            // Handle unsubscription confirmation
             return Task.CompletedTask;
         }
     }

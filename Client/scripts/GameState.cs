@@ -12,12 +12,12 @@ public partial class GameState : Node
     
     // Player data
     public string? SessionId { get; set; }
+    public string? PlayerId { get; set; }
     public Vector2I PlayerPosition { get; set; }
     
     // Other players
-    private Godot.Collections.Dictionary<string, Vector2I> _otherPlayers = new();
-    public IReadOnlyDictionary<string, Vector2I> OtherPlayers => _otherPlayers;
-    
+    public  Godot.Collections.Dictionary<string, Vector2I> OtherPlayers = new();
+
     // Pending operations
     public Vector2I? PendingMove { get; private set; }
     public bool IsMoving => PendingMove != null;
@@ -46,28 +46,28 @@ public partial class GameState : Node
         CurrentMapId = null;
         PlayerPosition = Vector2I.Zero;
         PendingMove = null;
-        _otherPlayers.Clear();
+        OtherPlayers.Clear();
     }
 
     public void AddPlayer(string playerId, Vector2I position)
     {
         if (playerId != SessionId)
         {
-            _otherPlayers[playerId] = position;
+            OtherPlayers[playerId] = position;
         }
     }
 
     public void UpdatePlayerPosition(string playerId, Vector2I position)
     {
-        if (playerId != SessionId && _otherPlayers.ContainsKey(playerId))
+        if (playerId != SessionId && OtherPlayers.ContainsKey(playerId))
         {
-            _otherPlayers[playerId] = position;
+            OtherPlayers[playerId] = position;
         }
     }
 
     public void RemovePlayer(string playerId)
     {
-        _otherPlayers.Remove(playerId);
+        OtherPlayers.Remove(playerId);
     }
 
     private void OnMoveInitiated(Vector2I newPosition)

@@ -8,7 +8,7 @@ namespace GameServer.Shared.Models
         {
             var dx = Math.Abs(X - other.X);
             var dy = Math.Abs(Y - other.Y);
-            return (dx == 1 && dy == 0) || (dx == 0 && dy == 1);
+            return (dx == 1 && dy == 0) || (dx == 0 && dy == 1)||(dx == 1 && dy == 1);
         }
 
         public bool IsValid(int maxX, int maxY)

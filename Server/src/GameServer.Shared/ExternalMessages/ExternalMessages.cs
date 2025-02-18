@@ -22,7 +22,7 @@ namespace GameServer.Shared.ExternalMessages
 
     public record ExtJoinMapInitiated(string MapId) : BaseExternalMessage;
 
-    public record ExtJoinMapCompleted(string MapId, TilemapData TilemapData) : BaseExternalMessage;
+    public record ExtJoinMapCompleted(string MapId, string PlayerId, Position Position, TilemapData TilemapData, IReadOnlyDictionary<string, Position> PlayerPositions) : BaseExternalMessage;
 
     public record ExtJoinMapFailed(string MapId, string Error) : BaseExternalMessage;
 

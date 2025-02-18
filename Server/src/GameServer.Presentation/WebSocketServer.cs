@@ -119,7 +119,7 @@ namespace GameServer.Presentation
                 m.Name, 
                 m.Width, 
                 m.Height, 
-                m.Players.Count
+                m.PlayerPositions.Count
             ));
             await SendResponse(new RequestMapListResponse(mapInfos.ToList()));
         }
@@ -168,9 +168,6 @@ namespace GameServer.Presentation
                 // Map join messages
                 case Application.Messages.Internal.JoinMapInitiated msg:
                     SendResponse(new GameServer.Shared.ExternalMessages.ExtJoinMapInitiated(msg.MapId));
-                    break;
-                case Application.Messages.Internal.JoinMapCompleted msg:
-                    SendResponse(new GameServer.Shared.ExternalMessages.ExtJoinMapCompleted(msg.MapId, msg.TilemapData));
                     break;
                 case Application.Messages.Internal.JoinMapFailed msg:
                     SendResponse(new GameServer.Shared.ExternalMessages.ExtJoinMapFailed(msg.MapId, msg.Error));

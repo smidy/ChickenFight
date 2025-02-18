@@ -8,14 +8,14 @@ namespace GameServer.Application.Actors
     public class MapActor : IActor
     {
         private readonly Map map;
-        private readonly HashSet<PID> players;
+        private readonly Dictionary<string, PID> players;
         private readonly Dictionary<string, PID> activeFights;
         private int fightCounter;
 
         public MapActor(string id, string name, int width, int height, int[] tileData)
         {
             map = new Map(id, name, width, height, tileData);
-            players = new HashSet<PID>();
+            players = new Dictionary<string, PID>();
             activeFights = new Dictionary<string, PID>();
             fightCounter = 0;
         }
@@ -28,8 +28,6 @@ namespace GameServer.Application.Actors
                 AddPlayer msg => OnAddPlayer(context, msg),
                 RemovePlayer msg => OnRemovePlayer(context, msg),
                 ValidateMove msg => OnValidateMove(context, msg),
-                SubscribeToMapUpdates msg => OnSubscribeToMapUpdates(context, msg),
-                UnsubscribeFromMapUpdates msg => OnUnsubscribeFromMapUpdates(context, msg),
                 ChallengeFightRequest msg => OnChallengeFightRequest(context, msg),
                 FightChallengeResponse msg => OnFightChallengeResponse(context, msg),
                 FightStarted msg => OnFightStarted(context, msg),
@@ -44,10 +42,10 @@ namespace GameServer.Application.Actors
         {
             if (map.TryAddPlayer(msg.PlayerId, out var startPosition))
             {
-                players.Add(msg.PlayerActor);
+                players.Add(msg.PlayerId, msg.PlayerActor);
                 BroadcastToAllPlayers(context, new ExtPlayerJoinedMap(msg.PlayerId, startPosition));
                 var tilemapData = new GameServer.Shared.ExternalMessages.TilemapData(map.Width, map.Height, map.TileData);
-                context.Send(msg.Requester, new PlayerAddedToMap(msg.PlayerActor, context.Self, map.Id, startPosition, tilemapData));
+                context.Send(msg.Requester, new PlayerAddedToMap(msg.PlayerActor, context.Self, msg.PlayerId, map.Id, startPosition, tilemapData, this.map.PlayerPositions));
             }
             else
             {
@@ -60,7 +58,7 @@ namespace GameServer.Application.Actors
         {
             if (map.RemovePlayer(msg.PlayerId))
             {
-                players.Remove(context.Sender);
+                players.Remove(msg.PlayerId);
                 
                 // Handle player disconnection if they're in a fight
                 var fightId = map.GetPlayerFightId(msg.PlayerId);
@@ -117,7 +115,7 @@ namespace GameServer.Application.Actors
             }
 
             // Send challenge to target player
-            var targetActor = players.FirstOrDefault(p => map.GetPlayerPosition(msg.TargetId) != null);
+            var targetActor = GetPlayerPID(msg.TargetId);
             if (targetActor != null)
             {
                 context.Send(targetActor, new ExtFightChallengeReceived(msg.ChallengerId));
@@ -157,8 +155,8 @@ namespace GameServer.Application.Actors
         private Task OnFightStarted(IContext context, FightStarted msg)
         {
             // Notify both players that the fight has started
-            var player1Actor = players.FirstOrDefault(p => map.GetPlayerPosition(msg.Player1Id) != null);
-            var player2Actor = players.FirstOrDefault(p => map.GetPlayerPosition(msg.Player2Id) != null);
+            var player1Actor = this.GetPlayerPID(msg.Player1Id);
+            var player2Actor = this.GetPlayerPID(msg.Player2Id);
 
             if (player1Actor != null)
                 context.Send(player1Actor, new ExtFightStarted(msg.Player2Id));
@@ -184,34 +182,21 @@ namespace GameServer.Application.Actors
             return Task.CompletedTask;
         }
 
-        private Task OnSubscribeToMapUpdates(IContext context, SubscribeToMapUpdates msg)
-        {
-            players.Add(msg.Subscriber);
-            context.Send(msg.Subscriber, new MapStateUpdate(
-                map.Id,
-                map.Name,
-                map.Width,
-                map.Height,
-                map.TileData,
-                map.PlayerPositions
-            ));
-            context.Send(msg.Subscriber, new MapUpdateSubscribed(msg.Subscriber));
-            return Task.CompletedTask;
-        }
-
-        private Task OnUnsubscribeFromMapUpdates(IContext context, UnsubscribeFromMapUpdates msg)
-        {
-            players.Remove(msg.Subscriber);
-            context.Send(msg.Subscriber, new MapUpdateUnsubscribed(msg.Subscriber));
-            return Task.CompletedTask;
-        }
-
         private void BroadcastToAllPlayers(IContext context, object message)
         {
-            foreach (var subscriber in players)
+            foreach (var player in players)
             {
-                context.Send(subscriber, message);
+                context.Send(player.Value, message);
             }
+        }
+
+        private PID? GetPlayerPID(string playerId)
+        {
+            if(players.TryGetValue(playerId, out var player))
+            {
+                return player;
+            }
+            return null;
         }
     }
 }

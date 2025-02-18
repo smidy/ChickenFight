@@ -66,10 +66,14 @@ public partial class MapSelect : Node2D
         _refreshButton.Disabled = true;
     }
 
-    private void OnJoinMapCompleted(Dictionary tilemapData)
+    private void OnJoinMapCompleted(string playerId, Vector2I playerPosition, Dictionary tilemapData, Godot.Collections.Dictionary<string, Vector2I> playerPositions)
     {
         // Store tilemap data for the game scene
-        GetNode<GameState>("/root/GameState").CurrentTilemapData = tilemapData;
+        var gameStateNode = GetNode<GameState>("/root/GameState");
+        gameStateNode.CurrentTilemapData = tilemapData;
+        gameStateNode.PlayerPosition = playerPosition;
+        gameStateNode.PlayerId = playerId;
+        gameStateNode.OtherPlayers = playerPositions;
         GetTree().ChangeSceneToFile("res://scenes/Game.tscn");
     }
 

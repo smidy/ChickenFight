@@ -47,6 +47,7 @@ public partial class Game : Node2D
 
         SetupTilemap();
         SetupPlayer();
+        SetupOtherPlayers();
         UpdateStatusLabel();
     }
 
@@ -85,6 +86,14 @@ public partial class Game : Node2D
         
         // Center camera on player
         _camera.Position = _player.Position;
+    }
+
+    private void SetupOtherPlayers()
+    {
+        foreach(var player in this._gameState.OtherPlayers)
+        {
+            OnPlayerJoined(player.Key, player.Value);
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)

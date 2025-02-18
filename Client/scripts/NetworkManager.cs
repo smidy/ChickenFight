@@ -130,7 +130,11 @@ public partial class NetworkManager : Node
                         ["Height"] = msg.TilemapData.Height,
                         ["TileData"] = new Godot.Collections.Array<int>(msg.TilemapData.TileData)
                     };
-                    EmitSignal(SignalName.JoinMapCompleted, tilemapDict);
+                    var playerPositions = new Godot.Collections.Dictionary<string, Vector2I>(
+                        msg.PlayerPositions.Select( x => KeyValuePair.Create(x.Key, new Vector2I(x.Value.X, x.Value.Y))
+                        ).ToDictionary());
+
+                    EmitSignal(SignalName.JoinMapCompleted, msg.PlayerId, new Vector2I(msg.Position.X, msg.Position.Y), tilemapDict, playerPositions);
                     break;
                 case ExtJoinMapFailed msg:
                     EmitSignal(SignalName.JoinMapFailed, msg.Error);
@@ -191,7 +195,7 @@ public partial class NetworkManager : Node
     [Signal]
     public delegate void JoinMapInitiatedEventHandler(string mapId);
     [Signal]
-    public delegate void JoinMapCompletedEventHandler(Dictionary tilemapData);
+    public delegate void JoinMapCompletedEventHandler(string playerId, Vector2I playerPosition, Dictionary tilemapData, Godot.Collections.Dictionary<string, Vector2I> playerPositions);
     [Signal]
     public delegate void JoinMapFailedEventHandler(string error);
 

@@ -6,7 +6,13 @@ namespace GameServer.Application.Messages.Internal
 {
     // Player management messages
     public record AddPlayer(PID PlayerActor, string PlayerId, string PlayerName, PID Requester);
-    public record PlayerAddedToMap(PID PlayerActor, PID MapPID, string MapId, Position StartPosition, Shared.ExternalMessages.TilemapData TilemapData);
+    public record PlayerAddedToMap(PID PlayerActor,
+        PID MapPID, 
+        string PlayerId,
+        string MapId, 
+        Position StartPosition, 
+        Shared.ExternalMessages.TilemapData TilemapData,
+        IReadOnlyDictionary<string, Position> PlayerPositions);
     public record PlayerAddFailure(PID PlayerActor, string MapId, string Error);
     
     public record RemovePlayer(string PlayerId, PID Requester);
@@ -19,9 +25,5 @@ namespace GameServer.Application.Messages.Internal
     public record MoveRejected(string PlayerId, Position AttemptedPosition, string Error);
     
     // Map state messages
-    public record MapStateUpdate(string MapId, string MapName, int Width, int Height, int[] TileData, IReadOnlyDictionary<string, Position> PlayerPositions);
-    public record SubscribeToMapUpdates(PID Subscriber);
-    public record UnsubscribeFromMapUpdates(PID Subscriber);
-    public record MapUpdateSubscribed(PID Subscriber);
-    public record MapUpdateUnsubscribed(PID Subscriber);
+    public record MapStateUpdate(string MapId, string MapName, int Width, int Height);
 }
