@@ -174,6 +174,17 @@ public partial class NetworkManager : Node
                     EmitSignal(SignalName.PlayerLeftMap, msg.PlayerId);
                     break;
 
+                // Fight messages
+                case ExtFightChallengeReceived msg:
+                    EmitSignal(SignalName.FightChallengeReceived, msg.ChallengerId);
+                    break;
+                case ExtFightStarted msg:
+                    EmitSignal(SignalName.FightStarted, msg.OpponentId);
+                    break;
+                case ExtFightEnded msg:
+                    EmitSignal(SignalName.FightEnded, msg.WinnerId, msg.Reason);
+                    break;
+
                 default:
                     GD.PrintErr($"Unknown message type: {message.GetType().Name}");
                     break;
@@ -221,6 +232,14 @@ public partial class NetworkManager : Node
 
     [Signal]
     public delegate void ConnectionLostEventHandler();
+
+    // Fight signals
+    [Signal]
+    public delegate void FightChallengeReceivedEventHandler(string challengerId);
+    [Signal]
+    public delegate void FightStartedEventHandler(string opponentId);
+    [Signal]
+    public delegate void FightEndedEventHandler(string winnerId, string reason);
 
     public void Disconnect()
     {

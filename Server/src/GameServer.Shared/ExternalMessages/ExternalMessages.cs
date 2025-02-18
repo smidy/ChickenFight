@@ -57,6 +57,7 @@ namespace GameServer.Shared.ExternalMessages
     public record TilemapData(int Width, int Height, int[] TileData);
 
     // External messages for client communication
+    public record ExtFightChallengeSend(string TargetId) : BaseExternalMessage;
     public record ExtFightChallengeReceived(string ChallengerId) : BaseExternalMessage;
 
     public record ExtFightChallengeAccepted(string TargetId) : BaseExternalMessage;

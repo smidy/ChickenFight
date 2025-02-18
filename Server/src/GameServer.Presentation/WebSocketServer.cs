@@ -96,6 +96,12 @@ namespace GameServer.Presentation
                     case ExtMove move:
                         HandleMove(move);
                         break;
+                    case ExtFightChallengeSend challenge:
+                        HandleFightChallenge(challenge);
+                        break;
+                    case ExtFightChallengeAccepted accept:
+                        HandleFightChallengeAccepted(accept);
+                        break;
                 }
             }
             catch (Exception ex)
@@ -144,6 +150,28 @@ namespace GameServer.Presentation
             }
 
             actorSystem.Root.Send(playerActor, new LeaveMapRequest(leaveMap.MapId));
+        }
+
+        private async void HandleFightChallengeAccepted(ExtFightChallengeAccepted accept)
+        {
+            if (playerActor == null)
+            {
+                // Cannot accept if not connected
+                return;
+            }
+
+            actorSystem.Root.Send(playerActor, accept);
+        }
+
+        private async void HandleFightChallenge(ExtFightChallengeSend challenge)
+        {
+            if (playerActor == null)
+            {
+                // Cannot challenge if not connected
+                return;
+            }
+
+            actorSystem.Root.Send(playerActor, challenge);
         }
 
         private async void HandleMove(ExtMove move)
@@ -198,6 +226,17 @@ namespace GameServer.Presentation
                 // Player state messages
                 case Application.Messages.Internal.PlayerStateUpdate msg:
                     SendResponse(new ExtPlayerInfo(new PlayerState(msg.Player.Id, msg.Player.Name, msg.Player.Position)));
+                    break;
+
+                // Fight messages
+                case ExtFightChallengeReceived msg:
+                    SendResponse(msg);
+                    break;
+                case ExtFightStarted msg:
+                    SendResponse(msg);
+                    break;
+                case ExtFightEnded msg:
+                    SendResponse(msg);
                     break;
             }
 

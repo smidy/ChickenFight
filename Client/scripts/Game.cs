@@ -11,6 +11,10 @@ public partial class Game : Node2D
     private GameState _gameState = null!;
     private Camera2D _camera = null!;
     private Label _statusLabel = null!;
+    private PopupMenu _contextMenu = null!;
+
+    // Fight state
+    private string? _rightClickedPlayerId;
 
     // Other players
     private Dictionary<string, Sprite2D> _otherPlayers = new();
@@ -45,9 +49,15 @@ public partial class Game : Node2D
         _network.PlayerPositionChanged += OnPlayerPositionChanged;
         _network.PlayerLeftMap += OnPlayerLeft;
 
+        // Connect fight signals
+        _network.FightChallengeReceived += OnFightChallengeReceived;
+        _network.FightStarted += OnFightStarted;
+        _network.FightEnded += OnFightEnded;
+
         SetupTilemap();
         SetupPlayer();
         SetupOtherPlayers();
+        SetupUI();
         UpdateStatusLabel();
     }
 
@@ -96,9 +106,40 @@ public partial class Game : Node2D
         }
     }
 
+    private void SetupUI()
+    {
+        _contextMenu = GetNode<PopupMenu>("UI/ContextMenu");
+        _contextMenu.IdPressed += OnContextMenuItemSelected;
+    }
+
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!_network.IsConnected || _gameState.IsMoving) return;
+        if (!_network.IsConnected) return;
+
+        if (@event is InputEventMouseButton mouseButton && mouseButton.ButtonIndex == MouseButton.Right && mouseButton.Pressed)
+        {
+            // Convert global mouse position to local coordinates
+            var mousePos = GetLocalMousePosition();
+            
+            // Check if clicked on another player
+            foreach (var (playerId, sprite) in _otherPlayers)
+            {
+                if (sprite.GetRect().HasPoint(mousePos - sprite.Position))
+                {
+                    _rightClickedPlayerId = playerId;
+                    
+                    // Only show Challenge option if target player is not in a fight
+                    _contextMenu.SetItemDisabled(0, _gameState.PlayersInFight.ContainsKey(playerId));
+                    
+                    // Show context menu at mouse position
+                    _contextMenu.Position = (Vector2I)GetViewport().GetMousePosition();
+                    _contextMenu.Popup();
+                    return;
+                }
+            }
+        }
+
+        if (_gameState.IsMoving) return;
 
         Vector2I movement = Vector2I.Zero;
 
@@ -115,6 +156,15 @@ public partial class Game : Node2D
         {
             var newPos = (_player.Position / 32).Round() + movement;
             _network.SendMessage(new ExtMove(new Position((int)newPos.X, (int)newPos.Y)));
+        }
+    }
+
+    private void OnContextMenuItemSelected(long id)
+    {
+        if (id == 0 && _rightClickedPlayerId != null) // Challenge
+        {
+            _network.SendMessage(new ExtFightChallengeSend(_rightClickedPlayerId));
+            UpdateStatusLabel($"Challenging player {_rightClickedPlayerId}...");
         }
     }
 
@@ -224,11 +274,43 @@ public partial class Game : Node2D
             _statusLabel.Text = "Moving...";
             _statusLabel.Modulate = Colors.Yellow;
         }
+        else if (_gameState.IsInFight)
+        {
+            _statusLabel.Text = $"In fight with {_gameState.OpponentId}";
+            _statusLabel.Modulate = Colors.Orange;
+        }
         else
         {
             _statusLabel.Text = "";
             _statusLabel.Modulate = Colors.White;
         }
+    }
+
+    private void OnFightChallengeReceived(string challengerId)
+    {
+        UpdateStatusLabel($"Received fight challenge from {challengerId}");
+        // Auto-accept for now
+        _network.SendMessage(new ExtFightChallengeAccepted(challengerId));
+    }
+
+    private void OnFightStarted(string opponentId)
+    {
+        UpdateStatusLabel();
+        if (_otherPlayers.TryGetValue(opponentId, out var sprite))
+        {
+            sprite.Modulate = Colors.Red;
+        }
+        _player.Modulate = Colors.Red;
+    }
+
+    private void OnFightEnded(string winnerId, string reason)
+    {
+        UpdateStatusLabel($"Fight ended. Winner: {winnerId}. Reason: {reason}");
+        if (_gameState.OpponentId != null && _otherPlayers.TryGetValue(_gameState.OpponentId, out var sprite))
+        {
+            sprite.Modulate = Colors.White;
+        }
+        _player.Modulate = new Color(0, 0.6f, 1);
     }
 
     private void OnConnectionLost()
@@ -247,6 +329,9 @@ public partial class Game : Node2D
         _network.PlayerJoinedMap -= OnPlayerJoined;
         _network.PlayerPositionChanged -= OnPlayerPositionChanged;
         _network.PlayerLeftMap -= OnPlayerLeft;
+        _network.FightChallengeReceived -= OnFightChallengeReceived;
+        _network.FightStarted -= OnFightStarted;
+        _network.FightEnded -= OnFightEnded;
 
         foreach (var sprite in _otherPlayers.Values)
         {

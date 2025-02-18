@@ -47,6 +47,7 @@ namespace GameServer.Application.Actors
                 MapStateUpdate msg => OnMapStateUpdate(context, msg),
 
                 // Fight messages
+                ExtFightChallengeSend msg => OnFightChallengeSend(context, msg),
                 ExtFightChallengeReceived msg => OnFightChallengeReceived(context, msg),
                 ExtFightStarted msg => OnFightStarted(context, msg),
                 ExtFightEnded msg => OnFightEnded(context, msg),
@@ -126,6 +127,14 @@ namespace GameServer.Application.Actors
 
             context.Send(currentMap, new RemovePlayer(player.Id, context.Self));
             await _sendToClient(new ExtLeaveMapInitiated(msg.MapId));
+        }
+
+        private async Task OnFightChallengeSend(IContext context, ExtFightChallengeSend msg)
+        {
+            if (currentMap == null)
+                return;
+
+            context.Send(currentMap, new ChallengeFightRequest(player.Id, msg.TargetId));
         }
 
         private async Task OnFightChallengeReceived(IContext context, ExtFightChallengeReceived msg)

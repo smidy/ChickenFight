@@ -5,6 +5,12 @@ using GameServer.Shared.ExternalMessages;
 
 namespace GameServer.Application.Actors
 {
+    /// <summary>
+    /// This actor will represent a fight between two players. 
+    /// A fight begins when one player challenges another. 
+    /// For a player to challenge or be challenged they must not be currently in a fight. 
+    /// While players are fighting they cannot move or leave a map unless they disconnect from the game at which point they lose the fight.
+    /// </summary>
     public class FightActor : IActor
     {
         private readonly string fightId;

@@ -16,7 +16,13 @@ public partial class GameState : Node
     public Vector2I PlayerPosition { get; set; }
     
     // Other players
-    public  Godot.Collections.Dictionary<string, Vector2I> OtherPlayers = new();
+    public Godot.Collections.Dictionary<string, Vector2I> OtherPlayers = new();
+    public Godot.Collections.Dictionary<string, bool> PlayersInFight = new();
+
+    // Fight state
+    public string? CurrentFightId { get; private set; }
+    public string? OpponentId { get; private set; }
+    public bool IsInFight => CurrentFightId != null;
 
     // Pending operations
     public Vector2I? PendingMove { get; private set; }
@@ -38,6 +44,8 @@ public partial class GameState : Node
         network.MoveCompleted += OnMoveCompleted;
         network.MoveFailed += OnMoveFailed;
         network.PlayerStateUpdated += OnPlayerStateUpdated;
+        network.FightStarted += OnFightStarted;
+        network.FightEnded += OnFightEnded;
     }
 
     public void Reset()
@@ -47,6 +55,9 @@ public partial class GameState : Node
         PlayerPosition = Vector2I.Zero;
         PendingMove = null;
         OtherPlayers.Clear();
+        PlayersInFight.Clear();
+        CurrentFightId = null;
+        OpponentId = null;
     }
 
     public void AddPlayer(string playerId, Vector2I position)
@@ -92,6 +103,25 @@ public partial class GameState : Node
         PlayerPosition = position;
     }
 
+    private void OnFightStarted(string opponentId)
+    {
+        CurrentFightId = $"fight_{SessionId}_{opponentId}";
+        OpponentId = opponentId;
+        PlayersInFight[SessionId] = true;
+        PlayersInFight[opponentId] = true;
+    }
+
+    private void OnFightEnded(string winnerId, string reason)
+    {
+        if (OpponentId != null)
+        {
+            PlayersInFight.Remove(SessionId);
+            PlayersInFight.Remove(OpponentId);
+        }
+        CurrentFightId = null;
+        OpponentId = null;
+    }
+
     public override void _ExitTree()
     {
         base._ExitTree();
@@ -100,5 +130,7 @@ public partial class GameState : Node
         network.MoveCompleted -= OnMoveCompleted;
         network.MoveFailed -= OnMoveFailed;
         network.PlayerStateUpdated -= OnPlayerStateUpdated;
+        network.FightStarted -= OnFightStarted;
+        network.FightEnded -= OnFightEnded;
     }
 }
