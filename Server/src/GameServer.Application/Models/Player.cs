@@ -6,6 +6,7 @@ namespace GameServer.Application.Models
     {
         public string Id { get; }
         public string Name { get; }
+        public Deck Deck { get; }
         public string? CurrentMapId { get; private set; }
         public Position? Position { get; private set; }
         public string? CurrentFightId { get; private set; }
@@ -15,6 +16,7 @@ namespace GameServer.Application.Models
         {
             Id = id;
             Name = name;
+            Deck = new Deck();
         }
 
         public void JoinMap(string mapId, Position position)
