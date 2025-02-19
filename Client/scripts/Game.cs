@@ -97,8 +97,8 @@ public partial class Game : Node2D
 
     private void SetupPlayer()
     {
-        // Set initial position
-        _player.Position = _gameState.PlayerPosition * 32; // 32 is tile size
+        // Set initial position with center offset
+        _player.Position = _gameState.PlayerPosition * 32 + new Vector2(16, 16); // 32 is tile size, offset by half tile
         _targetPosition = _player.Position;
         
         // Center camera on player
@@ -161,7 +161,9 @@ public partial class Game : Node2D
 
         if (movement != Vector2I.Zero)
         {
-            var newPos = (_player.Position / 32).Round() + movement;
+            // Remove the half-tile offset before calculating grid position
+            var currentGridPos = ((_player.Position - new Vector2(16, 16)) / 32).Round();
+            var newPos = currentGridPos + movement;
             _network.SendMessage(new ExtMove(new Position((int)newPos.X, (int)newPos.Y)));
         }
     }
@@ -215,11 +217,11 @@ public partial class Game : Node2D
         var sprite = new Sprite2D
         {
             Texture = _player.Texture,
-            Position = position * 32
+            Position = position * 32 + new Vector2(16, 16)
         };
         AddChild(sprite);
         _otherPlayers[playerId] = sprite;
-        _otherPlayersTargetPositions[playerId] = position * 32;
+        _otherPlayersTargetPositions[playerId] = position * 32 + new Vector2(16, 16);
         _gameState.AddPlayer(playerId, position);
     }
 
@@ -229,7 +231,7 @@ public partial class Game : Node2D
 
         if (_otherPlayers.ContainsKey(playerId))
         {
-            _otherPlayersTargetPositions[playerId] = position * 32;
+            _otherPlayersTargetPositions[playerId] = position * 32 + new Vector2(16, 16);
             _gameState.UpdatePlayerPosition(playerId, position);
         }
     }
@@ -247,26 +249,26 @@ public partial class Game : Node2D
 
     private void OnMoveInitiated(Vector2I newPosition)
     {
-        _targetPosition = newPosition * 32;
+        _targetPosition = newPosition * 32 + new Vector2(16, 16);
         UpdateStatusLabel();
     }
 
     private void OnMoveCompleted(Vector2I position)
     {
-        _targetPosition = position * 32;
+        _targetPosition = position * 32 + new Vector2(16, 16);
         UpdateStatusLabel();
     }
 
     private void OnMoveFailed(string error)
     {
         // Return to current position
-        _targetPosition = _gameState.PlayerPosition * 32;
+        _targetPosition = _gameState.PlayerPosition * 32 + new Vector2(16, 16);
         UpdateStatusLabel(error);
     }
 
     private void OnPlayerStateUpdated(Vector2I position)
     {
-        _targetPosition = position * 32;
+        _targetPosition = position * 32 + new Vector2(16, 16);
     }
 
     private void UpdateStatusLabel(string? error = null)
