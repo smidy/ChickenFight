@@ -78,6 +78,13 @@ public partial class Game : Node2D
         var height = data["Height"].AsInt32();
         var tileData = (Godot.Collections.Array)data["TileData"];
 
+        // Set camera limits based on map dimensions
+        _camera.LimitLeft = 0;
+        _camera.LimitTop = 0;
+        _camera.LimitRight = width * 32;
+        _camera.LimitBottom = height * 32;
+        _camera.LimitSmoothed = true;
+
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
