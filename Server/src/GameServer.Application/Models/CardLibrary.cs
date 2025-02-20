@@ -3,6 +3,9 @@ using System.Linq;
 
 namespace GameServer.Application.Models
 {
+    /// <summary>
+    /// A static library of all cards available in the game
+    /// </summary>
     public static class CardLibrary
     {
         // Attack Cards (15)

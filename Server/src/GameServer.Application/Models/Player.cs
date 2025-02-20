@@ -17,6 +17,15 @@ namespace GameServer.Application.Models
             Id = id;
             Name = name;
             Deck = new Deck();
+            
+            // Initialize deck with 25 random cards
+            var allCards = CardLibrary.AllCards.ToList();
+            var random = new Random();
+            while (Deck.Cards.Count < 25)
+            {
+                var randomCard = allCards[random.Next(allCards.Count())];
+                Deck.AddCard(randomCard);
+            }
         }
 
         public void JoinMap(string mapId, Position position)

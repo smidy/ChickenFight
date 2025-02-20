@@ -104,13 +104,13 @@ namespace GameServer.Application.Actors
 
             if (challengerPosition == null || targetPosition == null)
             {
-                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerId, msg.TargetId, false));
+                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerId, msg.Challenger, msg.TargetId, null, false));
                 return Task.CompletedTask;
             }
 
             if (map.IsPlayerInFight(msg.ChallengerId) || map.IsPlayerInFight(msg.TargetId))
             {
-                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerId, msg.TargetId, false));
+                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerId, msg.Challenger, msg.TargetId, null, false));
                 return Task.CompletedTask;
             }
 
@@ -140,7 +140,7 @@ namespace GameServer.Application.Actors
             // Create fight
             string fightId = $"fight_{++fightCounter}";
             var props = Props.FromProducer(() => 
-                new FightActor(fightId, msg.ChallengerId, msg.TargetId, context.Self));
+                new FightActor(fightId, msg.ChallengerId, msg.Challenger, msg.TargetId, msg.Target, context.Self));
             
             var fightActor = context.SpawnNamed(props, fightId);
             activeFights.Add(fightId, fightActor);
@@ -158,6 +158,7 @@ namespace GameServer.Application.Actors
             var player1Actor = this.GetPlayerPID(msg.Player1Id);
             var player2Actor = this.GetPlayerPID(msg.Player2Id);
 
+            // Send fight started notifications
             if (player1Actor != null)
                 context.Send(player1Actor, new ExtFightStarted(msg.Player2Id));
             if (player2Actor != null)

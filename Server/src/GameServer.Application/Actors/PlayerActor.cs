@@ -134,7 +134,7 @@ namespace GameServer.Application.Actors
             if (currentMap == null)
                 return;
 
-            context.Send(currentMap, new ChallengeFightRequest(player.Id, msg.TargetId));
+            context.Send(currentMap, new ChallengeFightRequest(player.Id, player, msg.TargetId));
         }
 
         private async Task OnFightChallengeReceived(IContext context, ExtFightChallengeReceived msg)
@@ -143,7 +143,7 @@ namespace GameServer.Application.Actors
                 return;
 
             // Auto-accept for now - in a real implementation, you'd wait for player input
-            context.Send(currentMap, new FightChallengeResponse(msg.ChallengerId, player.Id, true));
+            context.Send(currentMap, new FightChallengeResponse(msg.ChallengerId, null, player.Id, player, true));
             await _sendToClient(new ExtFightChallengeAccepted(msg.ChallengerId));
         }
 
