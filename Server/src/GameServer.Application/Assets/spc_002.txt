@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #ff4444; stroke-width: 2; }
+      .title-area { fill: #fff0f0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #fff8f8; }
+      .type-bar { fill: #ff4444; }
+      .text-area { fill: #fff0f0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .storm { fill: #4444aa; }
+      .lightning { fill: #ffff00; }
+      .cloud { fill: #666688; }
+    </style>
+    
+    <!-- Storm Gradient -->
+    <linearGradient id="storm-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4444aa" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#666688" stop-opacity="0.4"/>
+    </linearGradient>
+    
+    <!-- Lightning Effect -->
+    <filter id="lightning-glow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+    </filter>
+    
+    <!-- Cloud Pattern -->
+    <pattern id="cloud-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path class="cloud" d="M10,20 Q20,10 30,20 Q40,30 20,30 Q0,30 10,20" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Storm Field</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">6</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Storm Field Art -->
+  <g transform="translate(150,190)">
+    <!-- Storm Background -->
+    <circle class="storm" r="80" fill="url(#storm-gradient)" opacity="0.3">
+      <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+        values="0.3;0.5;0.3"/>
+    </circle>
+    
+    <!-- Storm Clouds -->
+    <g class="cloud">
+      <!-- Cloud Formations -->
+      <path d="M-60,-20 Q-30,-40 0,-20 Q30,-40 60,-20 Q30,0 0,-10 Q-30,0 -60,-20" 
+        opacity="0.8">
+        <animate attributeName="d" dur="4s" repeatCount="indefinite"
+          values="M-60,-20 Q-30,-40 0,-20 Q30,-40 60,-20 Q30,0 0,-10 Q-30,0 -60,-20;
+                 M-60,-30 Q-30,-50 0,-30 Q30,-50 60,-30 Q30,-10 0,-20 Q-30,-10 -60,-30;
+                 M-60,-20 Q-30,-40 0,-20 Q30,-40 60,-20 Q30,0 0,-10 Q-30,0 -60,-20"/>
+      </path>
+      
+      <!-- Lower Clouds -->
+      <path d="M-50,20 Q-20,0 10,20 Q40,0 50,20 Q20,40 -10,30 Q-40,40 -50,20" 
+        opacity="0.6">
+        <animate attributeName="d" dur="4s" repeatCount="indefinite"
+          values="M-50,20 Q-20,0 10,20 Q40,0 50,20 Q20,40 -10,30 Q-40,40 -50,20;
+                 M-50,10 Q-20,-10 10,10 Q40,-10 50,10 Q20,30 -10,20 Q-40,30 -50,10;
+                 M-50,20 Q-20,0 10,20 Q40,0 50,20 Q20,40 -10,30 Q-40,40 -50,20"
+          begin="2s"/>
+      </path>
+    </g>
+    
+    <!-- Lightning Bolts -->
+    <g class="lightning" filter="url(#lightning-glow)">
+      <!-- Main Bolt -->
+      <path d="M0,-40 L10,-20 L0,0 L10,20 L0,40" stroke-width="3" opacity="0.8">
+        <animate attributeName="opacity" dur="0.5s" repeatCount="indefinite"
+          values="0.8;0;0.8;0;0.8"/>
+      </path>
+      
+      <!-- Side Bolts -->
+      <path d="M-30,-30 L-20,-10 L-30,10" stroke-width="2" opacity="0.6">
+        <animate attributeName="opacity" dur="0.5s" repeatCount="indefinite"
+          values="0.6;0;0.6;0;0.6"
+          begin="0.25s"/>
+      </path>
+      <path d="M30,-30 L20,-10 L30,10" stroke-width="2" opacity="0.6">
+        <animate attributeName="opacity" dur="0.5s" repeatCount="indefinite"
+          values="0.6;0;0.6;0;0.6"
+          begin="0.125s"/>
+      </path>
+    </g>
+    
+    <!-- Storm Effects -->
+    <g class="storm" opacity="0.4">
+      <!-- Swirling Wind -->
+      <path d="M-40,-40 Q0,-20 40,-40" fill="none" stroke-width="2">
+        <animate attributeName="d" dur="2s" repeatCount="indefinite"
+          values="M-40,-40 Q0,-20 40,-40;
+                 M-40,-20 Q0,-40 40,-20;
+                 M-40,-40 Q0,-20 40,-40"/>
+      </path>
+      <path d="M-40,40 Q0,20 40,40" fill="none" stroke-width="2">
+        <animate attributeName="d" dur="2s" repeatCount="indefinite"
+          values="M-40,40 Q0,20 40,40;
+                 M-40,20 Q0,40 40,20;
+                 M-40,40 Q0,20 40,40"
+          begin="1s"/>
+      </path>
+    </g>
+    
+    <!-- Damage Counter -->
+    <g transform="translate(-60,-60)">
+      <circle class="type-bar" r="20" opacity="0.8"/>
+      <text fill="white" x="0" y="5" text-anchor="middle" font-size="12">2/t</text>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Special - Environment</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">All players take 2 damage per turn and spells cost +1</text>
+</svg>

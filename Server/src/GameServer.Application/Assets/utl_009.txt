@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #44ff44; stroke-width: 2; }
+      .title-area { fill: #f0fff0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8fff8; }
+      .type-bar { fill: #44ff44; }
+      .text-area { fill: #f0fff0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .crystal { fill: #00ffff; }
+      .vision { fill: #88ffff; }
+      .future { fill: #aaaaff; }
+    </style>
+    
+    <!-- Crystal Gradient -->
+    <linearGradient id="crystal-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00ffff" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#88ffff" stop-opacity="0.4"/>
+    </linearGradient>
+    
+    <!-- Vision Effect -->
+    <filter id="vision-glow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
+    </filter>
+    
+    <!-- Future Pattern -->
+    <pattern id="future-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path class="future" d="M20,0 L40,20 L20,40 L0,20 Z" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Future Sight</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">1</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Future Sight Art -->
+  <g transform="translate(150,190)">
+    <!-- Background Field -->
+    <circle class="crystal" r="80" fill="url(#crystal-gradient)" opacity="0.3">
+      <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+        values="0.3;0.5;0.3"/>
+    </circle>
+    
+    <!-- Crystal Ball -->
+    <g class="crystal">
+      <!-- Ball -->
+      <circle r="50" fill="url(#crystal-gradient)" opacity="0.8"/>
+      
+      <!-- Stand -->
+      <path d="M-20,45 C-20,55 20,55 20,45" stroke-width="4" fill="none"/>
+      <ellipse cx="0" cy="50" rx="30" ry="5"/>
+    </g>
+    
+    <!-- Vision Window -->
+    <g class="vision" filter="url(#vision-glow)">
+      <!-- Window Frame -->
+      <circle r="40" fill="url(#future-pattern)" opacity="0.4">
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.4;0.6;0.4"/>
+      </circle>
+      
+      <!-- Future Cards -->
+      <g class="future" opacity="0.6">
+        <!-- Card 1 -->
+        <rect x="-25" y="-15" width="20" height="30" rx="2">
+          <animate attributeName="transform" dur="3s" repeatCount="indefinite"
+            values="translate(0,0) rotate(0);
+                   translate(-5,-5) rotate(-10);
+                   translate(0,0) rotate(0)"/>
+        </rect>
+        
+        <!-- Card 2 -->
+        <rect x="5" y="-15" width="20" height="30" rx="2">
+          <animate attributeName="transform" dur="3s" repeatCount="indefinite"
+            values="translate(0,0) rotate(0);
+                   translate(5,-5) rotate(10);
+                   translate(0,0) rotate(0)"
+            begin="1s"/>
+        </rect>
+      </g>
+    </g>
+    
+    <!-- Mystical Energy -->
+    <g class="vision" opacity="0.4">
+      <!-- Energy Rings -->
+      <circle r="60" fill="none" stroke-width="2">
+        <animate attributeName="r" dur="3s" repeatCount="indefinite"
+          values="60;65;60"/>
+        <animateTransform attributeName="transform" type="rotate"
+          from="0" to="360" dur="10s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="70" fill="none" stroke-width="2">
+        <animate attributeName="r" dur="3s" repeatCount="indefinite"
+          values="70;75;70"/>
+        <animateTransform attributeName="transform" type="rotate"
+          from="360" to="0" dur="15s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+    
+    <!-- Vision Particles -->
+    <g class="crystal" filter="url(#vision-glow)">
+      <circle cx="-30" cy="-30" r="2" opacity="0.8">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="2;4;2"/>
+      </circle>
+      <circle cx="30" cy="-30" r="2" opacity="0.8">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="2;4;2"
+          begin="0.5s"/>
+      </circle>
+      <circle cx="0" cy="30" r="2" opacity="0.8">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="2;4;2"
+          begin="1s"/>
+      </circle>
+    </g>
+    
+    <!-- Peek Counter -->
+    <g transform="translate(-60,-60)">
+      <circle class="type-bar" r="20" opacity="0.8"/>
+      <text fill="white" x="0" y="5" text-anchor="middle" font-size="12">x3</text>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Utility - Peek</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Look at the top 3 cards of your deck</text>
+</svg>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #4444ff; stroke-width: 2; }
+      .title-area { fill: #f0f0ff; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8f8ff; }
+      .type-bar { fill: #4444ff; }
+      .text-area { fill: #f0f0ff; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .barrier { fill: #4444ff; }
+      .magic { fill: #8888ff; }
+      .glow { fill: #aaaaff; }
+    </style>
+    
+    <!-- Magic Gradient -->
+    <linearGradient id="magic-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4444ff" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#8888ff" stop-opacity="0.2"/>
+    </linearGradient>
+    
+    <!-- Glow Effect -->
+    <filter id="magic-glow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
+    </filter>
+    
+    <!-- Rune Pattern -->
+    <pattern id="rune-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path class="magic" d="M10,10 L30,10 M20,0 L20,20" stroke-width="2" opacity="0.3"/>
+      <circle class="magic" cx="20" cy="20" r="5" opacity="0.3"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Magic Barrier</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">3</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Magic Barrier Art -->
+  <g transform="translate(150,190)">
+    <!-- Barrier Dome -->
+    <path class="barrier" d="M0,-80 A80,80 0 0,1 80,0 A80,80 0 0,1 0,80 A80,80 0 0,1 -80,0 A80,80 0 0,1 0,-80"
+      fill="url(#magic-gradient)" opacity="0.6">
+      <animate attributeName="d" dur="3s" repeatCount="indefinite"
+        values="M0,-80 A80,80 0 0,1 80,0 A80,80 0 0,1 0,80 A80,80 0 0,1 -80,0 A80,80 0 0,1 0,-80;
+                M0,-85 A85,85 0 0,1 85,0 A85,85 0 0,1 0,85 A85,85 0 0,1 -85,0 A85,85 0 0,1 0,-85;
+                M0,-80 A80,80 0 0,1 80,0 A80,80 0 0,1 0,80 A80,80 0 0,1 -80,0 A80,80 0 0,1 0,-80"/>
+    </path>
+    
+    <!-- Magic Runes -->
+    <path d="M0,-70 A70,70 0 0,1 70,0 A70,70 0 0,1 0,70 A70,70 0 0,1 -70,0 A70,70 0 0,1 0,-70"
+      fill="url(#rune-pattern)">
+      <animateTransform attributeName="transform" type="rotate"
+        from="0" to="360" dur="20s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Energy Rings -->
+    <g class="magic" fill="none" stroke-width="2">
+      <circle r="60" opacity="0.4">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="60;65;60"/>
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.4;0.2;0.4"/>
+      </circle>
+      <circle r="40" opacity="0.4">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="40;45;40"/>
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.4;0.2;0.4"/>
+      </circle>
+    </g>
+    
+    <!-- Power Core -->
+    <g transform="translate(0,0)">
+      <circle class="glow" r="15" filter="url(#magic-glow)" opacity="0.5">
+        <animate attributeName="r" dur="1s" repeatCount="indefinite"
+          values="15;20;15"/>
+      </circle>
+      <circle class="magic" r="10">
+        <animate attributeName="r" dur="1s" repeatCount="indefinite"
+          values="10;12;10"/>
+      </circle>
+    </g>
+    
+    <!-- Energy Particles -->
+    <g class="magic" opacity="0.6">
+      <g transform="rotate(0)">
+        <circle cx="0" cy="-50" r="3">
+          <animate attributeName="cy" dur="2s" repeatCount="indefinite"
+            values="-50;-60;-50"/>
+        </circle>
+      </g>
+      <g transform="rotate(120)">
+        <circle cx="0" cy="-50" r="3">
+          <animate attributeName="cy" dur="2s" repeatCount="indefinite"
+            values="-50;-60;-50"
+            begin="0.6s"/>
+        </circle>
+      </g>
+      <g transform="rotate(240)">
+        <circle cx="0" cy="-50" r="3">
+          <animate attributeName="cy" dur="2s" repeatCount="indefinite"
+            values="-50;-60;-50"
+            begin="1.2s"/>
+        </circle>
+      </g>
+    </g>
+    
+    <!-- Barrier Pulse -->
+    <circle class="barrier" r="75" fill="none" stroke-width="3" opacity="0.3">
+      <animate attributeName="r" dur="2s" repeatCount="indefinite"
+        values="75;85;75"/>
+      <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+        values="0.3;0;0.3"/>
+    </circle>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Defense - Shield</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Reduce next damage by 6</text>
+</svg>

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #4444ff; stroke-width: 2; }
+      .title-area { fill: #f0f0ff; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8f8ff; }
+      .type-bar { fill: #4444ff; }
+      .text-area { fill: #f0f0ff; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .aura { fill: #4444ff; }
+      .barrier { fill: #8800ff; }
+      .energy { fill: #ff00ff; }
+    </style>
+    
+    <!-- Aura Gradient -->
+    <linearGradient id="aura-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4444ff" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#8800ff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ff00ff" stop-opacity="0.4"/>
+    </linearGradient>
+    
+    <!-- Energy Effect -->
+    <filter id="energy-glow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
+    </filter>
+    
+    <!-- Barrier Pattern -->
+    <pattern id="barrier-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path class="barrier" d="M20,0 L40,20 L20,40 L0,20 Z" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Adamantine Aura</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">5</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Adamantine Aura Art -->
+  <g transform="translate(150,190)">
+    <!-- Base Aura -->
+    <circle class="aura" r="80" fill="url(#aura-gradient)" opacity="0.3">
+      <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+        values="0.3;0.5;0.3"/>
+    </circle>
+    
+    <!-- Barrier Layers -->
+    <g class="barrier">
+      <!-- Outer Layer -->
+      <path d="M0,-70 A70,70 0 0,1 70,0 A70,70 0 0,1 0,70 A70,70 0 0,1 -70,0 A70,70 0 0,1 0,-70"
+        fill="url(#barrier-pattern)" opacity="0.6">
+        <animateTransform attributeName="transform" type="rotate"
+          from="0" to="360" dur="20s" repeatCount="indefinite"/>
+      </path>
+      
+      <!-- Middle Layer -->
+      <path d="M0,-50 A50,50 0 0,1 50,0 A50,50 0 0,1 0,50 A50,50 0 0,1 -50,0 A50,50 0 0,1 0,-50"
+        fill="url(#barrier-pattern)" opacity="0.6">
+        <animateTransform attributeName="transform" type="rotate"
+          from="360" to="0" dur="15s" repeatCount="indefinite"/>
+      </path>
+      
+      <!-- Inner Layer -->
+      <path d="M0,-30 A30,30 0 0,1 30,0 A30,30 0 0,1 0,30 A30,30 0 0,1 -30,0 A30,30 0 0,1 0,-30"
+        fill="url(#barrier-pattern)" opacity="0.6">
+        <animateTransform attributeName="transform" type="rotate"
+          from="0" to="360" dur="10s" repeatCount="indefinite"/>
+      </path>
+    </g>
+    
+    <!-- Energy Field -->
+    <g class="energy" filter="url(#energy-glow)">
+      <!-- Pulsing Rings -->
+      <circle r="60" fill="none" stroke-width="2" opacity="0.4">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="60;65;60"/>
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.4;0.2;0.4"/>
+      </circle>
+      <circle r="40" fill="none" stroke-width="2" opacity="0.4">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="40;45;40"/>
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.4;0.2;0.4"
+          begin="1s"/>
+      </circle>
+    </g>
+    
+    <!-- Power Core -->
+    <g transform="translate(0,0)">
+      <circle class="energy" r="15" opacity="0.8" filter="url(#energy-glow)">
+        <animate attributeName="r" dur="1s" repeatCount="indefinite"
+          values="15;18;15"/>
+      </circle>
+      <circle class="barrier" r="10">
+        <animate attributeName="r" dur="1s" repeatCount="indefinite"
+          values="10;12;10"/>
+      </circle>
+    </g>
+    
+    <!-- Energy Arcs -->
+    <g class="energy" opacity="0.6">
+      <g transform="rotate(0)">
+        <path d="M0,-20 Q10,-40 0,-60" fill="none" stroke-width="2">
+          <animate attributeName="d" dur="1s" repeatCount="indefinite"
+            values="M0,-20 Q10,-40 0,-60;M0,-20 Q-10,-40 0,-60;M0,-20 Q10,-40 0,-60"/>
+        </path>
+      </g>
+      <g transform="rotate(120)">
+        <path d="M0,-20 Q10,-40 0,-60" fill="none" stroke-width="2">
+          <animate attributeName="d" dur="1s" repeatCount="indefinite"
+            values="M0,-20 Q10,-40 0,-60;M0,-20 Q-10,-40 0,-60;M0,-20 Q10,-40 0,-60"
+            begin="0.33s"/>
+        </path>
+      </g>
+      <g transform="rotate(240)">
+        <path d="M0,-20 Q10,-40 0,-60" fill="none" stroke-width="2">
+          <animate attributeName="d" dur="1s" repeatCount="indefinite"
+            values="M0,-20 Q10,-40 0,-60;M0,-20 Q-10,-40 0,-60;M0,-20 Q10,-40 0,-60"
+            begin="0.66s"/>
+        </path>
+      </g>
+    </g>
+    
+    <!-- Defense Indicators -->
+    <g transform="translate(-60,-60)">
+      <!-- Base Defense -->
+      <circle class="barrier" r="20" opacity="0.8"/>
+      <text fill="white" x="0" y="5" text-anchor="middle" font-size="12">+6</text>
+      
+      <!-- Duration -->
+      <g transform="translate(40,0)">
+        <circle class="barrier" r="15" opacity="0.8"/>
+        <text fill="white" x="0" y="5" text-anchor="middle" font-size="10">1t</text>
+      </g>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Defense - Fortify</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Increase defense by 6 for 1 turn</text>
+</svg>

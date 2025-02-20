@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #ff4444; stroke-width: 2; }
+      .title-area { fill: #fff0f0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #fff8f8; }
+      .type-bar { fill: #ff4444; }
+      .text-area { fill: #fff0f0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .blood { fill: #cc0000; }
+      .heal { fill: #00cc00; }
+      .leech { fill: #880000; }
+    </style>
+    
+    <!-- Blood Gradient -->
+    <linearGradient id="blood-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#cc0000"/>
+      <stop offset="100%" stop-color="#ff0000"/>
+    </linearGradient>
+    
+    <!-- Heal Gradient -->
+    <linearGradient id="heal-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00cc00"/>
+      <stop offset="100%" stop-color="#00ff00"/>
+    </linearGradient>
+    
+    <!-- Blood Drop Filter -->
+    <filter id="blood-glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Blood Leech</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">2</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Blood Leech Art -->
+  <g transform="translate(150,190)">
+    <!-- Target -->
+    <g transform="translate(60,0)">
+      <!-- Blood Pool -->
+      <path class="blood" d="M-30,0 A30,30 0 0,1 30,0 Q0,40 -30,0" opacity="0.8">
+        <animate attributeName="d" dur="2s" repeatCount="indefinite"
+          values="M-30,0 A30,30 0 0,1 30,0 Q0,40 -30,0;
+                 M-30,0 A30,30 0 0,1 30,0 Q0,35 -30,0;
+                 M-30,0 A30,30 0 0,1 30,0 Q0,40 -30,0"/>
+      </path>
+      
+      <!-- Blood Drops -->
+      <g class="blood" filter="url(#blood-glow)">
+        <path d="M0,-10 L5,0 L-5,0 Z" opacity="0.6">
+          <animate attributeName="transform" dur="1s" repeatCount="indefinite"
+            values="translate(0,0);translate(0,20);translate(0,0)"/>
+        </path>
+      </g>
+    </g>
+    
+    <!-- Leech -->
+    <g transform="translate(-60,0)">
+      <!-- Leech Body -->
+      <path class="leech" d="M-20,-10 Q0,-20 20,-10 Q30,0 20,10 Q0,20 -20,10 Q-30,0 -20,-10 Z">
+        <animate attributeName="d" dur="1s" repeatCount="indefinite"
+          values="M-20,-10 Q0,-20 20,-10 Q30,0 20,10 Q0,20 -20,10 Q-30,0 -20,-10 Z;
+                 M-20,-8 Q0,-18 20,-8 Q30,2 20,12 Q0,22 -20,12 Q-30,2 -20,-8 Z;
+                 M-20,-10 Q0,-20 20,-10 Q30,0 20,10 Q0,20 -20,10 Q-30,0 -20,-10 Z"/>
+      </path>
+      
+      <!-- Healing Aura -->
+      <g class="heal" opacity="0.6" filter="url(#blood-glow)">
+        <circle r="25">
+          <animate attributeName="r" dur="1s" repeatCount="indefinite"
+            values="25;30;25"/>
+          <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+            values="0.6;0.8;0.6"/>
+        </circle>
+      </g>
+    </g>
+    
+    <!-- Blood Stream -->
+    <g>
+      <!-- Main Stream -->
+      <path class="blood" d="M60,0 Q30,-20 0,0 Q-30,20 -60,0" stroke-width="4" fill="none" filter="url(#blood-glow)">
+        <animate attributeName="d" dur="1s" repeatCount="indefinite"
+          values="M60,0 Q30,-20 0,0 Q-30,20 -60,0;
+                 M60,0 Q30,20 0,0 Q-30,-20 -60,0;
+                 M60,0 Q30,-20 0,0 Q-30,20 -60,0"/>
+      </path>
+      
+      <!-- Double Heal Effect -->
+      <g class="heal" opacity="0.4">
+        <path d="M-60,0 Q-30,-30 0,-30 Q30,-30 60,0" stroke-width="2" fill="none">
+          <animate attributeName="d" dur="2s" repeatCount="indefinite"
+            values="M-60,0 Q-30,-30 0,-30 Q30,-30 60,0;
+                   M-60,0 Q-30,-20 0,-20 Q30,-20 60,0;
+                   M-60,0 Q-30,-30 0,-30 Q30,-30 60,0"/>
+        </path>
+        <path d="M-60,0 Q-30,30 0,30 Q30,30 60,0" stroke-width="2" fill="none">
+          <animate attributeName="d" dur="2s" repeatCount="indefinite"
+            values="M-60,0 Q-30,30 0,30 Q30,30 60,0;
+                   M-60,0 Q-30,20 0,20 Q30,20 60,0;
+                   M-60,0 Q-30,30 0,30 Q30,30 60,0"/>
+        </path>
+      </g>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Attack - Vampiric</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Deal 2 damage and heal for double the amount</text>
+</svg>

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #4444ff; stroke-width: 2; }
+      .title-area { fill: #f0f0ff; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8f8ff; }
+      .type-bar { fill: #4444ff; }
+      .text-area { fill: #f0f0ff; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .shield { fill: #4444ff; }
+      .metal { fill: #888888; }
+      .highlight { fill: #ffffff; }
+    </style>
+    
+    <!-- Metal Gradient -->
+    <linearGradient id="metal-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#aaaaaa"/>
+      <stop offset="50%" stop-color="#666666"/>
+      <stop offset="100%" stop-color="#888888"/>
+    </linearGradient>
+    
+    <!-- Shield Pattern -->
+    <pattern id="shield-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path class="metal" d="M0,10 L20,10 M10,0 L10,20" stroke-width="1" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Iron Shield</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">2</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Iron Shield Art -->
+  <g transform="translate(150,190)">
+    <!-- Base Shield -->
+    <path class="shield" d="M0,-80 C-60,-80 -80,-40 -80,0 C-80,60 -40,80 0,100 C40,80 80,60 80,0 C80,-40 60,-80 0,-80 Z"
+      fill="url(#metal-gradient)">
+      <animate attributeName="d" dur="2s" repeatCount="indefinite"
+        values="M0,-80 C-60,-80 -80,-40 -80,0 C-80,60 -40,80 0,100 C40,80 80,60 80,0 C80,-40 60,-80 0,-80 Z;
+                M0,-85 C-65,-85 -85,-45 -85,0 C-85,65 -45,85 0,105 C45,85 85,65 85,0 C85,-45 65,-85 0,-85 Z;
+                M0,-80 C-60,-80 -80,-40 -80,0 C-80,60 -40,80 0,100 C40,80 80,60 80,0 C80,-40 60,-80 0,-80 Z"/>
+    </path>
+    
+    <!-- Shield Pattern -->
+    <path d="M0,-70 C-50,-70 -70,-35 -70,0 C-70,50 -35,70 0,90 C35,70 70,50 70,0 C70,-35 50,-70 0,-70 Z"
+      fill="url(#shield-pattern)"/>
+    
+    <!-- Reinforcement Bands -->
+    <g class="metal" opacity="0.8">
+      <!-- Vertical Band -->
+      <path d="M-5,-75 L-5,95 L5,95 L5,-75 Z"/>
+      <!-- Horizontal Band -->
+      <path d="M-75,5 C-75,5 -35,15 0,15 C35,15 75,5 75,5 L75,-5 C75,-5 35,5 0,5 C-35,5 -75,-5 -75,-5 Z"/>
+    </g>
+    
+    <!-- Shield Boss -->
+    <g transform="translate(0,0)">
+      <circle class="metal" r="20"/>
+      <circle class="highlight" r="15" opacity="0.3"/>
+      <circle class="shield" r="10"/>
+    </g>
+    
+    <!-- Rim Highlights -->
+    <path class="highlight" d="M-70,-20 C-70,40 -35,60 0,80 C35,60 70,40 70,-20"
+      fill="none" stroke-width="2" opacity="0.3">
+      <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+        values="0.3;0.1;0.3"/>
+    </path>
+    
+    <!-- Defense Aura -->
+    <g class="shield" opacity="0.2">
+      <circle r="90">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="90;100;90"/>
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.2;0.1;0.2"/>
+      </circle>
+    </g>
+    
+    <!-- Impact Effect -->
+    <g class="highlight">
+      <circle cx="-40" cy="-40" r="5" opacity="0.6">
+        <animate attributeName="r" dur="1s" repeatCount="indefinite"
+          values="5;8;5"/>
+      </circle>
+      <circle cx="40" cy="40" r="4" opacity="0.6">
+        <animate attributeName="r" dur="1.5s" repeatCount="indefinite"
+          values="4;7;4"/>
+      </circle>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Defense - Shield</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Reduce next damage by 4</text>
+</svg>

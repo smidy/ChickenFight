@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #44ff44; stroke-width: 2; }
+      .title-area { fill: #f0fff0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8fff8; }
+      .type-bar { fill: #44ff44; }
+      .text-area { fill: #f0fff0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .crystal { fill: #44ff44; }
+      .mana { fill: #00ffff; }
+      .network { fill: none; stroke: #88ffff; }
+    </style>
+    
+    <!-- Mana Gradient -->
+    <linearGradient id="mana-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#44ff44" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#00ffff" stop-opacity="0.4"/>
+    </linearGradient>
+    
+    <!-- Crystal Glow -->
+    <filter id="crystal-glow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
+    </filter>
+    
+    <!-- Network Pattern -->
+    <pattern id="network-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path class="network" d="M0,20 L40,20 M20,0 L20,40" stroke-width="1" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Mana Crystal</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">3</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Mana Crystal Art -->
+  <g transform="translate(150,190)">
+    <!-- Background Field -->
+    <circle class="crystal" r="80" fill="url(#mana-gradient)" opacity="0.3">
+      <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+        values="0.3;0.5;0.3"/>
+    </circle>
+    
+    <!-- Crystal Network -->
+    <g class="network" stroke-width="2">
+      <!-- Connection Lines -->
+      <g opacity="0.6">
+        <path d="M0,-60 L-52,-30 L-52,30 L0,60 L52,30 L52,-30 Z">
+          <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+            values="0.6;0.3;0.6"/>
+        </path>
+        <path d="M-52,-30 L0,0 L52,-30 M-52,30 L0,0 L52,30">
+          <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+            values="0.6;0.3;0.6"
+            begin="1s"/>
+        </path>
+      </g>
+    </g>
+    
+    <!-- Crystals -->
+    <g class="crystal">
+      <!-- Center Crystal -->
+      <g transform="translate(0,0)">
+        <path d="M0,-20 L17.3,-10 L17.3,10 L0,20 L-17.3,10 L-17.3,-10 Z" 
+          class="mana" filter="url(#crystal-glow)" opacity="0.8">
+          <animate attributeName="opacity" dur="1.5s" repeatCount="indefinite"
+            values="0.8;1;0.8"/>
+        </path>
+      </g>
+      
+      <!-- Outer Crystals -->
+      <g class="mana" opacity="0.6">
+        <!-- Top -->
+        <g transform="translate(0,-60)">
+          <path d="M0,-10 L8.7,-5 L8.7,5 L0,10 L-8.7,5 L-8.7,-5 Z">
+            <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+              values="scale(1);scale(1.2);scale(1)"/>
+          </path>
+        </g>
+        <!-- Bottom -->
+        <g transform="translate(0,60)">
+          <path d="M0,-10 L8.7,-5 L8.7,5 L0,10 L-8.7,5 L-8.7,-5 Z">
+            <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+              values="scale(1);scale(1.2);scale(1)"
+              begin="0.4s"/>
+          </path>
+        </g>
+        <!-- Left -->
+        <g transform="translate(-52,0)">
+          <path d="M0,-10 L8.7,-5 L8.7,5 L0,10 L-8.7,5 L-8.7,-5 Z">
+            <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+              values="scale(1);scale(1.2);scale(1)"
+              begin="0.8s"/>
+          </path>
+        </g>
+        <!-- Right -->
+        <g transform="translate(52,0)">
+          <path d="M0,-10 L8.7,-5 L8.7,5 L0,10 L-8.7,5 L-8.7,-5 Z">
+            <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+              values="scale(1);scale(1.2);scale(1)"
+              begin="1.2s"/>
+          </path>
+        </g>
+      </g>
+    </g>
+    
+    <!-- Energy Flow -->
+    <g class="mana" opacity="0.4" filter="url(#crystal-glow)">
+      <!-- Flow Lines -->
+      <g>
+        <path d="M0,-50 Q-20,-25 0,0 Q20,25 0,50" fill="none" stroke-width="2">
+          <animate attributeName="d" dur="3s" repeatCount="indefinite"
+            values="M0,-50 Q-20,-25 0,0 Q20,25 0,50;
+                   M0,-50 Q20,-25 0,0 Q-20,25 0,50;
+                   M0,-50 Q-20,-25 0,0 Q20,25 0,50"/>
+        </path>
+        <path d="M-45,-26 Q-22.5,-13 0,0 Q22.5,13 45,26" fill="none" stroke-width="2">
+          <animate attributeName="d" dur="3s" repeatCount="indefinite"
+            values="M-45,-26 Q-22.5,-13 0,0 Q22.5,13 45,26;
+                   M-45,-26 Q-22.5,13 0,0 Q22.5,-13 45,26;
+                   M-45,-26 Q-22.5,-13 0,0 Q22.5,13 45,26"
+            begin="1s"/>
+        </path>
+      </g>
+    </g>
+    
+    <!-- Energy Counter -->
+    <g transform="translate(-60,-60)">
+      <circle class="type-bar" r="20" opacity="0.8"/>
+      <text fill="white" x="0" y="5" text-anchor="middle" font-size="12">+2/t</text>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Utility - Energy</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Gain 2 energy per turn for 3 turns</text>
+</svg>

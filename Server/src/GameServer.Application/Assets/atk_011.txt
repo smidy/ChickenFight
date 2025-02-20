@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #ff4444; stroke-width: 2; }
+      .title-area { fill: #fff0f0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #fff8f8; }
+      .type-bar { fill: #ff4444; }
+      .text-area { fill: #fff0f0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .soul { fill: #8800ff; }
+      .spirit { fill: #aa44ff; }
+      .aura { fill: none; stroke: #cc88ff; }
+    </style>
+    
+    <!-- Soul Energy Gradient -->
+    <linearGradient id="soul-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8800ff"/>
+      <stop offset="100%" stop-color="#cc88ff"/>
+    </linearGradient>
+    
+    <!-- Spirit Glow -->
+    <filter id="spirit-glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Soul Siphon</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">4</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Soul Siphon Art -->
+  <g transform="translate(150,190)">
+    <!-- Target Aura -->
+    <g transform="translate(60,0)">
+      <!-- Outer Aura -->
+      <circle class="aura" r="40" stroke-width="2" opacity="0.3">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="40;35;40"/>
+      </circle>
+      
+      <!-- Inner Spirit -->
+      <circle class="spirit" r="30" opacity="0.8">
+        <animate attributeName="r" dur="1s" repeatCount="indefinite"
+          values="30;25;30"/>
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="0.8;0.4;0.8"/>
+      </circle>
+      
+      <!-- Soul Core -->
+      <circle fill="url(#soul-gradient)" r="20" filter="url(#spirit-glow)">
+        <animate attributeName="r" dur="0.5s" repeatCount="indefinite"
+          values="20;18;20"/>
+      </circle>
+    </g>
+    
+    <!-- Caster -->
+    <g transform="translate(-60,0)">
+      <!-- Absorption Aura -->
+      <circle class="aura" r="40" stroke-width="2" opacity="0.6">
+        <animate attributeName="r" dur="1s" repeatCount="indefinite"
+          values="40;45;40"/>
+      </circle>
+      
+      <!-- Power Build-up -->
+      <circle class="spirit" r="30" filter="url(#spirit-glow)" opacity="0.8">
+        <animate attributeName="r" dur="1s" repeatCount="indefinite"
+          values="30;35;30"/>
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="0.8;1;0.8"/>
+      </circle>
+    </g>
+    
+    <!-- Siphon Effect -->
+    <g>
+      <!-- Main Spirit Stream -->
+      <path class="spirit" d="M60,0 Q0,-20 -60,0" stroke-width="4" fill="none" filter="url(#spirit-glow)">
+        <animate attributeName="d" dur="2s" repeatCount="indefinite"
+          values="M60,0 Q0,-20 -60,0;
+                 M60,0 Q0,20 -60,0;
+                 M60,0 Q0,-20 -60,0"/>
+      </path>
+      
+      <!-- Soul Particles -->
+      <g class="soul" filter="url(#spirit-glow)">
+        <circle cx="40" cy="0" r="4" opacity="0.8">
+          <animate attributeName="cx" dur="2s" repeatCount="indefinite"
+            values="60;-60;60"/>
+          <animate attributeName="cy" dur="2s" repeatCount="indefinite"
+            values="0;-20;0"/>
+        </circle>
+        <circle cx="20" cy="10" r="3" opacity="0.6">
+          <animate attributeName="cx" dur="1.5s" repeatCount="indefinite"
+            values="60;-60;60"/>
+          <animate attributeName="cy" dur="1.5s" repeatCount="indefinite"
+            values="10;-10;10"/>
+        </circle>
+        <circle cx="0" cy="-10" r="3" opacity="0.7">
+          <animate attributeName="cx" dur="1.8s" repeatCount="indefinite"
+            values="60;-60;60"/>
+          <animate attributeName="cy" dur="1.8s" repeatCount="indefinite"
+            values="-10;10;-10"/>
+        </circle>
+      </g>
+      
+      <!-- Energy Wisps -->
+      <g class="aura" stroke-width="1" opacity="0.5">
+        <path d="M40,-20 Q20,-10 0,0">
+          <animate attributeName="d" dur="1.5s" repeatCount="indefinite"
+            values="M40,-20 Q20,-10 0,0;
+                   M40,-10 Q20,0 0,10;
+                   M40,-20 Q20,-10 0,0"/>
+        </path>
+        <path d="M40,20 Q20,10 0,0">
+          <animate attributeName="d" dur="1.5s" repeatCount="indefinite"
+            values="M40,20 Q20,10 0,0;
+                   M40,10 Q20,0 0,-10;
+                   M40,20 Q20,10 0,0"/>
+        </path>
+      </g>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Attack - Vampiric</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Deal 5 damage and heal for the amount</text>
+</svg>

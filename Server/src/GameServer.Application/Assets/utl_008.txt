@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #44ff44; stroke-width: 2; }
+      .title-area { fill: #f0fff0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8fff8; }
+      .type-bar { fill: #44ff44; }
+      .text-area { fill: #f0fff0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .select { fill: #44ff44; }
+      .card { fill: #ffffff; }
+      .highlight { fill: #ffff44; }
+    </style>
+    
+    <!-- Selection Gradient -->
+    <linearGradient id="select-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#44ff44" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffff44" stop-opacity="0.4"/>
+    </linearGradient>
+    
+    <!-- Highlight Effect -->
+    <filter id="highlight-glow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+    </filter>
+    
+    <!-- Card Pattern -->
+    <pattern id="card-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <rect x="10" y="10" width="20" height="30" rx="2" class="card" opacity="0.1"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Selective Shuffle</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">1</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Selective Shuffle Art -->
+  <g transform="translate(150,190)">
+    <!-- Background Field -->
+    <circle class="select" r="80" fill="url(#select-gradient)" opacity="0.3">
+      <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+        values="0.3;0.5;0.3"/>
+    </circle>
+    
+    <!-- Card Fan -->
+    <g class="card">
+      <!-- Unselected Cards -->
+      <g opacity="0.4">
+        <rect x="-60" y="-20" width="30" height="40" rx="2" transform="rotate(-30)"/>
+        <rect x="-20" y="-20" width="30" height="40" rx="2" transform="rotate(-10)"/>
+        <rect x="20" y="-20" width="30" height="40" rx="2" transform="rotate(10)"/>
+      </g>
+      
+      <!-- Selected Card -->
+      <g transform="rotate(-10)">
+        <rect x="-15" y="-50" width="30" height="40" rx="2" class="highlight" opacity="0.8"
+          filter="url(#highlight-glow)">
+          <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+            values="translate(0,0);translate(0,-10);translate(0,0)"/>
+        </rect>
+      </g>
+    </g>
+    
+    <!-- Selection Beam -->
+    <g class="highlight" filter="url(#highlight-glow)">
+      <path d="M0,-80 L0,-50" stroke-width="2" opacity="0.6">
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="0.6;0.2;0.6"/>
+      </path>
+    </g>
+    
+    <!-- Shuffle Effect -->
+    <g class="select">
+      <!-- Circular Path -->
+      <path d="M0,0 A40,40 0 1,1 40,40" fill="none" stroke-width="2" opacity="0.4">
+        <animateTransform attributeName="transform" type="rotate"
+          from="0" to="360" dur="4s" repeatCount="indefinite"/>
+      </path>
+      
+      <!-- Selected Card Movement -->
+      <g transform="translate(0,-50)">
+        <rect x="-15" y="-20" width="30" height="40" rx="2" class="card">
+          <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+            values="translate(0,0) rotate(0);
+                   translate(40,40) rotate(180);
+                   translate(0,80) rotate(360)"/>
+          <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+            values="1;0.5;0"/>
+        </rect>
+      </g>
+    </g>
+    
+    <!-- Selection Particles -->
+    <g class="highlight" opacity="0.6">
+      <circle cx="-40" cy="-40" r="2">
+        <animate attributeName="r" dur="1.5s" repeatCount="indefinite"
+          values="2;4;2"/>
+      </circle>
+      <circle cx="40" cy="-40" r="2">
+        <animate attributeName="r" dur="1.5s" repeatCount="indefinite"
+          values="2;4;2"
+          begin="0.5s"/>
+      </circle>
+      <circle cx="0" cy="-60" r="2">
+        <animate attributeName="r" dur="1.5s" repeatCount="indefinite"
+          values="2;4;2"
+          begin="1s"/>
+      </circle>
+    </g>
+    
+    <!-- Shuffle Counter -->
+    <g transform="translate(-60,-60)">
+      <circle class="type-bar" r="20" opacity="0.8"/>
+      <text fill="white" x="0" y="5" text-anchor="middle" font-size="12">x3</text>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Utility - Shuffle</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Shuffle 3 selected cards back into the deck</text>
+</svg>

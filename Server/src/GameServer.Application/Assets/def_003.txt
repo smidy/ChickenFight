@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #4444ff; stroke-width: 2; }
+      .title-area { fill: #f0f0ff; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8f8ff; }
+      .type-bar { fill: #4444ff; }
+      .text-area { fill: #f0f0ff; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .energy { fill: #4444ff; }
+      .hex { fill: #8888ff; }
+      .pulse { fill: none; stroke: #aaaaff; }
+    </style>
+    
+    <!-- Energy Gradient -->
+    <linearGradient id="energy-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4444ff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#8888ff" stop-opacity="0.2"/>
+    </linearGradient>
+    
+    <!-- Hex Glow -->
+    <filter id="hex-glow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+    </filter>
+    
+    <!-- Hex Pattern -->
+    <pattern id="hex-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path class="hex" d="M20,0 L35,10 L35,30 L20,40 L5,30 L5,10 Z" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Energy Shield</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">4</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Energy Shield Art -->
+  <g transform="translate(150,190)">
+    <!-- Shield Field -->
+    <g>
+      <!-- Base Field -->
+      <path class="energy" d="M0,-80 L69.3,-40 L69.3,40 L0,80 L-69.3,40 L-69.3,-40 Z"
+        fill="url(#energy-gradient)" opacity="0.6">
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.6;0.4;0.6"/>
+      </path>
+      
+      <!-- Hex Grid -->
+      <path d="M0,-70 L60,-35 L60,35 L0,70 L-60,35 L-60,-35 Z"
+        fill="url(#hex-pattern)">
+        <animateTransform attributeName="transform" type="rotate"
+          from="0" to="360" dur="30s" repeatCount="indefinite"/>
+      </path>
+    </g>
+    
+    <!-- Energy Hexagons -->
+    <g class="hex" filter="url(#hex-glow)">
+      <!-- Center Hex -->
+      <path d="M0,-20 L17.3,-10 L17.3,10 L0,20 L-17.3,10 L-17.3,-10 Z" opacity="0.8">
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="0.8;1;0.8"/>
+      </path>
+      
+      <!-- Outer Hexes -->
+      <g opacity="0.6">
+        <g transform="translate(0,-40)">
+          <path d="M0,-10 L8.7,-5 L8.7,5 L0,10 L-8.7,5 L-8.7,-5 Z">
+            <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+              values="scale(1);scale(1.2);scale(1)"/>
+          </path>
+        </g>
+        <g transform="translate(35,20)">
+          <path d="M0,-10 L8.7,-5 L8.7,5 L0,10 L-8.7,5 L-8.7,-5 Z">
+            <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+              values="scale(1);scale(1.2);scale(1)"
+              begin="0.4s"/>
+          </path>
+        </g>
+        <g transform="translate(-35,20)">
+          <path d="M0,-10 L8.7,-5 L8.7,5 L0,10 L-8.7,5 L-8.7,-5 Z">
+            <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+              values="scale(1);scale(1.2);scale(1)"
+              begin="0.8s"/>
+          </path>
+        </g>
+      </g>
+    </g>
+    
+    <!-- Energy Connections -->
+    <g class="pulse" stroke-width="2">
+      <path d="M0,-20 L0,-30">
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="1;0.3;1"/>
+      </path>
+      <path d="M17.3,10 L26,15">
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="1;0.3;1"
+          begin="0.4s"/>
+      </path>
+      <path d="M-17.3,10 L-26,15">
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="1;0.3;1"
+          begin="0.8s"/>
+      </path>
+    </g>
+    
+    <!-- Duration Indicators -->
+    <g class="energy" transform="translate(-60,-60)">
+      <!-- Turn Counter -->
+      <g opacity="0.8">
+        <circle r="15"/>
+        <text x="0" y="5" text-anchor="middle" font-size="12" fill="white">2</text>
+      </g>
+      
+      <!-- Timer Effect -->
+      <circle r="20" fill="none" stroke-width="2">
+        <animate attributeName="stroke-dasharray" 
+          values="0,125.6;125.6,0"
+          dur="2s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+    
+    <!-- Shield Pulses -->
+    <g class="pulse" stroke-width="2" opacity="0.5">
+      <path d="M0,-80 L69.3,-40 L69.3,40 L0,80 L-69.3,40 L-69.3,-40 Z">
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.5;0;0.5"/>
+        <animate attributeName="stroke-width" dur="2s" repeatCount="indefinite"
+          values="2;4;2"/>
+      </path>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Defense - Shield</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Reduce all damage by 2 for 2 turns</text>
+</svg>

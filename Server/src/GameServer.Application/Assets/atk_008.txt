@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #ff4444; stroke-width: 2; }
+      .title-area { fill: #fff0f0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #fff8f8; }
+      .type-bar { fill: #ff4444; }
+      .text-area { fill: #fff0f0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .shadow { fill: #222222; }
+      .blade { fill: #ff4444; }
+      .glow { fill: #ff6666; filter: blur(3px); }
+    </style>
+    
+    <!-- Shadow Gradient -->
+    <radialGradient id="shadow-fade" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#222222" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#222222" stop-opacity="0"/>
+    </radialGradient>
+    
+    <!-- Blade Gradient -->
+    <linearGradient id="blade-gradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff4444"/>
+      <stop offset="100%" stop-color="#ff8888"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Shadow Strike</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">3</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Shadow Strike Art -->
+  <g transform="translate(150,190)">
+    <!-- Shadow Background -->
+    <circle fill="url(#shadow-fade)" cx="0" cy="0" r="100" opacity="0.8">
+      <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+        values="0.8;0.6;0.8"/>
+    </circle>
+    
+    <!-- Shadow Tendrils -->
+    <g class="shadow" opacity="0.6">
+      <path d="M-80,-80 Q-40,-40 -60,0 Q-80,40 -40,80">
+        <animate attributeName="d" dur="3s" repeatCount="indefinite"
+          values="M-80,-80 Q-40,-40 -60,0 Q-80,40 -40,80;
+                 M-80,-80 Q-20,-40 -40,0 Q-60,40 -20,80;
+                 M-80,-80 Q-40,-40 -60,0 Q-80,40 -40,80"/>
+      </path>
+      <path d="M80,-80 Q40,-40 60,0 Q80,40 40,80">
+        <animate attributeName="d" dur="3s" repeatCount="indefinite"
+          values="M80,-80 Q40,-40 60,0 Q80,40 40,80;
+                 M80,-80 Q20,-40 40,0 Q60,40 20,80;
+                 M80,-80 Q40,-40 60,0 Q80,40 40,80"/>
+      </path>
+    </g>
+    
+    <!-- Blade -->
+    <g transform="rotate(45)">
+      <!-- Blade Glow -->
+      <path class="glow" d="M-20,-80 L20,-80 L0,80 Z" opacity="0.5">
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="0.5;0.8;0.5"/>
+      </path>
+      
+      <!-- Main Blade -->
+      <path fill="url(#blade-gradient)" d="M-10,-60 L10,-60 L0,60 Z">
+        <animate attributeName="transform" dur="0.5s" repeatCount="indefinite"
+          values="translate(0,0);translate(0,-10);translate(0,0)"/>
+      </path>
+      
+      <!-- Blade Edge Highlights -->
+      <path class="blade" d="M-8,-55 L-6,40 L0,50 L6,40 L8,-55" opacity="0.7"/>
+    </g>
+    
+    <!-- Shadow Wisps -->
+    <g class="shadow" opacity="0.4">
+      <path d="M-30,-30 Q0,-15 30,-30">
+        <animate attributeName="d" dur="2s" repeatCount="indefinite"
+          values="M-30,-30 Q0,-15 30,-30;
+                 M-30,-30 Q0,-45 30,-30;
+                 M-30,-30 Q0,-15 30,-30"/>
+      </path>
+      <path d="M-30,30 Q0,15 30,30">
+        <animate attributeName="d" dur="2s" repeatCount="indefinite"
+          values="M-30,30 Q0,15 30,30;
+                 M-30,30 Q0,45 30,30;
+                 M-30,30 Q0,15 30,30"/>
+      </path>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Attack - Piercing</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Deal 5 damage, ignoring shields</text>
+</svg>

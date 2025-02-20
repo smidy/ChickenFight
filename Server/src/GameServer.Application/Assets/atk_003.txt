@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #ff4444; stroke-width: 2; }
+      .title-area { fill: #fff0f0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #fff8f8; }
+      .type-bar { fill: #ff4444; }
+      .text-area { fill: #fff0f0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .ice { fill: #44ccff; }
+      .ice-glow { fill: #aaeeff; filter: blur(2px); }
+      .ice-highlight { fill: white; }
+    </style>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Ice Shard</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">1</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Ice Shard Art -->
+  <g transform="translate(150,190)">
+    <!-- Glow Effects -->
+    <path class="ice-glow" d="M0,-60 L20,-20 L0,60 L-20,-20 Z" opacity="0.6">
+      <animate attributeName="opacity" dur="1.5s" repeatCount="indefinite"
+        values="0.6;0.8;0.6"/>
+    </path>
+    
+    <!-- Main Ice Shard -->
+    <path class="ice" d="M0,-60 L20,-20 L0,60 L-20,-20 Z">
+      <animate attributeName="transform" attributeType="XML" type="rotate"
+        from="0" to="360" dur="10s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Ice Crystal Highlights -->
+    <path class="ice-highlight" d="M0,-40 L10,-20 L0,40 L-10,-20 Z" opacity="0.5"/>
+    
+    <!-- Secondary Ice Shards -->
+    <g transform="rotate(45)">
+      <path class="ice" d="M30,-30 L40,-10 L30,10 L20,-10 Z" opacity="0.7">
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.7;0.9;0.7"/>
+      </path>
+    </g>
+    <g transform="rotate(-45)">
+      <path class="ice" d="M30,-30 L40,-10 L30,10 L20,-10 Z" opacity="0.7">
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.7;0.9;0.7"/>
+      </path>
+    </g>
+    
+    <!-- Snowflake Pattern -->
+    <g transform="scale(0.4)">
+      <path class="ice-highlight" d="M0,0 L30,0 M0,0 L15,26 M0,0 L-15,26 M0,0 L-30,0 M0,0 L-15,-26 M0,0 L15,-26" 
+        stroke="white" stroke-width="2" opacity="0.3">
+        <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+          values="0.3;0.6;0.3"/>
+      </path>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Attack - Direct Damage</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Deal 2 damage and slow target</text>
+</svg>

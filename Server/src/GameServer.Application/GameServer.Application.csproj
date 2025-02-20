@@ -16,4 +16,8 @@
     <ProjectReference Include="..\GameServer.Shared\GameServer.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Assets\" />
+  </ItemGroup>
+
 </Project>

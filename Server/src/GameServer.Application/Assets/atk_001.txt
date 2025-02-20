@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #ff4444; stroke-width: 2; }
+      .title-area { fill: #fff0f0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #fff8f8; }
+      .type-bar { fill: #ff4444; }
+      .text-area { fill: #fff0f0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .flame { fill: #ff4444; }
+    </style>
+    
+    <!-- Flame Pattern -->
+    <pattern id="flame-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path class="flame" d="M30,10 Q45,25 30,40 Q15,25 30,10 Z"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Fireball</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">2</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Fireball Art -->
+  <g transform="translate(150,190)">
+    <!-- Main Fireball -->
+    <circle cx="0" cy="0" r="60" fill="url(#flame-pattern)"/>
+    <!-- Outer Flames -->
+    <path class="flame" d="M0,-70 Q20,-50 0,-30 Q-20,-50 0,-70" opacity="0.6">
+      <animate attributeName="d" dur="2s" repeatCount="indefinite"
+        values="M0,-70 Q20,-50 0,-30 Q-20,-50 0,-70;
+                M0,-70 Q25,-45 0,-30 Q-25,-45 0,-70;
+                M0,-70 Q20,-50 0,-30 Q-20,-50 0,-70"/>
+    </path>
+    <path class="flame" d="M70,0 Q50,20 30,0 Q50,-20 70,0" opacity="0.6">
+      <animate attributeName="d" dur="2s" repeatCount="indefinite"
+        values="M70,0 Q50,20 30,0 Q50,-20 70,0;
+                M70,0 Q45,25 30,0 Q45,-25 70,0;
+                M70,0 Q50,20 30,0 Q50,-20 70,0"/>
+    </path>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Attack - Direct Damage</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Deal 4 damage to target</text>
+</svg>

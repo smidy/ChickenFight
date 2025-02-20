@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #ff4444; stroke-width: 2; }
+      .title-area { fill: #fff0f0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #fff8f8; }
+      .type-bar { fill: #ff4444; }
+      .text-area { fill: #fff0f0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .strike { fill: #ff4444; }
+      .after-image { fill: #ff8888; }
+      .combo { fill: #ffaa44; }
+    </style>
+    
+    <!-- Motion Blur -->
+    <filter id="motion-blur">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+    </filter>
+    
+    <!-- Strike Gradient -->
+    <linearGradient id="strike-gradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff4444"/>
+      <stop offset="100%" stop-color="#ff8888"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Quick Strike</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">1</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Quick Strike Art -->
+  <g transform="translate(150,190)">
+    <!-- After Images -->
+    <g class="after-image" opacity="0.3" filter="url(#motion-blur)">
+      <path d="M-60,-40 L60,40">
+        <animate attributeName="opacity" dur="0.5s" repeatCount="indefinite"
+          values="0.3;0;0.3"/>
+      </path>
+      <path d="M-50,-30 L70,50">
+        <animate attributeName="opacity" dur="0.5s" repeatCount="indefinite"
+          values="0.2;0;0.2"/>
+      </path>
+    </g>
+    
+    <!-- Main Strike -->
+    <g transform="rotate(-45)">
+      <!-- Strike Path -->
+      <path class="strike" d="M-80,0 L80,0" stroke-width="4" stroke-linecap="round">
+        <animate attributeName="stroke-width" dur="0.5s" repeatCount="indefinite"
+          values="4;6;4"/>
+      </path>
+      
+      <!-- Strike Head -->
+      <path class="strike" d="M60,-10 L80,0 L60,10 Z">
+        <animate attributeName="transform" dur="0.5s" repeatCount="indefinite"
+          values="translate(0,0);translate(10,0);translate(0,0)"/>
+      </path>
+    </g>
+    
+    <!-- Combo Indicator -->
+    <g class="combo" transform="translate(60,-60)">
+      <!-- Plus Symbol -->
+      <g opacity="0.8">
+        <rect x="-15" y="-3" width="30" height="6" rx="2">
+          <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+            values="0.8;1;0.8"/>
+        </rect>
+        <rect x="-3" y="-15" width="6" height="30" rx="2">
+          <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+            values="0.8;1;0.8"/>
+        </rect>
+      </g>
+      
+      <!-- Power Up Particles -->
+      <g opacity="0.6">
+        <circle cx="0" cy="-20" r="3">
+          <animate attributeName="cy" dur="1s" repeatCount="indefinite"
+            values="-20;-30;-20"/>
+        </circle>
+        <circle cx="20" cy="0" r="3">
+          <animate attributeName="cx" dur="1s" repeatCount="indefinite"
+            values="20;30;20"/>
+        </circle>
+        <circle cx="-20" cy="0" r="3">
+          <animate attributeName="cx" dur="1s" repeatCount="indefinite"
+            values="-20;-30;-20"/>
+        </circle>
+      </g>
+    </g>
+    
+    <!-- Speed Lines -->
+    <g class="after-image" stroke-width="1" opacity="0.4">
+      <line x1="-80" y1="-80" x2="-60" y2="-60">
+        <animate attributeName="opacity" dur="0.3s" repeatCount="indefinite"
+          values="0.4;0.1;0.4"/>
+      </line>
+      <line x1="-60" y1="-80" x2="-40" y2="-60">
+        <animate attributeName="opacity" dur="0.3s" repeatCount="indefinite"
+          values="0.4;0.1;0.4"/>
+      </line>
+      <line x1="-40" y1="-80" x2="-20" y2="-60">
+        <animate attributeName="opacity" dur="0.3s" repeatCount="indefinite"
+          values="0.4;0.1;0.4"/>
+      </line>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Attack - Combo</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Deal 2 damage, +2 if played after another attack</text>
+</svg>

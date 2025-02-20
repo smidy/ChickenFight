@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #4444ff; stroke-width: 2; }
+      .title-area { fill: #f0f0ff; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8f8ff; }
+      .type-bar { fill: #4444ff; }
+      .text-area { fill: #f0f0ff; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .heal { fill: #44ff44; }
+      .wave { fill: none; stroke: #44ff44; }
+      .time { fill: #88ff88; }
+    </style>
+    
+    <!-- Wave Gradient -->
+    <linearGradient id="wave-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#44ff44" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#88ff88" stop-opacity="0.2"/>
+    </linearGradient>
+    
+    <!-- Glow Effect -->
+    <filter id="wave-glow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+    </filter>
+    
+    <!-- Time Pattern -->
+    <pattern id="time-pattern" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+      <circle cx="15" cy="15" r="5" class="time" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Regeneration</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">3</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Regeneration Art -->
+  <g transform="translate(150,190)">
+    <!-- Background Field -->
+    <circle class="heal" r="80" fill="url(#wave-gradient)" opacity="0.2">
+      <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+        values="0.2;0.3;0.2"/>
+    </circle>
+    
+    <!-- Healing Waves -->
+    <g class="wave" stroke-width="3" filter="url(#wave-glow)">
+      <!-- Wave 1 -->
+      <path d="M-60,0 Q-30,-30 0,0 Q30,30 60,0" opacity="0.8">
+        <animate attributeName="d" dur="3s" repeatCount="indefinite"
+          values="M-60,0 Q-30,-30 0,0 Q30,30 60,0;
+                 M-60,0 Q-30,30 0,0 Q30,-30 60,0;
+                 M-60,0 Q-30,-30 0,0 Q30,30 60,0"/>
+      </path>
+      
+      <!-- Wave 2 -->
+      <path d="M-60,20 Q-30,-10 0,20 Q30,50 60,20" opacity="0.6">
+        <animate attributeName="d" dur="3s" repeatCount="indefinite"
+          values="M-60,20 Q-30,-10 0,20 Q30,50 60,20;
+                 M-60,20 Q-30,50 0,20 Q30,-10 60,20;
+                 M-60,20 Q-30,-10 0,20 Q30,50 60,20"
+          begin="1s"/>
+      </path>
+      
+      <!-- Wave 3 -->
+      <path d="M-60,-20 Q-30,-50 0,-20 Q30,10 60,-20" opacity="0.6">
+        <animate attributeName="d" dur="3s" repeatCount="indefinite"
+          values="M-60,-20 Q-30,-50 0,-20 Q30,10 60,-20;
+                 M-60,-20 Q-30,10 0,-20 Q30,-50 60,-20;
+                 M-60,-20 Q-30,-50 0,-20 Q30,10 60,-20"
+          begin="2s"/>
+      </path>
+    </g>
+    
+    <!-- Time Indicators -->
+    <g class="time">
+      <!-- Turn 1 -->
+      <g transform="translate(-40,-40)">
+        <circle r="15" opacity="0.8"/>
+        <text class="heal" x="0" y="5" text-anchor="middle" font-size="12">1</text>
+      </g>
+      
+      <!-- Turn 2 -->
+      <g transform="translate(0,-40)">
+        <circle r="15" opacity="0.8"/>
+        <text class="heal" x="0" y="5" text-anchor="middle" font-size="12">2</text>
+      </g>
+      
+      <!-- Turn 3 -->
+      <g transform="translate(40,-40)">
+        <circle r="15" opacity="0.8"/>
+        <text class="heal" x="0" y="5" text-anchor="middle" font-size="12">3</text>
+      </g>
+      
+      <!-- Connecting Lines -->
+      <path d="M-40,-40 L40,-40" stroke-width="2" opacity="0.4"/>
+    </g>
+    
+    <!-- Healing Symbols -->
+    <g class="heal" opacity="0.6">
+      <!-- Center Cross -->
+      <g>
+        <rect x="-4" y="-20" width="8" height="40" rx="2"/>
+        <rect x="-20" y="-4" width="40" height="8" rx="2"/>
+      </g>
+      
+      <!-- Orbiting Crosses -->
+      <g>
+        <g transform="rotate(0)">
+          <g transform="translate(0,-50) scale(0.5)">
+            <rect x="-4" y="-20" width="8" height="40" rx="2"/>
+            <rect x="-20" y="-4" width="40" height="8" rx="2"/>
+            <animateTransform attributeName="transform" type="rotate"
+              from="0" to="360" dur="6s" repeatCount="indefinite"/>
+          </g>
+        </g>
+        <g transform="rotate(120)">
+          <g transform="translate(0,-50) scale(0.5)">
+            <rect x="-4" y="-20" width="8" height="40" rx="2"/>
+            <rect x="-20" y="-4" width="40" height="8" rx="2"/>
+            <animateTransform attributeName="transform" type="rotate"
+              from="0" to="360" dur="6s" repeatCount="indefinite"
+              begin="2s"/>
+          </g>
+        </g>
+        <g transform="rotate(240)">
+          <g transform="translate(0,-50) scale(0.5)">
+            <rect x="-4" y="-20" width="8" height="40" rx="2"/>
+            <rect x="-20" y="-4" width="40" height="8" rx="2"/>
+            <animateTransform attributeName="transform" type="rotate"
+              from="0" to="360" dur="6s" repeatCount="indefinite"
+              begin="4s"/>
+          </g>
+        </g>
+      </g>
+    </g>
+    
+    <!-- Healing Amount -->
+    <g transform="translate(-60,60)">
+      <circle class="heal" r="20" opacity="0.8"/>
+      <text fill="white" x="0" y="5" text-anchor="middle" font-size="12">+2/turn</text>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Defense - Heal</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Restore 2 health per turn for 3 turns</text>
+</svg>

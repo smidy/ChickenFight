@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #ff4444; stroke-width: 2; }
+      .title-area { fill: #fff0f0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #fff8f8; }
+      .type-bar { fill: #ff4444; }
+      .text-area { fill: #fff0f0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .life-force { fill: #ff0066; }
+      .drain-path { fill: none; stroke: #ff0066; }
+      .target { fill: #666666; }
+      .caster { fill: #ff4444; }
+    </style>
+    
+    <!-- Life Force Gradient -->
+    <linearGradient id="life-gradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff0066"/>
+      <stop offset="100%" stop-color="#ff6699"/>
+    </linearGradient>
+    
+    <!-- Drain Effect -->
+    <filter id="drain-glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Life Drain</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">3</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Life Drain Art -->
+  <g transform="translate(150,190)">
+    <!-- Target (Victim) -->
+    <g transform="translate(60,0)">
+      <circle class="target" r="30"/>
+      <circle class="life-force" r="25" opacity="0.6">
+        <animate attributeName="r" dur="1s" repeatCount="indefinite"
+          values="25;20;25"/>
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="0.6;0.3;0.6"/>
+      </circle>
+    </g>
+    
+    <!-- Caster -->
+    <g transform="translate(-60,0)">
+      <circle class="caster" r="30"/>
+      <circle fill="url(#life-gradient)" r="25" opacity="0.6" filter="url(#drain-glow)">
+        <animate attributeName="r" dur="1s" repeatCount="indefinite"
+          values="25;30;25"/>
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="0.6;0.9;0.6"/>
+      </circle>
+    </g>
+    
+    <!-- Drain Effect -->
+    <g class="drain-path" stroke-width="3" filter="url(#drain-glow)">
+      <!-- Main Drain Stream -->
+      <path d="M60,0 C30,0 -30,0 -60,0">
+        <animate attributeName="d" dur="1.5s" repeatCount="indefinite"
+          values="M60,0 C30,0 -30,0 -60,0;
+                 M60,0 C30,-30 -30,30 -60,0;
+                 M60,0 C30,0 -30,0 -60,0"/>
+      </path>
+      
+      <!-- Secondary Streams -->
+      <path d="M60,10 C30,10 -30,10 -60,10" opacity="0.6">
+        <animate attributeName="d" dur="1.5s" repeatCount="indefinite"
+          values="M60,10 C30,10 -30,10 -60,10;
+                 M60,10 C30,-20 -30,40 -60,10;
+                 M60,10 C30,10 -30,10 -60,10"/>
+      </path>
+      <path d="M60,-10 C30,-10 -30,-10 -60,-10" opacity="0.6">
+        <animate attributeName="d" dur="1.5s" repeatCount="indefinite"
+          values="M60,-10 C30,-10 -30,-10 -60,-10;
+                 M60,-10 C30,-40 -30,20 -60,-10;
+                 M60,-10 C30,-10 -30,-10 -60,-10"/>
+      </path>
+    </g>
+    
+    <!-- Life Force Particles -->
+    <g class="life-force" opacity="0.8">
+      <circle cx="30" cy="0" r="3">
+        <animate attributeName="cx" dur="1s" repeatCount="indefinite"
+          values="60;-60;60"/>
+      </circle>
+      <circle cx="0" cy="15" r="2">
+        <animate attributeName="cx" dur="1.5s" repeatCount="indefinite"
+          values="60;-60;60"/>
+      </circle>
+      <circle cx="-30" cy="-15" r="2">
+        <animate attributeName="cx" dur="2s" repeatCount="indefinite"
+          values="60;-60;60"/>
+      </circle>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Attack - Vampiric</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Deal 3 damage and heal for the amount</text>
+</svg>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #44ff44; stroke-width: 2; }
+      .title-area { fill: #f0fff0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8fff8; }
+      .type-bar { fill: #44ff44; }
+      .text-area { fill: #f0fff0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .crystal { fill: #44ff44; }
+      .energy { fill: #88ff88; }
+      .surge { fill: #ffff44; }
+    </style>
+    
+    <!-- Crystal Gradient -->
+    <linearGradient id="crystal-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#44ff44" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#88ff88" stop-opacity="0.4"/>
+    </linearGradient>
+    
+    <!-- Energy Glow -->
+    <filter id="energy-glow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
+    </filter>
+    
+    <!-- Surge Pattern -->
+    <pattern id="surge-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path class="surge" d="M20,0 L40,20 L20,40 L0,20 Z" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Energy Surge</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">2</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Energy Surge Art -->
+  <g transform="translate(150,190)">
+    <!-- Background Field -->
+    <circle class="crystal" r="80" fill="url(#crystal-gradient)" opacity="0.3">
+      <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+        values="0.3;0.5;0.3"/>
+    </circle>
+    
+    <!-- Power Crystal -->
+    <g class="crystal">
+      <!-- Crystal Base -->
+      <path d="M0,-60 L40,-20 L40,20 L0,60 L-40,20 L-40,-20 Z" 
+        fill="url(#surge-pattern)" opacity="0.8">
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.8;1;0.8"/>
+      </path>
+      
+      <!-- Crystal Core -->
+      <path d="M0,-40 L20,-20 L20,20 L0,40 L-20,20 L-20,-20 Z" 
+        class="energy" filter="url(#energy-glow)" opacity="0.6">
+        <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+          values="0.6;1;0.6"/>
+      </path>
+    </g>
+    
+    <!-- Energy Bursts -->
+    <g class="surge" filter="url(#energy-glow)">
+      <!-- Burst Lines -->
+      <g opacity="0.8">
+        <path d="M0,-80 L0,-60 M80,0 L60,0 M0,80 L0,60 M-80,0 L-60,0" stroke-width="4">
+          <animate attributeName="opacity" dur="0.5s" repeatCount="indefinite"
+            values="0.8;0.4;0.8"/>
+        </path>
+        <path d="M56,-56 L42,-42 M56,56 L42,42 M-56,56 L-42,42 M-56,-56 L-42,-42" stroke-width="4">
+          <animate attributeName="opacity" dur="0.5s" repeatCount="indefinite"
+            values="0.8;0.4;0.8"
+            begin="0.25s"/>
+        </path>
+      </g>
+    </g>
+    
+    <!-- Energy Waves -->
+    <g class="energy" opacity="0.4">
+      <circle r="70" fill="none" stroke-width="2">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="70;90;70"/>
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.4;0;0.4"/>
+      </circle>
+      <circle r="50" fill="none" stroke-width="2">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="50;70;50"/>
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.4;0;0.4"
+          begin="0.5s"/>
+      </circle>
+    </g>
+    
+    <!-- Energy Particles -->
+    <g class="surge" opacity="0.6">
+      <circle cx="0" cy="-40" r="3">
+        <animate attributeName="cy" dur="1s" repeatCount="indefinite"
+          values="-40;-60;-40"/>
+      </circle>
+      <circle cx="40" cy="0" r="3">
+        <animate attributeName="cx" dur="1s" repeatCount="indefinite"
+          values="40;60;40"/>
+      </circle>
+      <circle cx="-40" cy="0" r="3">
+        <animate attributeName="cx" dur="1s" repeatCount="indefinite"
+          values="-40;-60;-40"/>
+      </circle>
+    </g>
+    
+    <!-- Energy Counter -->
+    <g transform="translate(-60,-60)">
+      <circle class="type-bar" r="20" opacity="0.8"/>
+      <text fill="white" x="0" y="5" text-anchor="middle" font-size="12">+3</text>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Utility - Energy</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Gain 3 energy</text>
+</svg>

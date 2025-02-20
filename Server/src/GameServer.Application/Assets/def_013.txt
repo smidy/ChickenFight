@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #4444ff; stroke-width: 2; }
+      .title-area { fill: #f0f0ff; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8f8ff; }
+      .type-bar { fill: #4444ff; }
+      .text-area { fill: #f0f0ff; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .steel { fill: #888888; }
+      .armor { fill: #4444ff; }
+      .shine { fill: #ffffff; }
+    </style>
+    
+    <!-- Metal Gradient -->
+    <linearGradient id="steel-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#aaaaaa"/>
+      <stop offset="50%" stop-color="#666666"/>
+      <stop offset="100%" stop-color="#888888"/>
+    </linearGradient>
+    
+    <!-- Armor Pattern -->
+    <pattern id="armor-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="20" height="20" fill="#4444ff" opacity="0.1"/>
+      <path d="M0,10 L20,10 M10,0 L10,20" stroke="#4444ff" stroke-width="1" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Steel Skin</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">3</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Steel Skin Art -->
+  <g transform="translate(150,190)">
+    <!-- Base Layer -->
+    <circle class="steel" r="80" fill="url(#steel-gradient)" opacity="0.3"/>
+    
+    <!-- Armor Plates -->
+    <g class="armor">
+      <!-- Center Plate -->
+      <path d="M-40,-60 L40,-60 L50,0 L-50,0 Z" fill="url(#armor-pattern)">
+        <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+          values="translate(0,0);translate(0,-5);translate(0,0)"/>
+      </path>
+      
+      <!-- Lower Plate -->
+      <path d="M-50,0 L50,0 L40,60 L-40,60 Z" fill="url(#armor-pattern)">
+        <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+          values="translate(0,0);translate(0,5);translate(0,0)"/>
+      </path>
+      
+      <!-- Side Plates -->
+      <path d="M-60,-40 L-40,-60 L-50,0 L-70,0 Z" fill="url(#armor-pattern)">
+        <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+          values="translate(0,0);translate(-5,0);translate(0,0)"/>
+      </path>
+      <path d="M60,-40 L40,-60 L50,0 L70,0 Z" fill="url(#armor-pattern)">
+        <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+          values="translate(0,0);translate(5,0);translate(0,0)"/>
+      </path>
+    </g>
+    
+    <!-- Plate Edges -->
+    <g class="steel" stroke-width="2" fill="none">
+      <path d="M-40,-60 L40,-60 L50,0 L-50,0 Z"/>
+      <path d="M-50,0 L50,0 L40,60 L-40,60 Z"/>
+      <path d="M-60,-40 L-40,-60 L-50,0 L-70,0 Z"/>
+      <path d="M60,-40 L40,-60 L50,0 L70,0 Z"/>
+    </g>
+    
+    <!-- Rivets -->
+    <g class="steel">
+      <circle cx="-45" cy="-50" r="4"/>
+      <circle cx="45" cy="-50" r="4"/>
+      <circle cx="-55" cy="0" r="4"/>
+      <circle cx="55" cy="0" r="4"/>
+      <circle cx="-45" cy="50" r="4"/>
+      <circle cx="45" cy="50" r="4"/>
+    </g>
+    
+    <!-- Shine Effects -->
+    <g class="shine" opacity="0.3">
+      <path d="M-30,-40 L30,-40">
+        <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+          values="0.3;0.1;0.3"/>
+      </path>
+      <path d="M-40,20 L40,20">
+        <animate attributeName="opacity" dur="3s" repeatCount="indefinite"
+          values="0.3;0.1;0.3"
+          begin="1.5s"/>
+      </path>
+    </g>
+    
+    <!-- Defense Indicators -->
+    <g transform="translate(-60,-60)">
+      <!-- Base Defense -->
+      <circle class="armor" r="20" opacity="0.8"/>
+      <text fill="white" x="0" y="5" text-anchor="middle" font-size="12">+2</text>
+      
+      <!-- Duration -->
+      <g transform="translate(40,0)">
+        <circle class="armor" r="15" opacity="0.8"/>
+        <text fill="white" x="0" y="5" text-anchor="middle" font-size="10">3t</text>
+      </g>
+    </g>
+    
+    <!-- Fortification Effect -->
+    <g class="armor" opacity="0.2">
+      <circle r="90">
+        <animate attributeName="r" dur="2s" repeatCount="indefinite"
+          values="90;100;90"/>
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite"
+          values="0.2;0.1;0.2"/>
+      </circle>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Defense - Fortify</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Increase defense by 2 for 3 turns</text>
+</svg>

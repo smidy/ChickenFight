@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #ff4444; stroke-width: 2; }
+      .title-area { fill: #fff0f0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #fff8f8; }
+      .type-bar { fill: #ff4444; }
+      .text-area { fill: #fff0f0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .lightning { fill: #ff4444; }
+      .glow { fill: #ffaa44; filter: blur(3px); }
+    </style>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Lightning Strike</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">3</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Lightning Art -->
+  <g transform="translate(150,190)">
+    <!-- Glow Effect -->
+    <path class="glow" d="M0,-80 L20,-40 L10,0 L30,10 L-10,80 L0,20 L-20,10 Z" opacity="0.5">
+      <animate attributeName="opacity" dur="1s" repeatCount="indefinite"
+        values="0.5;0.8;0.5"/>
+    </path>
+    
+    <!-- Main Lightning Bolt -->
+    <path class="lightning" d="M0,-80 L20,-40 L10,0 L30,10 L-10,80 L0,20 L-20,10 Z">
+      <animate attributeName="d" dur="2s" repeatCount="indefinite"
+        values="M0,-80 L20,-40 L10,0 L30,10 L-10,80 L0,20 L-20,10 Z;
+                M0,-80 L25,-35 L15,5 L35,15 L-5,80 L5,25 L-15,15 Z;
+                M0,-80 L20,-40 L10,0 L30,10 L-10,80 L0,20 L-20,10 Z"/>
+    </path>
+    
+    <!-- Secondary Lightning -->
+    <path class="lightning" d="M10,-40 L40,-20 L20,0 Z" opacity="0.6">
+      <animate attributeName="opacity" dur="0.5s" repeatCount="indefinite"
+        values="0.6;0.9;0.6"/>
+    </path>
+    <path class="lightning" d="M-10,20 L-40,40 L-20,60 Z" opacity="0.6">
+      <animate attributeName="opacity" dur="0.5s" repeatCount="indefinite"
+        values="0.6;0.9;0.6"/>
+    </path>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Attack - Direct Damage</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Deal 6 damage to target</text>
+</svg>

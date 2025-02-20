@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .card-frame { fill: white; stroke: #44ff44; stroke-width: 2; }
+      .title-area { fill: #f0fff0; }
+      .cost-circle { fill: #ffd700; }
+      .art-area { fill: #f8fff8; }
+      .type-bar { fill: #44ff44; }
+      .text-area { fill: #f0fff0; }
+      .title-text { font-family: Arial; font-size: 20px; font-weight: bold; }
+      .type-text { font-family: Arial; font-size: 16px; fill: white; }
+      .desc-text { font-family: Arial; font-size: 14px; }
+      .scroll { fill: #ddddcc; }
+      .card { fill: #ffffff; }
+      .ink { fill: #000000; }
+    </style>
+    
+    <!-- Paper Texture -->
+    <pattern id="paper-pattern" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+      <rect width="50" height="50" fill="#ddddcc"/>
+      <path d="M0,0 L50,50 M50,0 L0,50" stroke="#ccccbb" stroke-width="0.5" opacity="0.2"/>
+    </pattern>
+    
+    <!-- Ink Effect -->
+    <filter id="ink-blur">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1"/>
+    </filter>
+  </defs>
+  
+  <!-- Card Frame -->
+  <rect class="card-frame" x="10" y="10" width="280" height="400" rx="15"/>
+  
+  <!-- Title Area -->
+  <rect class="title-area" x="20" y="20" width="260" height="40" rx="10"/>
+  <text class="title-text" x="150" y="47" text-anchor="middle">Strategic Planning</text>
+  
+  <!-- Cost Circle -->
+  <circle class="cost-circle" cx="40" cy="40" r="20"/>
+  <text class="title-text" x="40" y="47" text-anchor="middle">2</text>
+  
+  <!-- Art Area -->
+  <rect class="art-area" x="30" y="70" width="240" height="240" rx="10"/>
+  
+  <!-- Strategic Planning Art -->
+  <g transform="translate(150,190)">
+    <!-- Background Scrolls -->
+    <g class="scroll">
+      <!-- Left Scroll -->
+      <path d="M-80,-40 C-70,-45 -60,-45 -50,-40 L-50,40 C-60,45 -70,45 -80,40 Z" 
+        fill="url(#paper-pattern)">
+        <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+          values="translate(0,0);translate(-5,0);translate(0,0)"/>
+      </path>
+      <!-- Right Scroll -->
+      <path d="M50,-40 C60,-45 70,-45 80,-40 L80,40 C70,45 60,45 50,40 Z"
+        fill="url(#paper-pattern)">
+        <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+          values="translate(0,0);translate(5,0);translate(0,0)"/>
+      </path>
+    </g>
+    
+    <!-- Cards -->
+    <g class="card">
+      <!-- Card Stack -->
+      <g transform="translate(-20,-10)">
+        <rect x="-15" y="-20" width="30" height="40" rx="2"/>
+        <rect x="-12" y="-17" width="24" height="34" rx="1" fill="#f8f8f8"/>
+      </g>
+      
+      <!-- Drawing Card -->
+      <g transform="translate(20,0)">
+        <rect x="-15" y="-20" width="30" height="40" rx="2">
+          <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+            values="translate(0,0) rotate(0);translate(-10,-10) rotate(-10);translate(0,0) rotate(0)"/>
+        </rect>
+        <rect x="-12" y="-17" width="24" height="34" rx="1" fill="#f8f8f8">
+          <animate attributeName="transform" dur="2s" repeatCount="indefinite"
+            values="translate(0,0) rotate(0);translate(-10,-10) rotate(-10);translate(0,0) rotate(0)"/>
+        </rect>
+      </g>
+    </g>
+    
+    <!-- Writing -->
+    <g class="ink" opacity="0.7" filter="url(#ink-blur)">
+      <!-- Text Lines -->
+      <g transform="translate(-65,0)">
+        <path d="M-10,-30 L10,-30 M-8,-20 L8,-20 M-12,-10 L12,-10" stroke-width="1"/>
+        <path d="M-10,10 L10,10 M-8,20 L8,20 M-12,30 L12,30" stroke-width="1"/>
+      </g>
+      <g transform="translate(65,0)">
+        <path d="M-10,-30 L10,-30 M-8,-20 L8,-20 M-12,-10 L12,-10" stroke-width="1"/>
+        <path d="M-10,10 L10,10 M-8,20 L8,20 M-12,30 L12,30" stroke-width="1"/>
+      </g>
+    </g>
+    
+    <!-- Draw Effect -->
+    <g class="card" opacity="0.4">
+      <path d="M-40,-40 Q0,-30 40,-40">
+        <animate attributeName="d" dur="2s" repeatCount="indefinite"
+          values="M-40,-40 Q0,-30 40,-40;M-40,-40 Q0,-50 40,-40;M-40,-40 Q0,-30 40,-40"/>
+      </path>
+      <path d="M-40,40 Q0,30 40,40">
+        <animate attributeName="d" dur="2s" repeatCount="indefinite"
+          values="M-40,40 Q0,30 40,40;M-40,40 Q0,50 40,40;M-40,40 Q0,30 40,40"/>
+      </path>
+    </g>
+    
+    <!-- Draw Counter -->
+    <g transform="translate(-60,-60)">
+      <circle class="type-bar" r="20" opacity="0.8"/>
+      <text fill="white" x="0" y="5" text-anchor="middle" font-size="12">+2</text>
+    </g>
+  </g>
+  
+  <!-- Type Bar -->
+  <rect class="type-bar" x="20" y="320" width="260" height="30" rx="5"/>
+  <text class="type-text" x="150" y="342" text-anchor="middle">Utility - Draw</text>
+  
+  <!-- Description Area -->
+  <rect class="text-area" x="20" y="360" width="260" height="40" rx="5"/>
+  <text class="desc-text" x="150" y="385" text-anchor="middle">Draw 2 cards</text>
+</svg>
