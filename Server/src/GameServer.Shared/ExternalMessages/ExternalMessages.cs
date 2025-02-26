@@ -1,96 +1,80 @@
 using GameServer.Shared.Models;
 
+
 namespace GameServer.Shared.ExternalMessages
 {
-    public delegate Task SendToClientDelegate<in T>(T message) where T : BaseExternalMessage;
+    public abstract record ToClientMessage();
 
-    public record BaseExternalMessage
-    {
+    public abstract record FromClientMessage();
 
-    }
-
-    /// <summary>
-    /// Incoming client message with a PlayerActor destination
-    /// </summary>
-    /// <param name="PlayerId"></param>
-    public abstract record InPlayerMessage(string PlayerId) : BaseExternalMessage;
-    /// <summary>
-    /// Incoming client message with a MapActor destination
-    /// </summary>
-    /// <param name="MapId"></param>
-    public abstract record InMapMessage(string MapId) : BaseExternalMessage;
-    /// <summary>
-    /// Incoming client message with a FightActor destination
-    /// </summary>
-    /// <param name="FightId"></param>
-    public abstract record InFightMessage(string FightId) : BaseExternalMessage;
 
     // Connection messages
-    public record ExtConnectionConfirmed(string PlayerId) : BaseExternalMessage;
+    public record OutConnectionConfirmed(string PlayerId) : ToClientMessage;
 
     // Map listing messages
-    public record ExtRequestMapList() : BaseExternalMessage;
-    public record RequestMapListResponse(List<MapInfo> Maps) : BaseExternalMessage;
+    public record InRequestMapList() : FromClientMessage;
+    public record RequestMapListResponse(List<MapInfo> Maps) : ToClientMessage;
     public record MapInfo(string Id, string Name, int Width, int Height, int PlayerCount);
 
     // Map join/leave messages
-    public record ExtJoinMap(string MapId) : BaseExternalMessage;
+    public record InJoinMap(string MapId) : FromClientMessage;
 
-    public record ExtJoinMapInitiated(string MapId) : BaseExternalMessage;
+    public record OutJoinMapInitiated(string MapId) : ToClientMessage;
 
-    public record ExtJoinMapCompleted(string MapId, string PlayerId, ExPosition Position, TilemapData TilemapData, IReadOnlyDictionary<string, ExPosition> PlayerPositions) : BaseExternalMessage;
+    public record OutJoinMapCompleted(string MapId, string PlayerId, ExPosition Position, TilemapData TilemapData, IReadOnlyDictionary<string, ExPosition> PlayerPositions) : ToClientMessage;
 
-    public record ExtJoinMapFailed(string MapId, string Error) : BaseExternalMessage;
+    public record OutJoinMapFailed(string MapId, string Error) : ToClientMessage;
 
-    public record ExtPlayerJoinedMap(string PlayerId, ExPosition? Position) : BaseExternalMessage;
+    public record OutPlayerJoinedMap(string PlayerId, ExPosition? Position) : ToClientMessage;
 
-    public record ExtPlayerPositionChange(string PlayerId, ExPosition? Position) : BaseExternalMessage;
+    public record OutPlayerPositionChange(string PlayerId, ExPosition? Position) : ToClientMessage;
 
-    public record ExtPlayerLeftMap(string PlayerId) : BaseExternalMessage;
+    public record OutPlayerLeftMap(string PlayerId) : ToClientMessage;
 
-    public record ExtLeaveMap(string MapId) : BaseExternalMessage;
+    public record InLeaveMap(string MapId) : FromClientMessage;
 
-    public record ExtLeaveMapInitiated(string MapId) : BaseExternalMessage;
+    public record OutLeaveMapInitiated(string MapId) : ToClientMessage;
 
-    public record ExtLeaveMapCompleted(string MapId) : BaseExternalMessage;
+    public record OutLeaveMapCompleted(string MapId) : ToClientMessage;
 
-    public record ExtLeaveMapFailed(string MapId, string Error) : BaseExternalMessage;
+    public record OutLeaveMapFailed(string MapId, string Error) : ToClientMessage;
 
     // Movement messages
-    public record ExtMove(ExPosition NewPosition) : BaseExternalMessage;
+    public record InPlayerMove(ExPosition NewPosition) : FromClientMessage;
 
-    public record ExtMoveInitiated(ExPosition NewPosition) : BaseExternalMessage;
+    public record OutMoveInitiated(ExPosition NewPosition) : ToClientMessage;
 
-    public record ExtMoveCompleted(ExPosition NewPosition) : BaseExternalMessage;
+    public record OutMoveCompleted(ExPosition NewPosition) : ToClientMessage;
 
-    public record ExtMoveFailed(ExPosition AttemptedPosition, string Error) : BaseExternalMessage;
+    public record OutMoveFailed(ExPosition AttemptedPosition, string Error) : ToClientMessage;
 
     // State update messages
     public record PlayerState(string Id, string Name, ExPosition Position);
-    public record ExtPlayerInfo(PlayerState? State) : BaseExternalMessage;
+    public record OutPlayerInfo(PlayerState? State) : ToClientMessage;
 
     // Map data
     public record TilemapData(int Width, int Height, int[] TileData);
 
-    // External messages for client communication
     /// <summary>Sent when a player initiates a fight challenge</summary>
-    public record ExtFightChallengeSend(string TargetId) : BaseExternalMessage;
+    public record InFightChallengeSend(string TargetId) : FromClientMessage;
     
     /// <summary>Received by a player when they are challenged to a fight</summary>
-    public record ExtFightChallengeReceived(string ChallengerId) : BaseExternalMessage;
+    public record OutFightChallengeReceived(string ChallengerId) : ToClientMessage;
 
     /// <summary>Sent when a player accepts a fight challenge</summary>
-    public record ExtFightChallengeAccepted(string TargetId) : BaseExternalMessage;
+    public record InFightChallengeAccepted(string TargetId) : FromClientMessage;
+
+    public record OutFightChallengeAccepted(string TargetId) : ToClientMessage;
 
     /// <summary>Notifies players that a fight has begun</summary>
-    public record ExtFightStarted(string OpponentId) : BaseExternalMessage;
+    public record OutFightStarted(string OpponentId) : ToClientMessage;
 
     /// <summary>Notifies players that a fight has ended with a winner</summary>
-    public record ExtFightEnded(string WinnerId, string Reason) : BaseExternalMessage;
+    public record OutFightEnded(string WinnerId, string Reason) : ToClientMessage;
 
     // Card battle system messages
     /// <summary>Contains essential information about a card for client display</summary>
-    public record CardInfo(string Id, string Name, string Description, int Cost) : BaseExternalMessage;
+    public record CardInfo(string Id, string Name, string Description, int Cost) : ToClientMessage;
     
     /// <summary>
     /// Represents a player's current fight status including HP, AP, cards in hand,
@@ -101,60 +85,60 @@ namespace GameServer.Shared.ExternalMessages
         int ActionPoints,
         List<CardInfo> Hand,
         int DeckCount
-    ) : BaseExternalMessage;
+    ) : ToClientMessage;
 
     /// <summary>
     /// Provides a complete update of the fight state for both players,
     /// sent after any state-changing action
     /// </summary>
-    public record ExtFightStateUpdate(
+    public record OutFightStateUpdate(
         string CurrentTurnPlayerId,
         ExPlayerFightState PlayerState,
         ExPlayerFightState OpponentState
-    ) : BaseExternalMessage;
+    ) : ToClientMessage;
 
     /// <summary>
     /// Notifies that a player's turn has begun and shows their newly drawn cards
     /// </summary>
-    public record ExtTurnStarted(
+    public record OutTurnStarted(
         string ActivePlayerId,
         List<CardInfo> DrawnCards
-    ) : BaseExternalMessage;
+    ) : ToClientMessage;
 
     /// <summary>Notifies that a player's turn has ended</summary>
-    public record ExtTurnEnded(string PlayerId) : BaseExternalMessage;
+    public record OutTurnEnded(string PlayerId) : ToClientMessage;
 
     /// <summary>Request from client to play a specific card</summary>
-    public record ExtPlayCard(string CardId) : BaseExternalMessage;
+    public record InPlayCard(string CardId) : FromClientMessage;
     
     /// <summary>Confirms that a card play attempt has been received</summary>
-    public record ExtCardPlayInitiated(string CardId) : BaseExternalMessage;
+    public record OutCardPlayInitiated(string CardId) : ToClientMessage;
     
     /// <summary>
     /// Notifies that a card was successfully played and describes its effect
     /// </summary>
-    public record ExtCardPlayCompleted(
+    public record OutCardPlayCompleted(
         string PlayerId,
         CardInfo PlayedCard,
         string Effect
-    ) : BaseExternalMessage;
+    ) : ToClientMessage;
     
     /// <summary>
     /// Notifies that a card play attempt failed and provides the reason
     /// </summary>
-    public record ExtCardPlayFailed(
+    public record OutCardPlayFailed(
         string CardId,
         string Error
-    ) : BaseExternalMessage;
+    ) : ToClientMessage;
 
     /// <summary>
     /// Notifies that a card effect was applied to a player
     /// (e.g. damage, healing, status effects)
     /// </summary>
-    public record ExtEffectApplied(
+    public record OutEffectApplied(
         string TargetPlayerId,
         string EffectType,
         int Value,
         string Source
-    ) : BaseExternalMessage;
+    ) : ToClientMessage;
 }

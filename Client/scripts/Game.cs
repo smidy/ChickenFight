@@ -164,7 +164,7 @@ public partial class Game : Node2D
             // Remove the half-tile offset before calculating grid position
             var currentGridPos = ((_player.Position - new Vector2(16, 16)) / 32).Round();
             var newPos = currentGridPos + movement;
-            _network.SendMessage(new ExtMove(new ExPosition((int)newPos.X, (int)newPos.Y)));
+            _network.SendMessage(new InPlayerMove(new ExPosition((int)newPos.X, (int)newPos.Y)));
         }
     }
 
@@ -172,7 +172,7 @@ public partial class Game : Node2D
     {
         if (id == 0 && _rightClickedPlayerId != null) // Challenge
         {
-            _network.SendMessage(new ExtFightChallengeSend(_rightClickedPlayerId));
+            _network.SendMessage(new InFightChallengeSend(_rightClickedPlayerId));
             UpdateStatusLabel($"Challenging player {_rightClickedPlayerId}...");
         }
     }
@@ -299,7 +299,7 @@ public partial class Game : Node2D
     {
         UpdateStatusLabel($"Received fight challenge from {challengerId}");
         // Auto-accept for now
-        _network.SendMessage(new ExtFightChallengeAccepted(challengerId));
+        _network.SendMessage(new InFightChallengeAccepted(challengerId));
     }
 
     private void OnFightStarted(string opponentId)

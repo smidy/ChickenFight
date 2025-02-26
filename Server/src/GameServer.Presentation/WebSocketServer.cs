@@ -1,8 +1,4 @@
-using System;
 using System.Text;
-using System.Linq;
-using NetCoreServer;
-using TcpServer = NetCoreServer.TcpServer;
 using WsServer = NetCoreServer.WsServer;
 using WsSession = NetCoreServer.WsSession;
 using TcpSession = NetCoreServer.TcpSession;
@@ -30,7 +26,7 @@ namespace GameServer.Presentation
         protected override TcpSession CreateSession() => new GameSession(this);
     }
 
-    public class GameSession : WsSession, IActor
+    public class GameSession : WsSession
     {
         private readonly GameWebSocketServer server;
         private readonly ActorSystem actorSystem;
@@ -52,12 +48,12 @@ namespace GameServer.Presentation
             // Create player actor immediately on connection
             var createResponse = await actorSystem.Root.RequestAsync<PlayerCreated>(
                 server.gameActor,
-                new CreatePlayer(sessionId, $"Player_{sessionId}", (BaseExternalMessage msg) => SendResponse((dynamic)msg))
+                new CreatePlayer(sessionId, $"Player_{sessionId}", (ToClientMessage msg) => SendResponse((dynamic)msg))
             );
             playerActor = createResponse.PlayerActor;
             
             // Send connection confirmation to client
-            await SendResponse(new ExtConnectionConfirmed(createResponse.Player.Id));
+            await SendResponse(new OutConnectionConfirmed(createResponse.Player.Id));
         }
 
         public override async void OnWsDisconnected()
@@ -80,29 +76,29 @@ namespace GameServer.Presentation
             try
             {
                 var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
-                var baseMessage = JsonConfig.Deserialize<BaseExternalMessage>(message);
+                var baseMessage = JsonConfig.Deserialize<FromClientMessage>(message);
 
                 switch (baseMessage)
                 {
-                    case ExtRequestMapList:
+                    case InRequestMapList:
                         HandleRequestMapList();
                         break;
-                    case ExtJoinMap joinMap:
+                    case InJoinMap joinMap:
                         HandleJoinMap(joinMap);
                         break;
-                    case ExtLeaveMap leaveMap:
+                    case InLeaveMap leaveMap:
                         HandleLeaveMap(leaveMap);
                         break;
-                    case ExtMove move:
+                    case InPlayerMove move:
                         HandleMove(move);
                         break;
-                    case ExtFightChallengeSend challenge:
+                    case InFightChallengeSend challenge:
                         HandleFightChallenge(challenge);
                         break;
-                    case ExtFightChallengeAccepted accept:
+                    case InFightChallengeAccepted accept:
                         HandleFightChallengeAccepted(accept);
                         break;
-                    case ExtPlayCard playCard:
+                    case InPlayCard playCard:
                         HandlePlayCard(playCard);
                         break;
                 }
@@ -133,29 +129,29 @@ namespace GameServer.Presentation
             await SendResponse(new RequestMapListResponse(mapInfos.ToList()));
         }
 
-        private async void HandleJoinMap(ExtJoinMap joinMap)
+        private async void HandleJoinMap(InJoinMap joinMap)
         {
             if (playerActor == null)
             {
-                await SendResponse(new GameServer.Shared.ExternalMessages.ExtJoinMapFailed(joinMap.MapId, "Player not connected"));
+                await SendResponse(new GameServer.Shared.ExternalMessages.OutJoinMapFailed(joinMap.MapId, "Player not connected"));
                 return;
             }
 
             actorSystem.Root.Send(playerActor, new JoinMapRequest(joinMap.MapId));
         }
 
-        private async void HandleLeaveMap(ExtLeaveMap leaveMap)
+        private async void HandleLeaveMap(InLeaveMap leaveMap)
         {
             if (playerActor == null)
             {
-                await SendResponse(new GameServer.Shared.ExternalMessages.ExtLeaveMapFailed(leaveMap.MapId, "Not connected to any map"));
+                await SendResponse(new GameServer.Shared.ExternalMessages.OutLeaveMapFailed(leaveMap.MapId, "Not connected to any map"));
                 return;
             }
 
             actorSystem.Root.Send(playerActor, new LeaveMapRequest(leaveMap.MapId));
         }
 
-        private async void HandleFightChallengeAccepted(ExtFightChallengeAccepted accept)
+        private async void HandleFightChallengeAccepted(InFightChallengeAccepted accept)
         {
             if (playerActor == null)
             {
@@ -166,7 +162,7 @@ namespace GameServer.Presentation
             actorSystem.Root.Send(playerActor, accept);
         }
 
-        private async void HandleFightChallenge(ExtFightChallengeSend challenge)
+        private async void HandleFightChallenge(InFightChallengeSend challenge)
         {
             if (playerActor == null)
             {
@@ -177,79 +173,21 @@ namespace GameServer.Presentation
             actorSystem.Root.Send(playerActor, challenge);
         }
 
-        private async void HandleMove(ExtMove move)
+        private async void HandleMove(InPlayerMove move)
         {
             if (playerActor == null)
             {
-                await SendResponse(new ExtPlayerInfo(null));
+                await SendResponse(new OutPlayerInfo(null));
                 return;
             }
 
             actorSystem.Root.Send(playerActor, new MoveRequest(move.NewPosition));
         }
 
-        private async void HandlePlayCard(ExtPlayCard extPlayCard)
+        private async void HandlePlayCard(InPlayCard extPlayCard)
         {
 
             actorSystem.Root.Send(playerActor, extPlayCard);
-        }
-
-        public Task ReceiveAsync(IContext context)
-        {
-            switch (context.Message)
-            {
-                case Started _:
-                    self = context.Self;
-                    break;
-
-                // Map join messages
-                case Application.Messages.Internal.JoinMapInitiated msg:
-                    SendResponse(new GameServer.Shared.ExternalMessages.ExtJoinMapInitiated(msg.MapId));
-                    break;
-                case Application.Messages.Internal.JoinMapFailed msg:
-                    SendResponse(new GameServer.Shared.ExternalMessages.ExtJoinMapFailed(msg.MapId, msg.Error));
-                    break;
-
-                // Map leave messages
-                case Application.Messages.Internal.LeaveMapInitiated msg:
-                    SendResponse(new GameServer.Shared.ExternalMessages.ExtLeaveMapInitiated(msg.MapId));
-                    break;
-                case Application.Messages.Internal.LeaveMapCompleted msg:
-                    SendResponse(new GameServer.Shared.ExternalMessages.ExtLeaveMapCompleted(msg.MapId));
-                    break;
-                case Application.Messages.Internal.LeaveMapFailed msg:
-                    SendResponse(new GameServer.Shared.ExternalMessages.ExtLeaveMapFailed(msg.MapId, msg.Error));
-                    break;
-
-                // Movement messages
-                case Application.Messages.Internal.MoveInitiated msg:
-                    SendResponse(new GameServer.Shared.ExternalMessages.ExtMoveInitiated(msg.NewPosition));
-                    break;
-                case Application.Messages.Internal.MoveCompleted msg:
-                    SendResponse(new GameServer.Shared.ExternalMessages.ExtMoveCompleted(msg.NewPosition));
-                    break;
-                case Application.Messages.Internal.MoveFailed msg:
-                    SendResponse(new GameServer.Shared.ExternalMessages.ExtMoveFailed(msg.AttemptedPosition, msg.Error));
-                    break;
-
-                // Player state messages
-                case Application.Messages.Internal.PlayerStateUpdate msg:
-                    SendResponse(new ExtPlayerInfo(new PlayerState(msg.Player.Id, msg.Player.Name, msg.Player.Position)));
-                    break;
-
-                // Fight messages
-                case ExtFightChallengeReceived msg:
-                    SendResponse(msg);
-                    break;
-                case ExtFightStarted msg:
-                    SendResponse(msg);
-                    break;
-                case ExtFightEnded msg:
-                    SendResponse(msg);
-                    break;
-            }
-
-            return Task.CompletedTask;
         }
     }
 }

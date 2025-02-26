@@ -75,7 +75,7 @@ public partial class NetworkManager : Node
         GD.Print("Connected to WebSocket server");
     }
 
-    public void SendMessage<T>(T message) where T : BaseExternalMessage
+    public void SendMessage<T>(T message) where T : FromClientMessage
     {
         if (!IsConnected) return;
 
@@ -89,7 +89,7 @@ public partial class NetworkManager : Node
     {
         try
         {
-            var message = JsonConfig.Deserialize<BaseExternalMessage>(json);
+            var message = JsonConfig.Deserialize<ToClientMessage>(json);
             if (message == null) return;
 
             // Re-deserialize with concrete type based on Type property
@@ -98,7 +98,7 @@ public partial class NetworkManager : Node
 
             switch (typedMessage)
             {
-                case ExtConnectionConfirmed connectionConfirmed:
+                case OutConnectionConfirmed connectionConfirmed:
                     EmitSignal(SignalName.ConnectionConfirmed, connectionConfirmed.PlayerId);
                     break;
 
@@ -120,10 +120,10 @@ public partial class NetworkManager : Node
                     break;
 
                 // Map join messages
-                case ExtJoinMapInitiated msg:
+                case OutJoinMapInitiated msg:
                     EmitSignal(SignalName.JoinMapInitiated, msg.MapId);
                     break;
-                case ExtJoinMapCompleted msg:
+                case OutJoinMapCompleted msg:
                     var tilemapDict = new Dictionary
                     {
                         ["Width"] = msg.TilemapData.Width,
@@ -136,23 +136,23 @@ public partial class NetworkManager : Node
 
                     EmitSignal(SignalName.JoinMapCompleted, msg.PlayerId, new Vector2I(msg.Position.X, msg.Position.Y), tilemapDict, playerPositions);
                     break;
-                case ExtJoinMapFailed msg:
+                case OutJoinMapFailed msg:
                     EmitSignal(SignalName.JoinMapFailed, msg.Error);
                     break;
 
                 // Movement messages
-                case ExtMoveInitiated msg:
+                case OutMoveInitiated msg:
                     EmitSignal(SignalName.MoveInitiated, new Vector2I(msg.NewPosition.X, msg.NewPosition.Y));
                     break;
-                case ExtMoveCompleted msg:
+                case OutMoveCompleted msg:
                     EmitSignal(SignalName.MoveCompleted, new Vector2I(msg.NewPosition.X, msg.NewPosition.Y));
                     break;
-                case ExtMoveFailed msg:
+                case OutMoveFailed msg:
                     EmitSignal(SignalName.MoveFailed, msg.Error);
                     break;
 
                 // Player state messages
-                case ExtPlayerInfo playerInfo:
+                case OutPlayerInfo playerInfo:
                     if (playerInfo.State != null)
                     {
                         EmitSignal(SignalName.PlayerStateUpdated, 
@@ -160,28 +160,28 @@ public partial class NetworkManager : Node
                     }
                     break;
 
-                case ExtPlayerJoinedMap msg:
+                case OutPlayerJoinedMap msg:
                     EmitSignal(SignalName.PlayerJoinedMap, msg.PlayerId, 
                         new Vector2I(msg.Position.X, msg.Position.Y));
                     break;
 
-                case ExtPlayerPositionChange msg:
+                case OutPlayerPositionChange msg:
                     EmitSignal(SignalName.PlayerPositionChanged, msg.PlayerId,
                         new Vector2I(msg.Position.X, msg.Position.Y));
                     break;
 
-                case ExtPlayerLeftMap msg:
+                case OutPlayerLeftMap msg:
                     EmitSignal(SignalName.PlayerLeftMap, msg.PlayerId);
                     break;
 
                 // Fight messages
-                case ExtFightChallengeReceived msg:
+                case OutFightChallengeReceived msg:
                     EmitSignal(SignalName.FightChallengeReceived, msg.ChallengerId);
                     break;
-                case ExtFightStarted msg:
+                case OutFightStarted msg:
                     EmitSignal(SignalName.FightStarted, msg.OpponentId);
                     break;
-                case ExtFightEnded msg:
+                case OutFightEnded msg:
                     EmitSignal(SignalName.FightEnded, msg.WinnerId, msg.Reason);
                     break;
 

@@ -6,15 +6,22 @@ using GameServer.Shared.ExternalMessages;
 
 namespace GameServer.Application.Actors
 {
+    public delegate Task SendToClientDelegate<in T>(T message) where T : ToClientMessage;
+
+    /// <summary>
+    /// This actor represents a player in the game. 
+    /// It recieves messages from the client and other Actors in the Actor system.
+    /// It sends 'ToClientMessage' messages to the players client using the delegate method _sendToClient
+    /// </summary>
     public class PlayerActor : IActor
     {
         private readonly Player player;
-        private readonly SendToClientDelegate<BaseExternalMessage> _sendToClient;
+        private readonly SendToClientDelegate<ToClientMessage> _sendToClient;
         private PID? currentMap;
         private string? pendingMapJoin;
         private ExPosition? pendingMove;
 
-        public PlayerActor(string playerName, SendToClientDelegate<BaseExternalMessage> sendToClient)
+        public PlayerActor(string playerName, SendToClientDelegate<ToClientMessage> sendToClient)
         {
             player = new Player(playerName);
             _sendToClient = sendToClient;
@@ -45,13 +52,13 @@ namespace GameServer.Application.Actors
                 MapStateUpdate msg => OnMapStateUpdate(context, msg),
 
                 // Fight messages
-                ExtFightChallengeSend msg => OnFightChallengeSend(context, msg),
+                InFightChallengeSend msg => OnFightChallengeSend(context, msg),
                 FightChallengeRequest msg => OnFightChallengeRequestReceived(context, msg),
-                ExtFightStarted msg => OnFightStarted(context, msg),
-                ExtFightEnded msg => OnFightEnded(context, msg),
+                OutFightStarted msg => OnFightStarted(context, msg),
+                OutFightEnded msg => OnFightEnded(context, msg),
 
                 //Send external messages to client
-                BaseExternalMessage msg => _sendToClient(msg),
+                ToClientMessage msg => _sendToClient(msg),
 
                 _ => Task.CompletedTask
             };
@@ -80,7 +87,7 @@ namespace GameServer.Application.Actors
             }
 
             context.Send(foundMap, new AddPlayer(context.Self, player.Name, context.Self));
-            await _sendToClient(new ExtJoinMapInitiated(msg.MapId));
+            await _sendToClient(new OutJoinMapInitiated(msg.MapId));
         }
 
         private PID? GetMapPid(IContext context, string actorName)
@@ -95,7 +102,7 @@ namespace GameServer.Application.Actors
                 currentMap = msg.MapPID;
                 player.JoinMap(pendingMapJoin, msg.StartPosition);
                 var exPlayerPositions = msg.PlayerPositions.ToDictionary(y => y.Key.Id, y => new ExPosition(y.Value.X, y.Value.Y));
-                await _sendToClient(new ExtJoinMapCompleted(msg.MapId, player.Id, msg.StartPosition, msg.TilemapData, exPlayerPositions));
+                await _sendToClient(new OutJoinMapCompleted(msg.MapId, player.Id, msg.StartPosition, msg.TilemapData, exPlayerPositions));
                 pendingMapJoin = null;
             }
         }
@@ -104,7 +111,7 @@ namespace GameServer.Application.Actors
         {
             if (pendingMapJoin != null && msg.PlayerActor.Equals(context.Self))
             {
-                await _sendToClient(new ExtJoinMapFailed(msg.MapId, msg.Error));
+                await _sendToClient(new OutJoinMapFailed(msg.MapId, msg.Error));
                 pendingMapJoin = null;
             }
         }
@@ -114,25 +121,25 @@ namespace GameServer.Application.Actors
             // If mapId is null, force leave from current map (used for disconnection)
             if (currentMap == null)
             {
-                await _sendToClient(new ExtLeaveMapFailed(msg.MapId, "Player has not joined a map"));
+                await _sendToClient(new OutLeaveMapFailed(msg.MapId, "Player has not joined a map"));
                 return;
             }
             if (msg.MapId != null && msg.MapId != player.CurrentMapId)
             {
-                await _sendToClient(new ExtLeaveMapFailed(msg.MapId, "Invalid map id specified"));
+                await _sendToClient(new OutLeaveMapFailed(msg.MapId, "Invalid map id specified"));
                 return;
             }
             if (player.IsInFight && msg.MapId != null) // Allow force disconnect even in fight
             {
-                await _sendToClient(new ExtLeaveMapFailed(msg.MapId, "Cannot leave map while in a fight"));
+                await _sendToClient(new OutLeaveMapFailed(msg.MapId, "Cannot leave map while in a fight"));
                 return;
             }
 
             context.Send(currentMap, new RemovePlayer(context.Self, context.Self));
-            await _sendToClient(new ExtLeaveMapInitiated(msg.MapId));
+            await _sendToClient(new OutLeaveMapInitiated(msg.MapId));
         }
 
-        private async Task OnFightChallengeSend(IContext context, ExtFightChallengeSend msg)
+        private async Task OnFightChallengeSend(IContext context, InFightChallengeSend msg)
         {
             if (currentMap == null)
                 return;
@@ -152,15 +159,15 @@ namespace GameServer.Application.Actors
 
             // Auto-accept for now - in a real implementation, you'd wait for player input
             context.Send(currentMap, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, context.Self, player, true));
-            await _sendToClient(new ExtFightChallengeAccepted(msg.ChallengerActor.Id));
+            await _sendToClient(new OutFightChallengeAccepted(msg.ChallengerActor.Id));
         }
 
-        private async Task OnFightStarted(IContext context, ExtFightStarted msg)
+        private async Task OnFightStarted(IContext context, OutFightStarted msg)
         {
             await _sendToClient(msg);
         }
 
-        private async Task OnFightEnded(IContext context, ExtFightEnded msg)
+        private async Task OnFightEnded(IContext context, OutFightEnded msg)
         {
             await _sendToClient(msg);
         }
@@ -171,7 +178,7 @@ namespace GameServer.Application.Actors
             {
                 player.LeaveMap();
                 currentMap = null;
-                await _sendToClient(new ExtLeaveMapCompleted(msg.MapId));
+                await _sendToClient(new OutLeaveMapCompleted(msg.MapId));
             }
         }
 
@@ -179,7 +186,7 @@ namespace GameServer.Application.Actors
         {
             if (msg.PlayerActor.Equals(context.Self))
             {
-                await _sendToClient(new ExtLeaveMapFailed(msg.MapId, msg.Error));
+                await _sendToClient(new OutLeaveMapFailed(msg.MapId, msg.Error));
             }
         }
 
@@ -193,7 +200,7 @@ namespace GameServer.Application.Actors
 
             pendingMove = msg.NewPosition;
             context.Send(currentMap, new ValidateMove(context.Self, msg.NewPosition, context.Self));
-            await _sendToClient(new ExtMoveInitiated(msg.NewPosition));
+            await _sendToClient(new OutMoveInitiated(msg.NewPosition));
         }
 
         private async Task OnMoveValidated(IContext context, MoveValidated msg)
@@ -203,8 +210,8 @@ namespace GameServer.Application.Actors
                 pendingMove?.Y == msg.NewPosition.Y)
             {
                 player.UpdatePosition(msg.NewPosition);
-                await _sendToClient(new ExtPlayerInfo(new PlayerState(player.Id, player.Name, player.Position)));
-                await _sendToClient(new ExtMoveCompleted(msg.NewPosition));
+                await _sendToClient(new OutPlayerInfo(new PlayerState(player.Id, player.Name, player.Position)));
+                await _sendToClient(new OutMoveCompleted(msg.NewPosition));
                 pendingMove = null;
             }
         }
@@ -215,7 +222,7 @@ namespace GameServer.Application.Actors
                 pendingMove?.X == msg.AttemptedPosition.X && 
                 pendingMove?.Y == msg.AttemptedPosition.Y)
             {
-                await _sendToClient(new ExtMoveFailed(msg.AttemptedPosition, msg.Error));
+                await _sendToClient(new OutMoveFailed(msg.AttemptedPosition, msg.Error));
                 pendingMove = null;
             }
         }

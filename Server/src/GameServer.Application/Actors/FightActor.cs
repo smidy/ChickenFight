@@ -80,7 +80,7 @@ namespace GameServer.Application.Actors
             var cardInfos = drawnCards.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList();
 
             // Send turn started notification
-            context.Send(msg.PlayerActor, new ExtTurnStarted(playerId, cardInfos));
+            context.Send(msg.PlayerActor, new OutTurnStarted(playerId, cardInfos));
 
             // Send updated fight state
             SendFightStateUpdate(context);
@@ -95,7 +95,7 @@ namespace GameServer.Application.Actors
             var playerId = players[msg.PlayerActor].Id;
 
             // Notify clients
-            context.Send(mapActor, new ExtTurnEnded(playerId));
+            context.Send(mapActor, new OutTurnEnded(playerId));
 
             // Start next player's turn
             PID nextPlayerActor = msg.PlayerActor.Equals(player1Actor) ? player2Actor : player1Actor;
@@ -119,7 +119,7 @@ namespace GameServer.Application.Actors
                 // Validate and play the card
                 if (!state.CanPlayCard(playerId, card))
                 {
-                    context.Send(mapActor, new ExtCardPlayFailed(msg.CardId, "Not enough action points"));
+                    context.Send(mapActor, new OutCardPlayFailed(msg.CardId, "Not enough action points"));
                     return Task.CompletedTask;
                 }
 
@@ -130,7 +130,7 @@ namespace GameServer.Application.Actors
 
                 // Send notifications
                 var cardInfo = new CardInfo(card.Id, card.Name, card.Description, card.Cost);
-                context.Send(mapActor, new ExtCardPlayCompleted(playerId, cardInfo, effect));
+                context.Send(mapActor, new OutCardPlayCompleted(playerId, cardInfo, effect));
 
                 // Check for game over
                 if (state.IsGameOver)
@@ -146,7 +146,7 @@ namespace GameServer.Application.Actors
             }
             catch (Exception ex)
             {
-                context.Send(mapActor, new ExtCardPlayFailed(msg.CardId, ex.Message));
+                context.Send(mapActor, new OutCardPlayFailed(msg.CardId, ex.Message));
             }
 
             return Task.CompletedTask;
@@ -164,14 +164,14 @@ namespace GameServer.Application.Actors
                     int damage = GetDamageForCard(card);
                     state.ApplyDamage(targetId, damage);
                     effect = $"Dealt {damage} damage";
-                    context.Send(mapActor, new ExtEffectApplied(targetId, "Damage", damage, card.Name));
+                    context.Send(mapActor, new OutEffectApplied(targetId, "Damage", damage, card.Name));
                     break;
 
                 case CardType.Defense:
                     int healing = GetHealingForCard(card);
                     state.ApplyHealing(players[playerActor].Id, healing);
                     effect = $"Healed for {healing}";
-                    context.Send(mapActor, new ExtEffectApplied(players[playerActor].Id, "Heal", healing, card.Name));
+                    context.Send(mapActor, new OutEffectApplied(players[playerActor].Id, "Heal", healing, card.Name));
                     break;
 
                     // Add other card type effects as needed
@@ -211,7 +211,7 @@ namespace GameServer.Application.Actors
                 players[player2Actor].Deck.RemainingCards
             );
 
-            context.Send(mapActor, new ExtFightStateUpdate(
+            context.Send(mapActor, new OutFightStateUpdate(
                 state.CurrentTurnPlayerId,
                 p1State,
                 p2State

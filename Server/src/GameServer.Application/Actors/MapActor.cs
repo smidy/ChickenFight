@@ -47,7 +47,7 @@ namespace GameServer.Application.Actors
             if (map.TryAddPlayer(playerId, out var startPosition))
             {
                 players.Add(msg.PlayerActor, playerId);
-                BroadcastToAllPlayers(context, new ExtPlayerJoinedMap(playerId, startPosition));
+                BroadcastToAllPlayers(context, new OutPlayerJoinedMap(playerId, startPosition));
                 var tilemapData = new GameServer.Shared.ExternalMessages.TilemapData(map.Width, map.Height, map.TileData);
                 
                 // Convert player positions to use PIDs
@@ -79,7 +79,7 @@ namespace GameServer.Application.Actors
                     context.Send(fightActor, new PlayerDisconnected(msg.PlayerActor));
                 }
 
-                BroadcastToAllPlayers(context, new ExtPlayerLeftMap(playerId));
+                BroadcastToAllPlayers(context, new OutPlayerLeftMap(playerId));
                 context.Send(msg.Requester, new PlayerRemovedFromMap(this.map.Id, msg.PlayerActor));
             }
             else
@@ -106,7 +106,7 @@ namespace GameServer.Application.Actors
 
             if (map.TryMovePlayer(playerId, msg.NewPosition))
             {
-                BroadcastToAllPlayers(context, new ExtPlayerPositionChange(playerId, msg.NewPosition));
+                BroadcastToAllPlayers(context, new OutPlayerPositionChange(playerId, msg.NewPosition));
                 context.Send(msg.Requester, new MoveValidated(msg.PlayerActor, msg.NewPosition));
             }
             else
@@ -189,9 +189,9 @@ namespace GameServer.Application.Actors
             var player2Actor = players[msg.Player2Actor];
 
             if (player1Actor != null)
-                context.Send(msg.Player1Actor, new ExtFightStarted(msg.Player2.Id));
+                context.Send(msg.Player1Actor, new OutFightStarted(msg.Player2.Id));
             if (player2Actor != null)
-                context.Send(msg.Player2Actor, new ExtFightStarted(msg.Player1.Id));
+                context.Send(msg.Player2Actor, new OutFightStarted(msg.Player1.Id));
 
             return Task.CompletedTask;
         }
@@ -209,7 +209,7 @@ namespace GameServer.Application.Actors
                     map.SetPlayerFightId(loserPlayerId, null);
 
                 // Notify players of fight completion
-                BroadcastToAllPlayers(context, new ExtFightEnded(winnerPlayerId ?? "unknown", msg.Reason));
+                BroadcastToAllPlayers(context, new OutFightEnded(winnerPlayerId ?? "unknown", msg.Reason));
                 
                 // Stop the fight actor
                 context.Stop(fightActor);

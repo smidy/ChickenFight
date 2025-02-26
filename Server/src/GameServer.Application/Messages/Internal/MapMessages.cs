@@ -27,5 +27,5 @@ namespace GameServer.Application.Messages.Internal
     // Map state messages
     public record MapStateUpdate(string MapId, string MapName, int Width, int Height);
 
-    public record BroadcastExternalMessage(BaseExternalMessage ExternalMessage);
+    public record BroadcastExternalMessage(ToClientMessage ExternalMessage);
 }

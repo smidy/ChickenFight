@@ -34,7 +34,7 @@ public partial class MapSelect : Node2D
     {
         _statusLabel.Text = "Fetching maps...";
         _mapList.Clear();
-        _network.SendMessage(new ExtRequestMapList());
+        _network.SendMessage(new InRequestMapList());
     }
 
     private void OnMapListReceived(Godot.Collections.Array maps)
@@ -57,7 +57,7 @@ public partial class MapSelect : Node2D
     {
         var mapId = (string)_mapList.GetItemMetadata((int)index);
         _statusLabel.Text = "Requesting to join map...";
-        _network.SendMessage(new ExtJoinMap(mapId));
+        _network.SendMessage(new InJoinMap(mapId));
     }
 
     private void OnJoinMapInitiated(string mapId)
