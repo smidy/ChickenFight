@@ -4,19 +4,19 @@ using GameServer.Application.Models;
 namespace GameServer.Application.Messages.Internal
 {
     // Fight challenge messages
-    public record ChallengeFightRequest(string ChallengerId, Player Challenger, string TargetId);
-    public record FightChallengeResponse(string ChallengerId, Player Challenger, string TargetId, Player Target, bool Accepted);
+    public record FightChallengeRequest(PID ChallengerActor, Player Challenger, PID TargetActor);
+    public record FightChallengeResponse(PID ChallengerActor, Player Challenger, PID TargetActor, Player Target, bool Accepted);
     
     // Fight state messages
-    public record FightStarted(string FightId, string Player1Id, Player Player1, string Player2Id, Player Player2);
-    public record FightCompleted(string FightId, string WinnerId, string LoserId, string Reason);
-    public record PlayerDisconnected(string PlayerId);
-    public record EndFight(string WinnerId, string LoserId, string Reason);
+    public record FightStarted(string FightId, PID Player1Actor, Player Player1, PID Player2Actor, Player Player2);
+    public record FightCompleted(string FightId, PID WinnerActor, PID LoserActor, string Reason);
+    public record PlayerDisconnected(PID PlayerActor);
+    public record EndFight(PID WinnerActor, PID LoserActor, string Reason);
 
     // Card battle messages
-    public record StartTurn(string PlayerId);
-    public record EndTurn(string PlayerId);
-    public record PlayCard(string PlayerId, string CardId);
-    public record CardPlayed(string PlayerId, Card Card, string Effect);
-    public record ApplyCardEffect(string TargetPlayerId, string EffectType, int Value, string Source);
+    public record StartTurn(PID PlayerActor);
+    public record EndTurn(PID PlayerActor);
+    public record PlayCard(PID PlayerActor, string CardId);
+    public record CardPlayed(PID PlayerActor, Card Card, string Effect);
+    public record ApplyCardEffect(PID TargetActor, string EffectType, int Value, string Source);
 }

@@ -8,18 +8,16 @@ namespace GameServer.Application.Actors
 {
     public class PlayerActor : IActor
     {
-        private readonly string connectionId;
         private readonly Player player;
         private readonly SendToClientDelegate<BaseExternalMessage> _sendToClient;
         private PID? currentMap;
         private string? pendingMapJoin;
-        private Position? pendingMove;
+        private ExPosition? pendingMove;
 
-        public PlayerActor(string connectionId, string playerName, SendToClientDelegate<BaseExternalMessage> sendToClient)
+        public PlayerActor(string playerName, SendToClientDelegate<BaseExternalMessage> sendToClient)
         {
-            this.connectionId = connectionId;
-            this.player = new Player(connectionId, playerName);
-            this._sendToClient = sendToClient;
+            player = new Player(playerName);
+            _sendToClient = sendToClient;
         }
 
         public Task ReceiveAsync(IContext context)
@@ -48,7 +46,7 @@ namespace GameServer.Application.Actors
 
                 // Fight messages
                 ExtFightChallengeSend msg => OnFightChallengeSend(context, msg),
-                ExtFightChallengeReceived msg => OnFightChallengeReceived(context, msg),
+                FightChallengeRequest msg => OnFightChallengeRequestReceived(context, msg),
                 ExtFightStarted msg => OnFightStarted(context, msg),
                 ExtFightEnded msg => OnFightEnded(context, msg),
 
@@ -59,7 +57,10 @@ namespace GameServer.Application.Actors
             };
         }
 
-        private Task OnStarted(IContext context) => Task.CompletedTask;
+        private async Task OnStarted(IContext context) {
+            //Set the Player.Id as the Actor name/Id
+            this.player.SetId(context.Self.Id);
+        }
 
         private async Task OnJoinMapRequest(IContext context, JoinMapRequest msg)
         {
@@ -75,9 +76,10 @@ namespace GameServer.Application.Actors
             if(foundMap == null)
             {
                 context.Send(context.Sender, new GameServer.Application.Messages.Internal.JoinMapFailed(msg.MapId, "Invalid Map Id"));
+                return;
             }
 
-            context.Send(foundMap, new AddPlayer(context.Self, player.Id, player.Name, context.Self));
+            context.Send(foundMap, new AddPlayer(context.Self, player.Name, context.Self));
             await _sendToClient(new ExtJoinMapInitiated(msg.MapId));
         }
 
@@ -88,18 +90,19 @@ namespace GameServer.Application.Actors
 
         private async Task OnPlayerAddedToMap(IContext context, PlayerAddedToMap msg)
         {
-            if (pendingMapJoin != null)
+            if (pendingMapJoin != null && msg.PlayerActor.Equals(context.Self))
             {
                 currentMap = msg.MapPID;
                 player.JoinMap(pendingMapJoin, msg.StartPosition);
-                await _sendToClient(new ExtJoinMapCompleted(msg.MapId, msg.PlayerId, msg.StartPosition, msg.TilemapData, msg.PlayerPositions));
+                var exPlayerPositions = msg.PlayerPositions.ToDictionary(y => y.Key.Id, y => new ExPosition(y.Value.X, y.Value.Y));
+                await _sendToClient(new ExtJoinMapCompleted(msg.MapId, player.Id, msg.StartPosition, msg.TilemapData, exPlayerPositions));
                 pendingMapJoin = null;
             }
         }
 
         private async Task OnPlayerAddFailure(IContext context, PlayerAddFailure msg)
         {
-            if (pendingMapJoin != null)
+            if (pendingMapJoin != null && msg.PlayerActor.Equals(context.Self))
             {
                 await _sendToClient(new ExtJoinMapFailed(msg.MapId, msg.Error));
                 pendingMapJoin = null;
@@ -125,7 +128,7 @@ namespace GameServer.Application.Actors
                 return;
             }
 
-            context.Send(currentMap, new RemovePlayer(player.Id, context.Self));
+            context.Send(currentMap, new RemovePlayer(context.Self, context.Self));
             await _sendToClient(new ExtLeaveMapInitiated(msg.MapId));
         }
 
@@ -134,17 +137,22 @@ namespace GameServer.Application.Actors
             if (currentMap == null)
                 return;
 
-            context.Send(currentMap, new ChallengeFightRequest(player.Id, player, msg.TargetId));
+            // Find target PID using the actor system
+            var targetPid = context.System.ProcessRegistry.Find(x => x == msg.TargetId).FirstOrDefault();
+            if (targetPid != null)
+            {
+                context.Send(currentMap, new FightChallengeRequest(context.Self, player, targetPid));
+            }
         }
 
-        private async Task OnFightChallengeReceived(IContext context, ExtFightChallengeReceived msg)
+        private async Task OnFightChallengeRequestReceived(IContext context, FightChallengeRequest msg)
         {
             if (currentMap == null)
                 return;
 
             // Auto-accept for now - in a real implementation, you'd wait for player input
-            context.Send(currentMap, new FightChallengeResponse(msg.ChallengerId, null, player.Id, player, true));
-            await _sendToClient(new ExtFightChallengeAccepted(msg.ChallengerId));
+            context.Send(currentMap, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, context.Self, player, true));
+            await _sendToClient(new ExtFightChallengeAccepted(msg.ChallengerActor.Id));
         }
 
         private async Task OnFightStarted(IContext context, ExtFightStarted msg)
@@ -159,7 +167,7 @@ namespace GameServer.Application.Actors
 
         private async Task OnPlayerRemovedFromMap(IContext context, PlayerRemovedFromMap msg)
         {
-            if (msg.PlayerId == player.Id)
+            if (msg.PlayerActor.Equals(context.Self))
             {
                 player.LeaveMap();
                 currentMap = null;
@@ -169,7 +177,7 @@ namespace GameServer.Application.Actors
 
         private async Task OnPlayerRemoveFailure(IContext context, PlayerRemoveFailure msg)
         {
-            if (msg.PlayerId == player.Id)
+            if (msg.PlayerActor.Equals(context.Self))
             {
                 await _sendToClient(new ExtLeaveMapFailed(msg.MapId, msg.Error));
             }
@@ -184,13 +192,13 @@ namespace GameServer.Application.Actors
             }
 
             pendingMove = msg.NewPosition;
-            context.Send(currentMap, new ValidateMove(player.Id, msg.NewPosition, context.Self));
+            context.Send(currentMap, new ValidateMove(context.Self, msg.NewPosition, context.Self));
             await _sendToClient(new ExtMoveInitiated(msg.NewPosition));
         }
 
         private async Task OnMoveValidated(IContext context, MoveValidated msg)
         {
-            if (msg.PlayerId == player.Id && 
+            if (msg.PlayerActor.Equals(context.Self) && 
                 pendingMove?.X == msg.NewPosition.X && 
                 pendingMove?.Y == msg.NewPosition.Y)
             {
@@ -203,7 +211,7 @@ namespace GameServer.Application.Actors
 
         private async Task OnMoveRejected(IContext context, MoveRejected msg)
         {
-            if (msg.PlayerId == player.Id && 
+            if (msg.PlayerActor.Equals(context.Self) && 
                 pendingMove?.X == msg.AttemptedPosition.X && 
                 pendingMove?.Y == msg.AttemptedPosition.Y)
             {

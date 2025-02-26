@@ -102,6 +102,9 @@ namespace GameServer.Presentation
                     case ExtFightChallengeAccepted accept:
                         HandleFightChallengeAccepted(accept);
                         break;
+                    case ExtPlayCard playCard:
+                        HandlePlayCard(playCard);
+                        break;
                 }
             }
             catch (Exception ex)
@@ -183,6 +186,12 @@ namespace GameServer.Presentation
             }
 
             actorSystem.Root.Send(playerActor, new MoveRequest(move.NewPosition));
+        }
+
+        private async void HandlePlayCard(ExtPlayCard extPlayCard)
+        {
+
+            actorSystem.Root.Send(playerActor, extPlayCard);
         }
 
         public Task ReceiveAsync(IContext context)

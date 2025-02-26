@@ -9,6 +9,22 @@ namespace GameServer.Shared.ExternalMessages
 
     }
 
+    /// <summary>
+    /// Incoming client message with a PlayerActor destination
+    /// </summary>
+    /// <param name="PlayerId"></param>
+    public abstract record InPlayerMessage(string PlayerId) : BaseExternalMessage;
+    /// <summary>
+    /// Incoming client message with a MapActor destination
+    /// </summary>
+    /// <param name="MapId"></param>
+    public abstract record InMapMessage(string MapId) : BaseExternalMessage;
+    /// <summary>
+    /// Incoming client message with a FightActor destination
+    /// </summary>
+    /// <param name="FightId"></param>
+    public abstract record InFightMessage(string FightId) : BaseExternalMessage;
+
     // Connection messages
     public record ExtConnectionConfirmed(string PlayerId) : BaseExternalMessage;
 
@@ -22,13 +38,13 @@ namespace GameServer.Shared.ExternalMessages
 
     public record ExtJoinMapInitiated(string MapId) : BaseExternalMessage;
 
-    public record ExtJoinMapCompleted(string MapId, string PlayerId, Position Position, TilemapData TilemapData, IReadOnlyDictionary<string, Position> PlayerPositions) : BaseExternalMessage;
+    public record ExtJoinMapCompleted(string MapId, string PlayerId, ExPosition Position, TilemapData TilemapData, IReadOnlyDictionary<string, ExPosition> PlayerPositions) : BaseExternalMessage;
 
     public record ExtJoinMapFailed(string MapId, string Error) : BaseExternalMessage;
 
-    public record ExtPlayerJoinedMap(string PlayerId, Position? Position) : BaseExternalMessage;
+    public record ExtPlayerJoinedMap(string PlayerId, ExPosition? Position) : BaseExternalMessage;
 
-    public record ExtPlayerPositionChange(string PlayerId, Position? Position) : BaseExternalMessage;
+    public record ExtPlayerPositionChange(string PlayerId, ExPosition? Position) : BaseExternalMessage;
 
     public record ExtPlayerLeftMap(string PlayerId) : BaseExternalMessage;
 
@@ -41,16 +57,16 @@ namespace GameServer.Shared.ExternalMessages
     public record ExtLeaveMapFailed(string MapId, string Error) : BaseExternalMessage;
 
     // Movement messages
-    public record ExtMove(Position NewPosition) : BaseExternalMessage;
+    public record ExtMove(ExPosition NewPosition) : BaseExternalMessage;
 
-    public record ExtMoveInitiated(Position NewPosition) : BaseExternalMessage;
+    public record ExtMoveInitiated(ExPosition NewPosition) : BaseExternalMessage;
 
-    public record ExtMoveCompleted(Position NewPosition) : BaseExternalMessage;
+    public record ExtMoveCompleted(ExPosition NewPosition) : BaseExternalMessage;
 
-    public record ExtMoveFailed(Position AttemptedPosition, string Error) : BaseExternalMessage;
+    public record ExtMoveFailed(ExPosition AttemptedPosition, string Error) : BaseExternalMessage;
 
     // State update messages
-    public record PlayerState(string Id, string Name, Position Position);
+    public record PlayerState(string Id, string Name, ExPosition Position);
     public record ExtPlayerInfo(PlayerState? State) : BaseExternalMessage;
 
     // Map data

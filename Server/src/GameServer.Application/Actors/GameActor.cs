@@ -7,12 +7,12 @@ namespace GameServer.Application.Actors
     public class GameActor : IActor
     {
         private readonly Dictionary<string, (Map Map, PID Actor)> maps;
-        private readonly Dictionary<string, PID> players;
+        private readonly Dictionary<PID, string> players;
         
         public GameActor()
         {
             maps = new Dictionary<string, (Map Map, PID Actor)>();
-            players = new Dictionary<string, PID>();
+            players = new Dictionary<PID, string>();
         }
 
         public Task ReceiveAsync(IContext context)
@@ -62,11 +62,12 @@ namespace GameServer.Application.Actors
 
         private Task OnCreatePlayer(IContext context, CreatePlayer msg)
         {
-            var props = Props.FromProducer(() => new PlayerActor(msg.ConnectionId, msg.PlayerName, msg.SendToClient));
-            var pid = context.Spawn(props);
-            var player = new Player(msg.ConnectionId, msg.PlayerName);
+            // Create player actor with connectionId as its PlayerId/actor name
+            var props = Props.FromProducer(() => new PlayerActor(msg.PlayerName, msg.SendToClient));
+            var pid = context.SpawnNamed(props, msg.ConnectionId);
+            var player = new Player(msg.PlayerName);
             
-            players[msg.ConnectionId] = pid;
+            players[pid] = msg.ConnectionId;
             
             context.Respond(new PlayerCreated(pid, player));
             return Task.CompletedTask;

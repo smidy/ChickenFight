@@ -9,7 +9,7 @@ namespace GameServer.Application.Models
         public string Name { get; }
         public int Width { get; }
         public int Height { get; }
-        private readonly Dictionary<string, Position> playerPositions;
+        private readonly Dictionary<string, ExPosition> playerPositions;
         private readonly Dictionary<string, string> playerFightIds;
         private readonly int[] tileData;
 
@@ -19,16 +19,16 @@ namespace GameServer.Application.Models
             Name = name;
             Width = width;
             Height = height;
-            playerPositions = new Dictionary<string, Position>();
+            playerPositions = new Dictionary<string, ExPosition>();
             playerFightIds = new Dictionary<string, string>();
             this.tileData = tileData ?? new int[width * height];
         }
 
-        public IReadOnlyDictionary<string, Position> PlayerPositions => playerPositions;
+        public IReadOnlyDictionary<string, ExPosition> PlayerPositions => playerPositions;
         
         public int[] TileData => tileData;
 
-        public Position? GetPlayerPosition(string playerId)
+        public ExPosition? GetPlayerPosition(string playerId)
         {
             return playerPositions.TryGetValue(playerId, out var position) ? position : null;
         }
@@ -72,7 +72,7 @@ namespace GameServer.Application.Models
             return -1;
         }
 
-        public bool TryAddPlayer(string playerId, out Position? startPosition)
+        public bool TryAddPlayer(string playerId, out ExPosition? startPosition)
         {
             startPosition = null;
             if (playerPositions.ContainsKey(playerId))
@@ -83,7 +83,7 @@ namespace GameServer.Application.Models
             {
                 for (int y = 0; y < Height; y++)
                 {
-                    var position = new Position(x, y);
+                    var position = new ExPosition(x, y);
                     if (!IsPositionOccupied(position))
                     {
                         startPosition = position;
@@ -102,7 +102,7 @@ namespace GameServer.Application.Models
             return playerPositions.Remove(playerId);
         }
 
-        public bool TryMovePlayer(string playerId, Position newPosition)
+        public bool TryMovePlayer(string playerId, ExPosition newPosition)
         {
             if (!playerPositions.TryGetValue(playerId, out var currentPosition))
                 return false;
@@ -120,7 +120,7 @@ namespace GameServer.Application.Models
             return true;
         }
 
-        private bool IsPositionOccupied(Position position)
+        private bool IsPositionOccupied(ExPosition position)
         {
             foreach (var playerPosition in playerPositions.Values)
             {

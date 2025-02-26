@@ -15,10 +15,10 @@ namespace GameServer.Application.Messages.Internal
     public record LeaveMapFailed(string MapId, string Error);
     
     // Movement messages
-    public record MoveRequest(Position NewPosition);
-    public record MoveInitiated(Position NewPosition);
-    public record MoveCompleted(Position NewPosition);
-    public record MoveFailed(Position AttemptedPosition, string Error);
+    public record MoveRequest(ExPosition NewPosition);
+    public record MoveInitiated(ExPosition NewPosition);
+    public record MoveCompleted(ExPosition NewPosition);
+    public record MoveFailed(ExPosition AttemptedPosition, string Error);
     
     // State update messages
     public record PlayerStateUpdate(Player Player);

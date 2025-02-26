@@ -15,27 +15,28 @@ namespace GameServer.Application.Actors
     public class FightActor : IActor
     {
         private readonly string fightId;
-        private readonly string player1Id;
-        private readonly string player2Id;
+        private readonly PID player1Actor;
+        private readonly PID player2Actor;
         private readonly PID mapActor;
         private readonly FightState state;
-        private readonly Dictionary<string, Player> players;
+        private readonly Dictionary<PID, Player> players;
         private bool isActive;
 
         public FightActor(string fightId, string player1Id, Player player1, string player2Id, Player player2, PID mapActor)
         {
             this.fightId = fightId;
-            this.player1Id = player1Id;
-            this.player2Id = player2Id;
+            // Get PIDs from the actor system using connectionIds
+            this.player1Actor = Proto.PID.FromAddress("nonhost", player1Id);
+            this.player2Actor = Proto.PID.FromAddress("nonhost", player2Id);
             this.mapActor = mapActor;
             this.isActive = true;
-            
+
             // Initialize fight state
             state = new FightState(player1Id, player2Id);
-            players = new Dictionary<string, Player>
+            players = new Dictionary<PID, Player>
             {
-                { player1Id, player1 },
-                { player2Id, player2 }
+                { player1Actor, player1 },
+                { player2Actor, player2 }
             };
         }
 
@@ -56,32 +57,34 @@ namespace GameServer.Application.Actors
         private Task OnStarted(IContext context)
         {
             // Notify clients that fight has started
-            context.Send(mapActor, new FightStarted(fightId, player1Id, players[player1Id], player2Id, players[player2Id]));
-            
+            context.Send(mapActor, new FightStarted(fightId, player1Actor, players[player1Actor], player2Actor, players[player2Actor]));
+
             // Start first turn
-            return OnStartTurn(context, new StartTurn(player1Id));
+            return OnStartTurn(context, new StartTurn(player1Actor));
         }
 
         private Task OnStartTurn(IContext context, StartTurn msg)
         {
             if (!isActive) return Task.CompletedTask;
 
+            var playerId = msg.PlayerActor.Id;
+
             // Update fight state for new turn
-            state.StartTurn(msg.PlayerId);
-            
+            state.StartTurn(playerId);
+
             // Draw cards for active player
-            var player = players[msg.PlayerId];
-            var drawnCards = state.DrawCards(msg.PlayerId, player.Deck);
-            
+            var player = players[msg.PlayerActor];
+            var drawnCards = state.DrawCards(playerId, player.Deck);
+
             // Convert to CardInfo for client
             var cardInfos = drawnCards.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList();
-            
+
             // Send turn started notification
-            context.Send(mapActor, new ExtTurnStarted(msg.PlayerId, cardInfos));
-            
+            context.Send(msg.PlayerActor, new ExtTurnStarted(playerId, cardInfos));
+
             // Send updated fight state
             SendFightStateUpdate(context);
-            
+
             return Task.CompletedTask;
         }
 
@@ -89,48 +92,53 @@ namespace GameServer.Application.Actors
         {
             if (!isActive) return Task.CompletedTask;
 
+            var playerId = players[msg.PlayerActor].Id;
+
             // Notify clients
-            context.Send(mapActor, new ExtTurnEnded(msg.PlayerId));
-            
+            context.Send(mapActor, new ExtTurnEnded(playerId));
+
             // Start next player's turn
-            string nextPlayerId = msg.PlayerId == player1Id ? player2Id : player1Id;
-            return OnStartTurn(context, new StartTurn(nextPlayerId));
+            PID nextPlayerActor = msg.PlayerActor.Equals(player1Actor) ? player2Actor : player1Actor;
+            return OnStartTurn(context, new StartTurn(nextPlayerActor));
         }
 
         private Task OnPlayCard(IContext context, PlayCard msg)
         {
             if (!isActive) return Task.CompletedTask;
-            if (!state.IsPlayersTurn(msg.PlayerId)) return Task.CompletedTask;
+
+            var playerId = players[msg.PlayerActor].Id;
+            if (!state.IsPlayersTurn(playerId)) return Task.CompletedTask;
 
             try
             {
                 // Get the card from player's hand
-                var playerState = state.GetPlayerState(msg.PlayerId);
+                var playerState = state.GetPlayerState(playerId);
                 var card = playerState.Hand.FirstOrDefault(c => c.Id == msg.CardId);
                 if (card == null) return Task.CompletedTask;
 
                 // Validate and play the card
-                if (!state.CanPlayCard(msg.PlayerId, card))
+                if (!state.CanPlayCard(playerId, card))
                 {
                     context.Send(mapActor, new ExtCardPlayFailed(msg.CardId, "Not enough action points"));
                     return Task.CompletedTask;
                 }
 
-                state.PlayCard(msg.PlayerId, card);
+                state.PlayCard(playerId, card);
 
                 // Apply card effects
-                string effect = ApplyCardEffects(context, msg.PlayerId, card);
+                string effect = ApplyCardEffects(context, msg.PlayerActor, card);
 
                 // Send notifications
                 var cardInfo = new CardInfo(card.Id, card.Name, card.Description, card.Cost);
-                context.Send(mapActor, new ExtCardPlayCompleted(msg.PlayerId, cardInfo, effect));
-                
+                context.Send(mapActor, new ExtCardPlayCompleted(playerId, cardInfo, effect));
+
                 // Check for game over
                 if (state.IsGameOver)
                 {
-                    string winnerId = state.GetWinnerId();
-                    string loserId = winnerId == player1Id ? player2Id : player1Id;
-                    return OnEndFight(context, new EndFight(winnerId, loserId, "Player defeated"));
+                    string winnerPlayerId = state.GetWinnerId();
+                    PID winnerActor = winnerPlayerId == players[player1Actor].Id ? player1Actor : player2Actor;
+                    PID loserActor = winnerActor.Equals(player1Actor) ? player2Actor : player1Actor;
+                    return OnEndFight(context, new EndFight(winnerActor, loserActor, "Player defeated"));
                 }
 
                 // Update fight state
@@ -144,9 +152,10 @@ namespace GameServer.Application.Actors
             return Task.CompletedTask;
         }
 
-        private string ApplyCardEffects(IContext context, string playerId, Card card)
+        private string ApplyCardEffects(IContext context, PID playerActor, Card card)
         {
-            string targetId = playerId == player1Id ? player2Id : player1Id;
+            PID targetActor = playerActor.Equals(player1Actor) ? player2Actor : player1Actor;
+            string targetId = players[targetActor].Id;
             string effect = "";
 
             switch (card.Type)
@@ -160,12 +169,12 @@ namespace GameServer.Application.Actors
 
                 case CardType.Defense:
                     int healing = GetHealingForCard(card);
-                    state.ApplyHealing(playerId, healing);
+                    state.ApplyHealing(players[playerActor].Id, healing);
                     effect = $"Healed for {healing}";
-                    context.Send(mapActor, new ExtEffectApplied(playerId, "Heal", healing, card.Name));
+                    context.Send(mapActor, new ExtEffectApplied(players[playerActor].Id, "Heal", healing, card.Name));
                     break;
 
-                // Add other card type effects as needed
+                    // Add other card type effects as needed
             }
 
             return effect;
@@ -185,21 +194,21 @@ namespace GameServer.Application.Actors
 
         private void SendFightStateUpdate(IContext context)
         {
-            var player1State = state.GetPlayerState(player1Id);
-            var player2State = state.GetPlayerState(player2Id);
+            var player1State = state.GetPlayerState(player1Actor.Id);
+            var player2State = state.GetPlayerState(player2Actor.Id);
 
             var p1State = new ExPlayerFightState(
                 player1State.HitPoints,
                 player1State.ActionPoints,
                 player1State.Hand.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList(),
-                players[player1Id].Deck.RemainingCards
+                players[player1Actor].Deck.RemainingCards
             );
 
             var p2State = new ExPlayerFightState(
                 player2State.HitPoints,
                 player2State.ActionPoints,
                 player2State.Hand.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList(),
-                players[player2Id].Deck.RemainingCards
+                players[player2Actor].Deck.RemainingCards
             );
 
             context.Send(mapActor, new ExtFightStateUpdate(
@@ -213,11 +222,10 @@ namespace GameServer.Application.Actors
         {
             if (!isActive) return Task.CompletedTask;
 
-            string winnerId = msg.PlayerId == player1Id ? player2Id : player1Id;
-            string loserId = msg.PlayerId;
-            
+            PID winnerActor = msg.PlayerActor.Equals(player1Actor) ? player2Actor : player1Actor;
+
             isActive = false;
-            context.Send(mapActor, new FightCompleted(fightId, winnerId, loserId, "Player disconnected"));
+            context.Send(mapActor, new FightCompleted(fightId, winnerActor, msg.PlayerActor, "Player disconnected"));
             return Task.CompletedTask;
         }
 
@@ -226,7 +234,7 @@ namespace GameServer.Application.Actors
             if (!isActive) return Task.CompletedTask;
 
             isActive = false;
-            context.Send(mapActor, new FightCompleted(fightId, msg.WinnerId, msg.LoserId, msg.Reason));
+            context.Send(mapActor, new FightCompleted(fightId, msg.WinnerActor, msg.LoserActor, msg.Reason));
             return Task.CompletedTask;
         }
     }

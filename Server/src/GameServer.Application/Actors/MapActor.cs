@@ -8,14 +8,14 @@ namespace GameServer.Application.Actors
     public class MapActor : IActor
     {
         private readonly Map map;
-        private readonly Dictionary<string, PID> players;
+        private readonly Dictionary<PID, string> players;
         private readonly Dictionary<string, PID> activeFights;
         private int fightCounter;
 
         public MapActor(string id, string name, int width, int height, int[] tileData)
         {
             map = new Map(id, name, width, height, tileData);
-            players = new Dictionary<string, PID>();
+            players = new Dictionary<PID, string>();
             activeFights = new Dictionary<string, PID>();
             fightCounter = 0;
         }
@@ -28,10 +28,11 @@ namespace GameServer.Application.Actors
                 AddPlayer msg => OnAddPlayer(context, msg),
                 RemovePlayer msg => OnRemovePlayer(context, msg),
                 ValidateMove msg => OnValidateMove(context, msg),
-                ChallengeFightRequest msg => OnChallengeFightRequest(context, msg),
+                FightChallengeRequest msg => OnChallengeFightRequest(context, msg),
                 FightChallengeResponse msg => OnFightChallengeResponse(context, msg),
                 FightStarted msg => OnFightStarted(context, msg),
                 FightCompleted msg => OnFightCompleted(context, msg),
+                BroadcastExternalMessage msg => OnBroadcastExternalMessage(context, msg),
                 _ => Task.CompletedTask
             };
         }
@@ -40,12 +41,22 @@ namespace GameServer.Application.Actors
 
         private Task OnAddPlayer(IContext context, AddPlayer msg)
         {
-            if (map.TryAddPlayer(msg.PlayerId, out var startPosition))
+            // Get playerId from actor name
+            var playerId = msg.PlayerActor.Id;
+            
+            if (map.TryAddPlayer(playerId, out var startPosition))
             {
-                players.Add(msg.PlayerId, msg.PlayerActor);
-                BroadcastToAllPlayers(context, new ExtPlayerJoinedMap(msg.PlayerId, startPosition));
+                players.Add(msg.PlayerActor, playerId);
+                BroadcastToAllPlayers(context, new ExtPlayerJoinedMap(playerId, startPosition));
                 var tilemapData = new GameServer.Shared.ExternalMessages.TilemapData(map.Width, map.Height, map.TileData);
-                context.Send(msg.Requester, new PlayerAddedToMap(msg.PlayerActor, context.Self, msg.PlayerId, map.Id, startPosition, tilemapData, this.map.PlayerPositions));
+                
+                // Convert player positions to use PIDs
+                var pidPositions = map.PlayerPositions.ToDictionary(
+                    kvp => players.First(p => p.Value == kvp.Key).Key,
+                    kvp => kvp.Value
+                );
+                
+                context.Send(msg.Requester, new PlayerAddedToMap(msg.PlayerActor, context.Self, map.Id, startPosition, tilemapData, pidPositions));
             }
             else
             {
@@ -56,70 +67,83 @@ namespace GameServer.Application.Actors
 
         private Task OnRemovePlayer(IContext context, RemovePlayer msg)
         {
-            if (map.RemovePlayer(msg.PlayerId))
+            var playerId = players.GetValueOrDefault(msg.PlayerActor);
+            if (playerId != null && map.RemovePlayer(playerId))
             {
-                players.Remove(msg.PlayerId);
+                players.Remove(msg.PlayerActor);
                 
                 // Handle player disconnection if they're in a fight
-                var fightId = map.GetPlayerFightId(msg.PlayerId);
+                var fightId = map.GetPlayerFightId(playerId);
                 if (fightId != null && activeFights.TryGetValue(fightId, out var fightActor))
                 {
-                    context.Send(fightActor, new PlayerDisconnected(msg.PlayerId));
+                    context.Send(fightActor, new PlayerDisconnected(msg.PlayerActor));
                 }
 
-                BroadcastToAllPlayers(context, new ExtPlayerLeftMap(msg.PlayerId));
-                context.Send(msg.Requester, new PlayerRemovedFromMap(this.map.Id, msg.PlayerId));
+                BroadcastToAllPlayers(context, new ExtPlayerLeftMap(playerId));
+                context.Send(msg.Requester, new PlayerRemovedFromMap(this.map.Id, msg.PlayerActor));
             }
             else
             {
-                context.Send(msg.Requester, new PlayerRemoveFailure(this.map.Id, msg.PlayerId, "Player not found in map"));
+                context.Send(msg.Requester, new PlayerRemoveFailure(this.map.Id, msg.PlayerActor, "Player not found in map"));
             }
             return Task.CompletedTask;
         }
 
         private Task OnValidateMove(IContext context, ValidateMove msg)
         {
-            if (map.IsPlayerInFight(msg.PlayerId))
+            var playerId = players.GetValueOrDefault(msg.PlayerActor);
+            if (playerId == null)
             {
-                context.Send(msg.Requester, new MoveRejected(msg.PlayerId, msg.NewPosition, "Cannot move while in a fight"));
+                context.Send(msg.Requester, new MoveRejected(msg.PlayerActor, msg.NewPosition, "Player not found"));
                 return Task.CompletedTask;
             }
 
-            if (map.TryMovePlayer(msg.PlayerId, msg.NewPosition))
+            if (map.IsPlayerInFight(playerId))
             {
-                BroadcastToAllPlayers(context, new ExtPlayerPositionChange(msg.PlayerId, msg.NewPosition));
-                context.Send(msg.Requester, new MoveValidated(msg.PlayerId, msg.NewPosition));
+                context.Send(msg.Requester, new MoveRejected(msg.PlayerActor, msg.NewPosition, "Cannot move while in a fight"));
+                return Task.CompletedTask;
+            }
+
+            if (map.TryMovePlayer(playerId, msg.NewPosition))
+            {
+                BroadcastToAllPlayers(context, new ExtPlayerPositionChange(playerId, msg.NewPosition));
+                context.Send(msg.Requester, new MoveValidated(msg.PlayerActor, msg.NewPosition));
             }
             else
             {
-                context.Send(msg.Requester, new MoveRejected(msg.PlayerId, msg.NewPosition, "Invalid move"));
+                context.Send(msg.Requester, new MoveRejected(msg.PlayerActor, msg.NewPosition, "Invalid move"));
             }
             return Task.CompletedTask;
         }
 
-        private Task OnChallengeFightRequest(IContext context, ChallengeFightRequest msg)
+        private Task OnChallengeFightRequest(IContext context, FightChallengeRequest msg)
         {
-            var challengerPosition = map.GetPlayerPosition(msg.ChallengerId);
-            var targetPosition = map.GetPlayerPosition(msg.TargetId);
+            var challengerPlayerId = players.GetValueOrDefault(msg.ChallengerActor);
+            var targetPlayerId = players.GetValueOrDefault(msg.TargetActor);
 
-            if (challengerPosition == null || targetPosition == null)
+            if (challengerPlayerId == null || targetPlayerId == null)
             {
-                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerId, msg.Challenger, msg.TargetId, null, false));
+                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, msg.TargetActor, null, false));
                 return Task.CompletedTask;
             }
 
-            if (map.IsPlayerInFight(msg.ChallengerId) || map.IsPlayerInFight(msg.TargetId))
+            var challengerPosition = map.GetPlayerPosition(challengerPlayerId);
+            var targetPosition = map.GetPlayerPosition(targetPlayerId);
+
+            if (challengerPosition == null || targetPosition == null)
             {
-                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerId, msg.Challenger, msg.TargetId, null, false));
+                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, msg.TargetActor, null, false));
+                return Task.CompletedTask;
+            }
+
+            if (map.IsPlayerInFight(challengerPlayerId) || map.IsPlayerInFight(targetPlayerId))
+            {
+                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, msg.TargetActor, null, false));
                 return Task.CompletedTask;
             }
 
             // Send challenge to target player
-            var targetActor = GetPlayerPID(msg.TargetId);
-            if (targetActor != null)
-            {
-                context.Send(targetActor, new ExtFightChallengeReceived(msg.ChallengerId));
-            }
+            context.Send(msg.TargetActor, msg);
 
             return Task.CompletedTask;
         }
@@ -128,11 +152,17 @@ namespace GameServer.Application.Actors
         {
             if (!msg.Accepted) return Task.CompletedTask;
 
-            var challengerPosition = map.GetPlayerPosition(msg.ChallengerId);
-            var targetPosition = map.GetPlayerPosition(msg.TargetId);
+            var challengerPlayerId = players.GetValueOrDefault(msg.ChallengerActor);
+            var targetPlayerId = players.GetValueOrDefault(msg.TargetActor);
+
+            if (challengerPlayerId == null || targetPlayerId == null)
+                return Task.CompletedTask;
+
+            var challengerPosition = map.GetPlayerPosition(challengerPlayerId);
+            var targetPosition = map.GetPlayerPosition(targetPlayerId);
 
             if (challengerPosition == null || targetPosition == null || 
-                map.IsPlayerInFight(msg.ChallengerId) || map.IsPlayerInFight(msg.TargetId))
+                map.IsPlayerInFight(challengerPlayerId) || map.IsPlayerInFight(targetPlayerId))
             {
                 return Task.CompletedTask;
             }
@@ -140,29 +170,28 @@ namespace GameServer.Application.Actors
             // Create fight
             string fightId = $"fight_{++fightCounter}";
             var props = Props.FromProducer(() => 
-                new FightActor(fightId, msg.ChallengerId, msg.Challenger, msg.TargetId, msg.Target, context.Self));
+                new FightActor(fightId, challengerPlayerId, msg.Challenger, targetPlayerId, msg.Target, context.Self));
             
             var fightActor = context.SpawnNamed(props, fightId);
             activeFights.Add(fightId, fightActor);
 
             // Update player states
-            map.SetPlayerFightId(msg.ChallengerId, fightId);
-            map.SetPlayerFightId(msg.TargetId, fightId);
+            map.SetPlayerFightId(challengerPlayerId, fightId);
+            map.SetPlayerFightId(targetPlayerId, fightId);
 
             return Task.CompletedTask;
         }
 
         private Task OnFightStarted(IContext context, FightStarted msg)
         {
-            // Notify both players that the fight has started
-            var player1Actor = this.GetPlayerPID(msg.Player1Id);
-            var player2Actor = this.GetPlayerPID(msg.Player2Id);
+            // Convert Player1Id/Player2Id from PlayerIds to PIDs
+            var player1Actor = players[msg.Player1Actor];
+            var player2Actor = players[msg.Player2Actor];
 
-            // Send fight started notifications
             if (player1Actor != null)
-                context.Send(player1Actor, new ExtFightStarted(msg.Player2Id));
+                context.Send(msg.Player1Actor, new ExtFightStarted(msg.Player2.Id));
             if (player2Actor != null)
-                context.Send(player2Actor, new ExtFightStarted(msg.Player1Id));
+                context.Send(msg.Player2Actor, new ExtFightStarted(msg.Player1.Id));
 
             return Task.CompletedTask;
         }
@@ -171,11 +200,16 @@ namespace GameServer.Application.Actors
         {
             if (activeFights.Remove(msg.FightId, out var fightActor))
             {
-                map.SetPlayerFightId(msg.WinnerId, null);
-                map.SetPlayerFightId(msg.LoserId, null);
+                var winnerPlayerId = players.GetValueOrDefault(msg.WinnerActor);
+                var loserPlayerId = players.GetValueOrDefault(msg.LoserActor);
+
+                if (winnerPlayerId != null)
+                    map.SetPlayerFightId(winnerPlayerId, null);
+                if (loserPlayerId != null)
+                    map.SetPlayerFightId(loserPlayerId, null);
 
                 // Notify players of fight completion
-                BroadcastToAllPlayers(context, new ExtFightEnded(msg.WinnerId, msg.Reason));
+                BroadcastToAllPlayers(context, new ExtFightEnded(winnerPlayerId ?? "unknown", msg.Reason));
                 
                 // Stop the fight actor
                 context.Stop(fightActor);
@@ -183,21 +217,17 @@ namespace GameServer.Application.Actors
             return Task.CompletedTask;
         }
 
+        private async Task OnBroadcastExternalMessage(IContext context, BroadcastExternalMessage msg)
+        {
+            BroadcastToAllPlayers(context, msg.ExternalMessage);
+        }
+
         private void BroadcastToAllPlayers(IContext context, object message)
         {
             foreach (var player in players)
             {
-                context.Send(player.Value, message);
+                context.Send(player.Key, message);
             }
-        }
-
-        private PID? GetPlayerPID(string playerId)
-        {
-            if(players.TryGetValue(playerId, out var player))
-            {
-                return player;
-            }
-            return null;
         }
     }
 }

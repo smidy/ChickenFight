@@ -164,7 +164,7 @@ public partial class Game : Node2D
             // Remove the half-tile offset before calculating grid position
             var currentGridPos = ((_player.Position - new Vector2(16, 16)) / 32).Round();
             var newPos = currentGridPos + movement;
-            _network.SendMessage(new ExtMove(new Position((int)newPos.X, (int)newPos.Y)));
+            _network.SendMessage(new ExtMove(new ExPosition((int)newPos.X, (int)newPos.Y)));
         }
     }
 
