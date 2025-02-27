@@ -16,14 +16,17 @@ namespace GameServer.Application.Actors
     public class PlayerActor : IActor
     {
         private readonly Player player;
+        private readonly PID mapManagerActor;
         private readonly SendToClientDelegate<ToClientMessage> _sendToClient;
         private PID? currentMap;
+        private PID? currentFight;
         private string? pendingMapJoin;
-        private ExPosition? pendingMove;
+        private MapPosition? pendingMove;
 
-        public PlayerActor(string playerName, SendToClientDelegate<ToClientMessage> sendToClient)
+        public PlayerActor(PID mapManagerActor, string playerName, SendToClientDelegate<ToClientMessage> sendToClient)
         {
             player = new Player(playerName);
+            this.mapManagerActor = mapManagerActor;
             _sendToClient = sendToClient;
         }
 
@@ -32,9 +35,7 @@ namespace GameServer.Application.Actors
             return context.Message switch
             {
                 Started => OnStarted(context),
-                JoinMapRequest msg => OnJoinMapRequest(context, msg),
-                LeaveMapRequest msg => OnLeaveMapRequest(context, msg),
-                MoveRequest msg => OnMoveRequest(context, msg),
+                MapListResponse msg => OnMapListResponse(context, msg),
                                
                 // Map join messages
                 PlayerAddedToMap msg => OnPlayerAddedToMap(context, msg),
@@ -52,13 +53,14 @@ namespace GameServer.Application.Actors
                 MapStateUpdate msg => OnMapStateUpdate(context, msg),
 
                 // Fight messages
-                InFightChallengeSend msg => OnFightChallengeSend(context, msg),
+
                 FightChallengeRequest msg => OnFightChallengeRequestReceived(context, msg),
-                OutFightStarted msg => OnFightStarted(context, msg),
-                OutFightEnded msg => OnFightEnded(context, msg),
+                FightStarted msg => OnFightStarted(context, msg),
+
+                FromClientMessage msg => OnIncommingClientMessage(context, msg),
 
                 //Send external messages to client
-                ToClientMessage msg => _sendToClient(msg),
+                ToClientMessage msg => OnOutgoingClientMessage(context, msg),
 
                 _ => Task.CompletedTask
             };
@@ -67,32 +69,12 @@ namespace GameServer.Application.Actors
         private async Task OnStarted(IContext context) {
             //Set the Player.Id as the Actor name/Id
             this.player.SetId(context.Self.Id);
-        }
-
-        private async Task OnJoinMapRequest(IContext context, JoinMapRequest msg)
-        {
-            if (currentMap != null)
-            {
-                context.Send(context.Sender, new GameServer.Application.Messages.Internal.JoinMapFailed(msg.MapId, "Already in a map"));
-            }
-
-            pendingMapJoin = msg.MapId;
-
-            var foundMap = GetMapPid(context, msg.MapId);
-
-            if(foundMap == null)
-            {
-                context.Send(context.Sender, new GameServer.Application.Messages.Internal.JoinMapFailed(msg.MapId, "Invalid Map Id"));
-                return;
-            }
-
-            context.Send(foundMap, new AddPlayer(context.Self, player.Name, context.Self));
-            await _sendToClient(new OutJoinMapInitiated(msg.MapId));
+            await _sendToClient(new OutConnectionConfirmed(this.player.Id));
         }
 
         private PID? GetMapPid(IContext context, string actorName)
         {
-            return context.System.ProcessRegistry.Find(x => x == $"$1/{actorName}").FirstOrDefault();
+            return context.System.ProcessRegistry.Find(x => x == $"$1/MapManager/{actorName}").FirstOrDefault();
         }
 
         private async Task OnPlayerAddedToMap(IContext context, PlayerAddedToMap msg)
@@ -101,7 +83,7 @@ namespace GameServer.Application.Actors
             {
                 currentMap = msg.MapPID;
                 player.JoinMap(pendingMapJoin, msg.StartPosition);
-                var exPlayerPositions = msg.PlayerPositions.ToDictionary(y => y.Key.Id, y => new ExPosition(y.Value.X, y.Value.Y));
+                var exPlayerPositions = msg.PlayerPositions.ToDictionary(y => y.Key.Id, y => new MapPosition(y.Value.X, y.Value.Y));
                 await _sendToClient(new OutJoinMapCompleted(msg.MapId, player.Id, msg.StartPosition, msg.TilemapData, exPlayerPositions));
                 pendingMapJoin = null;
             }
@@ -115,30 +97,6 @@ namespace GameServer.Application.Actors
                 pendingMapJoin = null;
             }
         }
-
-        private async Task OnLeaveMapRequest(IContext context, LeaveMapRequest msg)
-        {
-            // If mapId is null, force leave from current map (used for disconnection)
-            if (currentMap == null)
-            {
-                await _sendToClient(new OutLeaveMapFailed(msg.MapId, "Player has not joined a map"));
-                return;
-            }
-            if (msg.MapId != null && msg.MapId != player.CurrentMapId)
-            {
-                await _sendToClient(new OutLeaveMapFailed(msg.MapId, "Invalid map id specified"));
-                return;
-            }
-            if (player.IsInFight && msg.MapId != null) // Allow force disconnect even in fight
-            {
-                await _sendToClient(new OutLeaveMapFailed(msg.MapId, "Cannot leave map while in a fight"));
-                return;
-            }
-
-            context.Send(currentMap, new RemovePlayer(context.Self, context.Self));
-            await _sendToClient(new OutLeaveMapInitiated(msg.MapId));
-        }
-
         private async Task OnFightChallengeSend(IContext context, InFightChallengeSend msg)
         {
             if (currentMap == null)
@@ -159,12 +117,13 @@ namespace GameServer.Application.Actors
 
             // Auto-accept for now - in a real implementation, you'd wait for player input
             context.Send(currentMap, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, context.Self, player, true));
-            await _sendToClient(new OutFightChallengeAccepted(msg.ChallengerActor.Id));
         }
 
-        private async Task OnFightStarted(IContext context, OutFightStarted msg)
+        private async Task OnFightStarted(IContext context, FightStarted msg)
         {
-            await _sendToClient(msg);
+            currentFight = msg.FightActor;
+            var opponentId = msg.Player1 == this.player ? msg.Player1.Id : msg.Player2.Id;
+            await _sendToClient(new OutFightStarted(opponentId));
         }
 
         private async Task OnFightEnded(IContext context, OutFightEnded msg)
@@ -188,19 +147,6 @@ namespace GameServer.Application.Actors
             {
                 await _sendToClient(new OutLeaveMapFailed(msg.MapId, msg.Error));
             }
-        }
-
-        private async Task OnMoveRequest(IContext context, MoveRequest msg)
-        {
-            if (currentMap == null)
-            {
-                context.Send(context.Sender, new Messages.Internal.MoveFailed(msg.NewPosition, "Not in a map"));
-                return;
-            }
-
-            pendingMove = msg.NewPosition;
-            context.Send(currentMap, new ValidateMove(context.Self, msg.NewPosition, context.Self));
-            await _sendToClient(new OutMoveInitiated(msg.NewPosition));
         }
 
         private async Task OnMoveValidated(IContext context, MoveValidated msg)
@@ -227,9 +173,119 @@ namespace GameServer.Application.Actors
             }
         }
 
-        private Task OnMapStateUpdate(IContext context, MapStateUpdate msg)
+        private async Task OnMapListResponse(IContext context, MapListResponse msg)
         {
-            return Task.CompletedTask;
+            var mapInfos = msg.Maps.Select(m => new MapInfo(
+                m.Id,
+                m.Name,
+                m.Width,
+                m.Height,
+                m.PlayerPositions.Count
+            ));
+            await _sendToClient(new OutRequestMapListResponse(mapInfos.ToList()));
+        }
+
+        private async Task OnMapStateUpdate(IContext context, MapStateUpdate msg)
+        {
+
+        }
+
+        private async Task OnPlayCard(IContext context, InPlayCard msg)
+        {
+            if (currentFight != null)
+            {
+                context.Send(currentFight, new PlayCard(context.Self, msg.CardId));
+            }
+        }
+
+        private async Task OnEndTurn(IContext context, InEndTurn msg)
+        {
+            if (currentFight != null)
+            {
+                context.Send(currentFight, new EndTurn(context.Self));
+            }
+        }
+
+        private async Task OnIncommingClientMessage(IContext context, FromClientMessage fromClientMessage)
+        {
+            var handle = fromClientMessage switch
+            {
+                InRequestMapList msg => OnRequestMapList(context, msg),
+                InJoinMap msg => OnJoinMap(context, msg),
+                InLeaveMap msg => OnLeaveMap(context, msg),
+                InPlayerMove msg => OnPlayerMove(context, msg),
+                InFightChallengeSend msg => OnFightChallengeSend(context, msg),
+                InPlayCard msg => OnPlayCard(context, msg),
+                InEndTurn msg => OnEndTurn(context, msg),
+                _ => Task.CompletedTask
+            };
+            await handle;
+        }
+
+        private async Task OnOutgoingClientMessage(IContext context, ToClientMessage toClientMessage)
+        {
+            await _sendToClient(toClientMessage);
+        }
+
+        private async Task OnRequestMapList(IContext context, InRequestMapList inRequestMapList)
+        {
+            context.Send(mapManagerActor, new RequestMapList(context.Self));
+        }
+
+        private async Task OnJoinMap(IContext context, InJoinMap inJoinMap)
+        {
+            if (currentMap != null)
+            {
+                await _sendToClient(new OutJoinMapFailed(inJoinMap.MapId, "Already in a map"));
+            }
+
+            pendingMapJoin = inJoinMap.MapId;
+
+            var foundMap = GetMapPid(context, inJoinMap.MapId);
+
+            if (foundMap == null)
+            {
+                await _sendToClient(new OutJoinMapFailed(inJoinMap.MapId, "Invalid Map Id"));
+                return;
+            }
+
+            context.Send(foundMap, new JoinMap(context.Self, player.Name, context.Self));
+            await _sendToClient(new OutJoinMapInitiated(inJoinMap.MapId));
+        }
+
+        private async Task OnLeaveMap(IContext context, InLeaveMap inLeaveMap)
+        {
+            if (currentMap == null)
+            {
+                await _sendToClient(new OutLeaveMapFailed(inLeaveMap.MapId, "Player has not joined a map"));
+                return;
+            }
+            if (inLeaveMap.MapId != null && inLeaveMap.MapId != player.CurrentMapId)
+            {
+                await _sendToClient(new OutLeaveMapFailed(inLeaveMap.MapId, "Invalid map id specified"));
+                return;
+            }
+            if (player.IsInFight && inLeaveMap.MapId != null)
+            {
+                await _sendToClient(new OutLeaveMapFailed(inLeaveMap.MapId, "Cannot leave map while in a fight"));
+                return;
+            }
+
+            context.Send(currentMap, new LeaveMap(context.Self, context.Self));
+            await _sendToClient(new OutLeaveMapInitiated(inLeaveMap.MapId));
+        }
+
+        private async Task OnPlayerMove(IContext context, InPlayerMove inPlayerMove)
+        {
+            if (currentMap == null)
+            {
+                await _sendToClient(new OutMoveFailed(inPlayerMove.NewPosition, "Not in a map"));
+                return;
+            }
+
+            pendingMove = inPlayerMove.NewPosition;
+            context.Send(currentMap, new TryMove(context.Self, inPlayerMove.NewPosition, context.Self));
+            await _sendToClient(new OutMoveInitiated(inPlayerMove.NewPosition));
         }
     }
 }

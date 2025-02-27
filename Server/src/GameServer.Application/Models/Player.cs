@@ -8,7 +8,7 @@ namespace GameServer.Application.Models
         public string Name { get; }
         public Deck Deck { get; }
         public string? CurrentMapId { get; private set; }
-        public ExPosition? Position { get; private set; }
+        public MapPosition? Position { get; private set; }
         public string? CurrentFightId { get; private set; }
         public bool IsInFight => CurrentFightId != null;
 
@@ -32,7 +32,7 @@ namespace GameServer.Application.Models
             Id = id;
         }
 
-        public void JoinMap(string mapId, ExPosition position)
+        public void JoinMap(string mapId, MapPosition position)
         {
             CurrentMapId = mapId;
             Position = position;
@@ -44,7 +44,7 @@ namespace GameServer.Application.Models
             Position = null;
         }
 
-        public void UpdatePosition(ExPosition newPosition)
+        public void UpdatePosition(MapPosition newPosition)
         {
             Position = newPosition;
         }

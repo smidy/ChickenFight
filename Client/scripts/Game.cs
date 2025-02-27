@@ -15,6 +15,9 @@ public partial class Game : Node2D
 
     // Fight state
     private string? _rightClickedPlayerId;
+    private CardBattle _cardBattle = null!;
+    private bool _cardBattleActive = false;
+    private PackedScene _cardBattleScene = null!;
 
     // Other players
     private Dictionary<string, Sprite2D> _otherPlayers = new();
@@ -36,6 +39,9 @@ public partial class Game : Node2D
         _statusLabel = GetNode<Label>("UILayer/StatusLabel");
         _network = GetNode<NetworkManager>("/root/NetworkManager");
         _gameState = GetNode<GameState>("/root/GameState");
+        
+        // Load the card battle scene
+        _cardBattleScene = GD.Load<PackedScene>("res://scenes/CardBattle.tscn");
 
         // Connect movement signals
         _network.MoveInitiated += OnMoveInitiated;
@@ -164,7 +170,7 @@ public partial class Game : Node2D
             // Remove the half-tile offset before calculating grid position
             var currentGridPos = ((_player.Position - new Vector2(16, 16)) / 32).Round();
             var newPos = currentGridPos + movement;
-            _network.SendMessage(new InPlayerMove(new ExPosition((int)newPos.X, (int)newPos.Y)));
+            _network.SendMessage(new InPlayerMove(new MapPosition((int)newPos.X, (int)newPos.Y)));
         }
     }
 
@@ -310,6 +316,9 @@ public partial class Game : Node2D
             sprite.Modulate = Colors.Red;
         }
         _player.Modulate = Colors.Red;
+        
+        // Show the card battle UI
+        ShowCardBattleUI();
     }
 
     private void OnFightEnded(string winnerId, string reason)
@@ -320,6 +329,45 @@ public partial class Game : Node2D
             sprite.Modulate = Colors.White;
         }
         _player.Modulate = new Color(0, 0.6f, 1);
+        
+        // Hide the card battle UI
+        HideCardBattleUI();
+    }
+    
+    private void ShowCardBattleUI()
+    {
+        if (_cardBattleActive)
+            return;
+            
+        // Instantiate the card battle scene
+        _cardBattle = _cardBattleScene.Instantiate<CardBattle>();
+        
+        // Add it to the UI layer
+        var uiLayer = GetNode("UILayer");
+        uiLayer.AddChild(_cardBattle);
+        
+        // Center the card battle UI in the viewport
+        _cardBattle.Position = new Vector2(
+            (GetViewport().GetVisibleRect().Size.X - _cardBattle.Size.X * _cardBattle.Scale.X) / 2,
+            (GetViewport().GetVisibleRect().Size.Y - _cardBattle.Size.Y * _cardBattle.Scale.Y) / 2
+        );
+        
+        _cardBattleActive = true;
+    }
+    
+    private void HideCardBattleUI()
+    {
+        if (!_cardBattleActive)
+            return;
+            
+        // Remove the card battle scene
+        if (_cardBattle != null)
+        {
+            _cardBattle.QueueFree();
+            _cardBattle = null!;
+        }
+        
+        _cardBattleActive = false;
     }
 
     private void OnConnectionLost()

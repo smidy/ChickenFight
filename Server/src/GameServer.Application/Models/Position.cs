@@ -4,6 +4,6 @@ namespace GameServer.Application.Models
 {
     public class PositionRef
     {
-        public static ExPosition Create(int x, int y) => new ExPosition(x, y);
+        public static MapPosition Create(int x, int y) => new MapPosition(x, y);
     }
 }

@@ -102,7 +102,7 @@ public partial class NetworkManager : Node
                     EmitSignal(SignalName.ConnectionConfirmed, connectionConfirmed.PlayerId);
                     break;
 
-                case RequestMapListResponse mapListResponse:
+                case OutRequestMapListResponse mapListResponse:
                     var mapsArray = new Godot.Collections.Array();
                     foreach (var map in mapListResponse.Maps)
                     {
@@ -184,6 +184,107 @@ public partial class NetworkManager : Node
                 case OutFightEnded msg:
                     EmitSignal(SignalName.FightEnded, msg.WinnerId, msg.Reason);
                     break;
+                    
+                // Card battle messages
+                case OutCardImages msg:
+                    EmitSignal(SignalName.CardImagesReceived, new Godot.Collections.Dictionary<string, string>(msg.CardSvgData));
+                    break;
+                    
+                case OutCardDrawn msg:
+                    var drawnCardDict = new Dictionary
+                    {
+                        ["Id"] = msg.CardInfo.Id,
+                        ["Name"] = msg.CardInfo.Name,
+                        ["Description"] = msg.CardInfo.Description,
+                        ["Cost"] = msg.CardInfo.Cost
+                    };
+                    EmitSignal(SignalName.CardDrawn, drawnCardDict, msg.SvgData);
+                    break;
+                    
+                case OutTurnStarted msg:
+                    var cardsArray = new Godot.Collections.Array();
+                    foreach (var card in msg.DrawnCards)
+                    {
+                        var turnCardDict = new Dictionary
+                        {
+                            ["Id"] = card.Id,
+                            ["Name"] = card.Name,
+                            ["Description"] = card.Description,
+                            ["Cost"] = card.Cost
+                        };
+                        cardsArray.Add(turnCardDict);
+                    }
+                    EmitSignal(SignalName.TurnStarted, msg.ActivePlayerId, cardsArray);
+                    break;
+                    
+                case OutTurnEnded msg:
+                    EmitSignal(SignalName.TurnEnded, msg.PlayerId);
+                    break;
+                    
+                case OutCardPlayCompleted msg:
+                    var playedCardDict = new Dictionary
+                    {
+                        ["Id"] = msg.PlayedCard.Id,
+                        ["Name"] = msg.PlayedCard.Name,
+                        ["Description"] = msg.PlayedCard.Description,
+                        ["Cost"] = msg.PlayedCard.Cost
+                    };
+                    EmitSignal(SignalName.CardPlayCompleted, msg.PlayerId, playedCardDict, msg.Effect);
+                    break;
+                    
+                case OutCardPlayFailed msg:
+                    EmitSignal(SignalName.CardPlayFailed, msg.CardId, msg.Error);
+                    break;
+                    
+                case OutEffectApplied msg:
+                    EmitSignal(SignalName.EffectApplied, msg.TargetPlayerId, msg.EffectType, msg.Value, msg.Source);
+                    break;
+                    
+                case OutFightStateUpdate msg:
+                    var playerStateDict = new Dictionary
+                    {
+                        ["HitPoints"] = msg.PlayerState.HitPoints,
+                        ["ActionPoints"] = msg.PlayerState.ActionPoints,
+                        ["DeckCount"] = msg.PlayerState.DeckCount
+                    };
+                    
+                    var playerHandArray = new Godot.Collections.Array();
+                    foreach (var card in msg.PlayerState.Hand)
+                    {
+                        var playerCardDict = new Dictionary
+                        {
+                            ["Id"] = card.Id,
+                            ["Name"] = card.Name,
+                            ["Description"] = card.Description,
+                            ["Cost"] = card.Cost
+                        };
+                        playerHandArray.Add(playerCardDict);
+                    }
+                    playerStateDict["Hand"] = playerHandArray;
+                    
+                    var opponentStateDict = new Dictionary
+                    {
+                        ["HitPoints"] = msg.OpponentState.HitPoints,
+                        ["ActionPoints"] = msg.OpponentState.ActionPoints,
+                        ["DeckCount"] = msg.OpponentState.DeckCount
+                    };
+                    
+                    var opponentHandArray = new Godot.Collections.Array();
+                    foreach (var card in msg.OpponentState.Hand)
+                    {
+                        var opponentCardDict = new Dictionary
+                        {
+                            ["Id"] = card.Id,
+                            ["Name"] = card.Name,
+                            ["Description"] = card.Description,
+                            ["Cost"] = card.Cost
+                        };
+                        opponentHandArray.Add(opponentCardDict);
+                    }
+                    opponentStateDict["Hand"] = opponentHandArray;
+                    
+                    EmitSignal(SignalName.FightStateUpdated, msg.CurrentTurnPlayerId, playerStateDict, opponentStateDict);
+                    break;
 
                 default:
                     GD.PrintErr($"Unknown message type: {message.GetType().Name}");
@@ -240,6 +341,24 @@ public partial class NetworkManager : Node
     public delegate void FightStartedEventHandler(string opponentId);
     [Signal]
     public delegate void FightEndedEventHandler(string winnerId, string reason);
+    
+    // Card battle signals
+    [Signal]
+    public delegate void CardImagesReceivedEventHandler(Godot.Collections.Dictionary<string, string> cardSvgData);
+    [Signal]
+    public delegate void CardDrawnEventHandler(Dictionary cardInfo, string svgData);
+    [Signal]
+    public delegate void TurnStartedEventHandler(string activePlayerId, Godot.Collections.Array drawnCards);
+    [Signal]
+    public delegate void TurnEndedEventHandler(string playerId);
+    [Signal]
+    public delegate void CardPlayCompletedEventHandler(string playerId, Dictionary playedCard, string effect);
+    [Signal]
+    public delegate void CardPlayFailedEventHandler(string cardId, string error);
+    [Signal]
+    public delegate void EffectAppliedEventHandler(string targetPlayerId, string effectType, int value, string source);
+    [Signal]
+    public delegate void FightStateUpdatedEventHandler(string currentTurnPlayerId, Dictionary playerState, Dictionary opponentState);
 
     public void Disconnect()
     {
@@ -248,5 +367,16 @@ public partial class NetworkManager : Node
             _webSocket.Close();
             _webSocket = null;
         }
+    }
+    
+    // Card battle methods
+    public void PlayCard(string cardId)
+    {
+        SendMessage(new InPlayCard(cardId));
+    }
+    
+    public void EndTurn()
+    {
+        SendMessage(new InEndTurn());
     }
 }

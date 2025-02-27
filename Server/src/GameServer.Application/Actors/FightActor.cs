@@ -14,7 +14,6 @@ namespace GameServer.Application.Actors
     /// </summary>
     public class FightActor : IActor
     {
-        private readonly string fightId;
         private readonly PID player1Actor;
         private readonly PID player2Actor;
         private readonly PID mapActor;
@@ -22,23 +21,25 @@ namespace GameServer.Application.Actors
         private readonly Dictionary<PID, Player> players;
         private bool isActive;
 
-        public FightActor(string fightId, string player1Id, Player player1, string player2Id, Player player2, PID mapActor)
+        public FightActor(PID player1Actor, Player player1, PID player2Actor, Player player2, PID mapActor)
         {
-            this.fightId = fightId;
             // Get PIDs from the actor system using connectionIds
-            this.player1Actor = Proto.PID.FromAddress("nonhost", player1Id);
-            this.player2Actor = Proto.PID.FromAddress("nonhost", player2Id);
+            this.player1Actor = player1Actor;
+            this.player2Actor = player2Actor;
             this.mapActor = mapActor;
             this.isActive = true;
 
             // Initialize fight state
-            state = new FightState(player1Id, player2Id);
+            state = new FightState(player1Actor.Id, player2Actor.Id);
             players = new Dictionary<PID, Player>
             {
-                { player1Actor, player1 },
-                { player2Actor, player2 }
+                { this.player1Actor, player1 },
+                { this.player2Actor, player2 }
             };
         }
+        
+        // Cache for card SVG data
+        private readonly Dictionary<string, string> cardSvgCache = new Dictionary<string, string>();
 
         public Task ReceiveAsync(IContext context)
         {
@@ -53,11 +54,53 @@ namespace GameServer.Application.Actors
                 _ => Task.CompletedTask
             };
         }
+        
+        /// <summary>
+        /// Reads the SVG data for a card from the assets directory
+        /// </summary>
+        private string GetCardSvgData(string cardId)
+        {
+            // Check if we already have this card in the cache
+            if (cardSvgCache.TryGetValue(cardId, out var svgData))
+            {
+                return svgData;
+            }
+            
+            // Read the SVG data from the file
+            var filePath = $"Assets\\{cardId}.txt";
+            if (!File.Exists(filePath))
+            {
+                // If the specific card file doesn't exist, use the template
+                filePath = "Assets\\card_template.txt";
+            }
+            
+            svgData = File.ReadAllText(filePath);
+            
+            // Cache the SVG data
+            cardSvgCache[cardId] = svgData;
+            
+            return svgData;
+        }
+        
+        /// <summary>
+        /// Collects SVG data for all cards in a player's hand
+        /// </summary>
+        private Dictionary<string, string> GetCardSvgsForHand(List<Card> hand)
+        {
+            var svgData = new Dictionary<string, string>();
+            
+            foreach (var card in hand)
+            {
+                svgData[card.Id] = GetCardSvgData(card.Id);
+            }
+            
+            return svgData;
+        }
 
         private Task OnStarted(IContext context)
         {
-            // Notify clients that fight has started
-            context.Send(mapActor, new FightStarted(fightId, player1Actor, players[player1Actor], player2Actor, players[player2Actor]));
+            context.Send(player1Actor, new FightStarted(context.Self, player1Actor, players[player1Actor], player2Actor, players[player2Actor]));
+            context.Send(player2Actor, new FightStarted(context.Self, player1Actor, players[player1Actor], player2Actor, players[player2Actor]));
 
             // Start first turn
             return OnStartTurn(context, new StartTurn(player1Actor));
@@ -81,6 +124,20 @@ namespace GameServer.Application.Actors
 
             // Send turn started notification
             context.Send(msg.PlayerActor, new OutTurnStarted(playerId, cardInfos));
+            
+            // Send card SVG data for the drawn cards
+            var cardSvgData = new Dictionary<string, string>();
+            foreach (var card in drawnCards)
+            {
+                cardSvgData[card.Id] = GetCardSvgData(card.Id);
+                
+                // Also send individual card drawn messages with SVG data
+                var cardInfo = new CardInfo(card.Id, card.Name, card.Description, card.Cost);
+                context.Send(msg.PlayerActor, new OutCardDrawn(cardInfo, GetCardSvgData(card.Id)));
+            }
+            
+            // Send all card SVGs in one message
+            context.Send(msg.PlayerActor, new OutCardImages(cardSvgData));
 
             // Send updated fight state
             SendFightStateUpdate(context);
@@ -95,12 +152,12 @@ namespace GameServer.Application.Actors
             var playerId = players[msg.PlayerActor].Id;
 
             // Notify clients
-            context.Send(mapActor, new OutTurnEnded(playerId));
+            context.Send(msg.PlayerActor, new OutTurnEnded(playerId));
 
             // Start next player's turn
             PID nextPlayerActor = msg.PlayerActor.Equals(player1Actor) ? player2Actor : player1Actor;
             return OnStartTurn(context, new StartTurn(nextPlayerActor));
-        }
+        }        
 
         private Task OnPlayCard(IContext context, PlayCard msg)
         {
@@ -211,11 +268,11 @@ namespace GameServer.Application.Actors
                 players[player2Actor].Deck.RemainingCards
             );
 
-            context.Send(mapActor, new OutFightStateUpdate(
-                state.CurrentTurnPlayerId,
-                p1State,
-                p2State
-            ));
+            //context.Send(mapActor, new OutFightStateUpdate(
+            //    state.CurrentTurnPlayerId,
+            //    p1State,
+            //    p2State
+            //));
         }
 
         private Task OnPlayerDisconnected(IContext context, PlayerDisconnected msg)
@@ -225,7 +282,7 @@ namespace GameServer.Application.Actors
             PID winnerActor = msg.PlayerActor.Equals(player1Actor) ? player2Actor : player1Actor;
 
             isActive = false;
-            context.Send(mapActor, new FightCompleted(fightId, winnerActor, msg.PlayerActor, "Player disconnected"));
+            context.Send(mapActor, new FightCompleted(context.Self, winnerActor, msg.PlayerActor, "Player disconnected"));
             return Task.CompletedTask;
         }
 
@@ -234,7 +291,7 @@ namespace GameServer.Application.Actors
             if (!isActive) return Task.CompletedTask;
 
             isActive = false;
-            context.Send(mapActor, new FightCompleted(fightId, msg.WinnerActor, msg.LoserActor, msg.Reason));
+            context.Send(mapActor, new FightCompleted(context.Self, msg.WinnerActor, msg.LoserActor, msg.Reason));
             return Task.CompletedTask;
         }
     }

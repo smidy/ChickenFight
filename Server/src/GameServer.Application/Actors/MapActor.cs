@@ -25,21 +25,22 @@ namespace GameServer.Application.Actors
             return context.Message switch
             {
                 Started => OnStarted(context),
-                AddPlayer msg => OnAddPlayer(context, msg),
-                RemovePlayer msg => OnRemovePlayer(context, msg),
-                ValidateMove msg => OnValidateMove(context, msg),
+                JoinMap msg => OnAddPlayer(context, msg),
+                LeaveMap msg => OnRemovePlayer(context, msg),
+                TryMove msg => OnValidateMove(context, msg),
                 FightChallengeRequest msg => OnChallengeFightRequest(context, msg),
                 FightChallengeResponse msg => OnFightChallengeResponse(context, msg),
-                FightStarted msg => OnFightStarted(context, msg),
                 FightCompleted msg => OnFightCompleted(context, msg),
                 BroadcastExternalMessage msg => OnBroadcastExternalMessage(context, msg),
+                InPlayCard msg => OnCardMessage(context, msg),
+                InEndTurn msg => OnCardMessage(context, msg),
                 _ => Task.CompletedTask
             };
         }
 
         private Task OnStarted(IContext context) => Task.CompletedTask;
 
-        private Task OnAddPlayer(IContext context, AddPlayer msg)
+        private Task OnAddPlayer(IContext context, JoinMap msg)
         {
             // Get playerId from actor name
             var playerId = msg.PlayerActor.Id;
@@ -65,7 +66,7 @@ namespace GameServer.Application.Actors
             return Task.CompletedTask;
         }
 
-        private Task OnRemovePlayer(IContext context, RemovePlayer msg)
+        private Task OnRemovePlayer(IContext context, LeaveMap msg)
         {
             var playerId = players.GetValueOrDefault(msg.PlayerActor);
             if (playerId != null && map.RemovePlayer(playerId))
@@ -89,7 +90,7 @@ namespace GameServer.Application.Actors
             return Task.CompletedTask;
         }
 
-        private Task OnValidateMove(IContext context, ValidateMove msg)
+        private Task OnValidateMove(IContext context, TryMove msg)
         {
             var playerId = players.GetValueOrDefault(msg.PlayerActor);
             if (playerId == null)
@@ -170,7 +171,7 @@ namespace GameServer.Application.Actors
             // Create fight
             string fightId = $"fight_{++fightCounter}";
             var props = Props.FromProducer(() => 
-                new FightActor(fightId, challengerPlayerId, msg.Challenger, targetPlayerId, msg.Target, context.Self));
+                new FightActor(fightId, msg.ChallengerActor, msg.Challenger, msg.TargetActor, msg.Target, context.Self));
             
             var fightActor = context.SpawnNamed(props, fightId);
             activeFights.Add(fightId, fightActor);
@@ -182,23 +183,9 @@ namespace GameServer.Application.Actors
             return Task.CompletedTask;
         }
 
-        private Task OnFightStarted(IContext context, FightStarted msg)
-        {
-            // Convert Player1Id/Player2Id from PlayerIds to PIDs
-            var player1Actor = players[msg.Player1Actor];
-            var player2Actor = players[msg.Player2Actor];
-
-            if (player1Actor != null)
-                context.Send(msg.Player1Actor, new OutFightStarted(msg.Player2.Id));
-            if (player2Actor != null)
-                context.Send(msg.Player2Actor, new OutFightStarted(msg.Player1.Id));
-
-            return Task.CompletedTask;
-        }
-
         private Task OnFightCompleted(IContext context, FightCompleted msg)
         {
-            if (activeFights.Remove(msg.FightId, out var fightActor))
+            if (activeFights.Remove(msg.FightId.Id, out var fightActor))
             {
                 var winnerPlayerId = players.GetValueOrDefault(msg.WinnerActor);
                 var loserPlayerId = players.GetValueOrDefault(msg.LoserActor);
@@ -220,6 +207,22 @@ namespace GameServer.Application.Actors
         private async Task OnBroadcastExternalMessage(IContext context, BroadcastExternalMessage msg)
         {
             BroadcastToAllPlayers(context, msg.ExternalMessage);
+        }
+
+        private Task OnCardMessage(IContext context, object msg)
+        {
+            // Get the player ID from the sender
+            if (!players.TryGetValue(context.Sender, out var playerId))
+                return Task.CompletedTask;
+
+            // Get the fight ID for the player
+            var fightId = map.GetPlayerFightId(playerId);
+            if (fightId == null || !activeFights.TryGetValue(fightId, out var fightActor))
+                return Task.CompletedTask;
+
+            // Forward the message to the fight actor
+            context.Send(fightActor, msg);
+            return Task.CompletedTask;
         }
 
         private void BroadcastToAllPlayers(IContext context, object message)

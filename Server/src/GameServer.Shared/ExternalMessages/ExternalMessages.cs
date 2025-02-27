@@ -7,31 +7,30 @@ namespace GameServer.Shared.ExternalMessages
 
     public abstract record FromClientMessage();
 
-
     // Connection messages
     public record OutConnectionConfirmed(string PlayerId) : ToClientMessage;
 
     // Map listing messages
     public record InRequestMapList() : FromClientMessage;
-    public record RequestMapListResponse(List<MapInfo> Maps) : ToClientMessage;
+    public record OutRequestMapListResponse(List<MapInfo> Maps) : ToClientMessage;
     public record MapInfo(string Id, string Name, int Width, int Height, int PlayerCount);
 
     // Map join/leave messages
     public record InJoinMap(string MapId) : FromClientMessage;
 
+    public record InLeaveMap(string MapId) : FromClientMessage;
+
     public record OutJoinMapInitiated(string MapId) : ToClientMessage;
 
-    public record OutJoinMapCompleted(string MapId, string PlayerId, ExPosition Position, TilemapData TilemapData, IReadOnlyDictionary<string, ExPosition> PlayerPositions) : ToClientMessage;
+    public record OutJoinMapCompleted(string MapId, string PlayerId, MapPosition Position, TilemapData TilemapData, IReadOnlyDictionary<string, MapPosition> PlayerPositions) : ToClientMessage;
 
     public record OutJoinMapFailed(string MapId, string Error) : ToClientMessage;
 
-    public record OutPlayerJoinedMap(string PlayerId, ExPosition? Position) : ToClientMessage;
+    public record OutPlayerJoinedMap(string PlayerId, MapPosition? Position) : ToClientMessage;
 
-    public record OutPlayerPositionChange(string PlayerId, ExPosition? Position) : ToClientMessage;
+    public record OutPlayerPositionChange(string PlayerId, MapPosition? Position) : ToClientMessage;
 
     public record OutPlayerLeftMap(string PlayerId) : ToClientMessage;
-
-    public record InLeaveMap(string MapId) : FromClientMessage;
 
     public record OutLeaveMapInitiated(string MapId) : ToClientMessage;
 
@@ -40,16 +39,16 @@ namespace GameServer.Shared.ExternalMessages
     public record OutLeaveMapFailed(string MapId, string Error) : ToClientMessage;
 
     // Movement messages
-    public record InPlayerMove(ExPosition NewPosition) : FromClientMessage;
+    public record InPlayerMove(MapPosition NewPosition) : FromClientMessage;
 
-    public record OutMoveInitiated(ExPosition NewPosition) : ToClientMessage;
+    public record OutMoveInitiated(MapPosition NewPosition) : ToClientMessage;
 
-    public record OutMoveCompleted(ExPosition NewPosition) : ToClientMessage;
+    public record OutMoveCompleted(MapPosition NewPosition) : ToClientMessage;
 
-    public record OutMoveFailed(ExPosition AttemptedPosition, string Error) : ToClientMessage;
+    public record OutMoveFailed(MapPosition AttemptedPosition, string Error) : ToClientMessage;
 
     // State update messages
-    public record PlayerState(string Id, string Name, ExPosition Position);
+    public record PlayerState(string Id, string Name, MapPosition Position);
     public record OutPlayerInfo(PlayerState? State) : ToClientMessage;
 
     // Map data
@@ -63,8 +62,6 @@ namespace GameServer.Shared.ExternalMessages
 
     /// <summary>Sent when a player accepts a fight challenge</summary>
     public record InFightChallengeAccepted(string TargetId) : FromClientMessage;
-
-    public record OutFightChallengeAccepted(string TargetId) : ToClientMessage;
 
     /// <summary>Notifies players that a fight has begun</summary>
     public record OutFightStarted(string OpponentId) : ToClientMessage;
@@ -141,4 +138,24 @@ namespace GameServer.Shared.ExternalMessages
         int Value,
         string Source
     ) : ToClientMessage;
+    
+    /// <summary>
+    /// Sends SVG data for multiple cards to the client
+    /// </summary>
+    public record OutCardImages(
+        Dictionary<string, string> CardSvgData
+    ) : ToClientMessage;
+    
+    /// <summary>
+    /// Notifies when a new card is drawn with its SVG data
+    /// </summary>
+    public record OutCardDrawn(
+        CardInfo CardInfo,
+        string SvgData
+    ) : ToClientMessage;
+    
+    /// <summary>
+    /// Request from client to end their turn
+    /// </summary>
+    public record InEndTurn() : FromClientMessage;
 }

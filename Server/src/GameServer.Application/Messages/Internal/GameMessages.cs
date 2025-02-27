@@ -6,11 +6,7 @@ using GameServer.Application.Actors;
 namespace GameServer.Application.Messages.Internal
 {
     // Creation messages
-    public record CreatePlayer(string ConnectionId, string PlayerName, SendToClientDelegate<ToClientMessage> SendToClient);
-    public record PlayerCreated(PID PlayerActor, Player Player);
-    
-    // Map listing messages
-    public record GetMapList;
-    public record MapList(IReadOnlyCollection<Map> Maps);
-    
+    public record CreatePlayer(string PlayerId, string PlayerName, SendToClientDelegate<ToClientMessage> SendToClient);
+    public record CreatePlayerResponse(PID PlayerActor);
+     
 }

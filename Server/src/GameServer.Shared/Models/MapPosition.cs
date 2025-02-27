@@ -2,9 +2,9 @@ using System;
 
 namespace GameServer.Shared.Models
 {
-    public record ExPosition(int X, int Y)
+    public record MapPosition(int X, int Y)
     {
-        public bool IsAdjacent(ExPosition other)
+        public bool IsAdjacent(MapPosition other)
         {
             var dx = Math.Abs(X - other.X);
             var dy = Math.Abs(Y - other.Y);

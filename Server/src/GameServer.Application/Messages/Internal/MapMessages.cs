@@ -6,23 +6,23 @@ using GameServer.Shared.ExternalMessages;
 namespace GameServer.Application.Messages.Internal
 {
     // Player management messages
-    public record AddPlayer(PID PlayerActor, string PlayerName, PID Requester);
+    public record JoinMap(PID PlayerActor, string PlayerName, PID Requester);
     public record PlayerAddedToMap(PID PlayerActor,
         PID MapPID,
         string MapId, 
-        ExPosition StartPosition, 
+        MapPosition StartPosition, 
         Shared.ExternalMessages.TilemapData TilemapData,
-        IReadOnlyDictionary<PID, ExPosition> PlayerPositions);
+        IReadOnlyDictionary<PID, MapPosition> PlayerPositions);
     public record PlayerAddFailure(PID PlayerActor, string MapId, string Error);
     
-    public record RemovePlayer(PID PlayerActor, PID Requester);
+    public record LeaveMap(PID PlayerActor, PID Requester);
     public record PlayerRemovedFromMap(string MapId, PID PlayerActor);
     public record PlayerRemoveFailure(string MapId, PID PlayerActor, string Error);
     
     // Movement messages
-    public record ValidateMove(PID PlayerActor, ExPosition NewPosition, PID Requester);
-    public record MoveValidated(PID PlayerActor, ExPosition NewPosition);
-    public record MoveRejected(PID PlayerActor, ExPosition AttemptedPosition, string Error);
+    public record TryMove(PID PlayerActor, MapPosition NewPosition, PID Requester);
+    public record MoveValidated(PID PlayerActor, MapPosition NewPosition);
+    public record MoveRejected(PID PlayerActor, MapPosition AttemptedPosition, string Error);
     
     // Map state messages
     public record MapStateUpdate(string MapId, string MapName, int Width, int Height);

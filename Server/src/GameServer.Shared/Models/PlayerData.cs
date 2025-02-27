@@ -1,4 +1,4 @@
 ﻿namespace GameServer.Shared.Models
 {
-    public record PlayerData(string Id, ExPosition Position);
+    public record PlayerData(string Id, MapPosition Position);
 }

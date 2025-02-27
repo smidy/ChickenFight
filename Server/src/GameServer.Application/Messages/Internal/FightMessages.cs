@@ -8,8 +8,8 @@ namespace GameServer.Application.Messages.Internal
     public record FightChallengeResponse(PID ChallengerActor, Player Challenger, PID TargetActor, Player Target, bool Accepted);
     
     // Fight state messages
-    public record FightStarted(string FightId, PID Player1Actor, Player Player1, PID Player2Actor, Player Player2);
-    public record FightCompleted(string FightId, PID WinnerActor, PID LoserActor, string Reason);
+    public record FightStarted(PID FightActor, PID Player1Actor, Player Player1, PID Player2Actor, Player Player2);
+    public record FightCompleted(PID FightId, PID WinnerActor, PID LoserActor, string Reason);
     public record PlayerDisconnected(PID PlayerActor);
     public record EndFight(PID WinnerActor, PID LoserActor, string Reason);
 

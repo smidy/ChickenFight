@@ -28,6 +28,8 @@ namespace GameServer.Presentation
 
     public class GameSession : WsSession
     {
+        const int CreatePlayerTimeout = 5000;
+
         private readonly GameWebSocketServer server;
         private readonly ActorSystem actorSystem;
         private PID? playerActor;
@@ -44,26 +46,24 @@ namespace GameServer.Presentation
         public override async void OnWsConnected(HttpRequest request)
         {
             Console.WriteLine($"WebSocket session connected: {sessionId}");
-            
+
             // Create player actor immediately on connection
-            var createResponse = await actorSystem.Root.RequestAsync<PlayerCreated>(
+            var createResponse = await actorSystem.Root.RequestAsync<CreatePlayerResponse>(
                 server.gameActor,
-                new CreatePlayer(sessionId, $"Player_{sessionId}", (ToClientMessage msg) => SendResponse((dynamic)msg))
+                new CreatePlayer(sessionId, $"Player_{sessionId}", (ToClientMessage msg) => SendResponse((dynamic)msg)),
+                TimeSpan.FromMilliseconds(CreatePlayerTimeout)
             );
             playerActor = createResponse.PlayerActor;
-            
-            // Send connection confirmation to client
-            await SendResponse(new OutConnectionConfirmed(createResponse.Player.Id));
         }
 
-        public override async void OnWsDisconnected()
+        public override void OnWsDisconnected()
         {
             Console.WriteLine($"WebSocket session disconnected: {sessionId}");
 
             if (playerActor != null)
             {
                 // If player is in a map, ensure they leave properly
-                actorSystem.Root.Send(playerActor, new LeaveMapRequest(null)); // null mapId will force leave from any map
+                actorSystem.Root.Send(playerActor, new InLeaveMap(null)); // null mapId will force leave from any map
 
                 // Stop the player actor
                 actorSystem.Root.Stop(playerActor);
@@ -71,37 +71,20 @@ namespace GameServer.Presentation
             }
         }
 
+        /// <summary>
+        /// Send all incomming messages to the player actor which was created OnWsConnected 
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <param name="size"></param>
         public override void OnWsReceived(byte[] buffer, long offset, long size)
         {
             try
             {
+                //todo validate message security
                 var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
                 var baseMessage = JsonConfig.Deserialize<FromClientMessage>(message);
-
-                switch (baseMessage)
-                {
-                    case InRequestMapList:
-                        HandleRequestMapList();
-                        break;
-                    case InJoinMap joinMap:
-                        HandleJoinMap(joinMap);
-                        break;
-                    case InLeaveMap leaveMap:
-                        HandleLeaveMap(leaveMap);
-                        break;
-                    case InPlayerMove move:
-                        HandleMove(move);
-                        break;
-                    case InFightChallengeSend challenge:
-                        HandleFightChallenge(challenge);
-                        break;
-                    case InFightChallengeAccepted accept:
-                        HandleFightChallengeAccepted(accept);
-                        break;
-                    case InPlayCard playCard:
-                        HandlePlayCard(playCard);
-                        break;
-                }
+                actorSystem.Root.Send(playerActor, baseMessage);
             }
             catch (Exception ex)
             {
@@ -116,78 +99,5 @@ namespace GameServer.Presentation
             return Task.CompletedTask;
         }
 
-        private async void HandleRequestMapList()
-        {
-            var response = await actorSystem.Root.RequestAsync<MapList>(server.gameActor, new GetMapList());
-            var mapInfos = response.Maps.Select(m => new MapInfo(
-                m.Id, 
-                m.Name, 
-                m.Width, 
-                m.Height, 
-                m.PlayerPositions.Count
-            ));
-            await SendResponse(new RequestMapListResponse(mapInfos.ToList()));
-        }
-
-        private async void HandleJoinMap(InJoinMap joinMap)
-        {
-            if (playerActor == null)
-            {
-                await SendResponse(new GameServer.Shared.ExternalMessages.OutJoinMapFailed(joinMap.MapId, "Player not connected"));
-                return;
-            }
-
-            actorSystem.Root.Send(playerActor, new JoinMapRequest(joinMap.MapId));
-        }
-
-        private async void HandleLeaveMap(InLeaveMap leaveMap)
-        {
-            if (playerActor == null)
-            {
-                await SendResponse(new GameServer.Shared.ExternalMessages.OutLeaveMapFailed(leaveMap.MapId, "Not connected to any map"));
-                return;
-            }
-
-            actorSystem.Root.Send(playerActor, new LeaveMapRequest(leaveMap.MapId));
-        }
-
-        private async void HandleFightChallengeAccepted(InFightChallengeAccepted accept)
-        {
-            if (playerActor == null)
-            {
-                // Cannot accept if not connected
-                return;
-            }
-
-            actorSystem.Root.Send(playerActor, accept);
-        }
-
-        private async void HandleFightChallenge(InFightChallengeSend challenge)
-        {
-            if (playerActor == null)
-            {
-                // Cannot challenge if not connected
-                return;
-            }
-
-            actorSystem.Root.Send(playerActor, challenge);
-        }
-
-        private async void HandleMove(InPlayerMove move)
-        {
-            if (playerActor == null)
-            {
-                await SendResponse(new OutPlayerInfo(null));
-                return;
-            }
-
-            actorSystem.Root.Send(playerActor, new MoveRequest(move.NewPosition));
-        }
-
-        private async void HandlePlayCard(InPlayCard extPlayCard)
-        {
-
-            actorSystem.Root.Send(playerActor, extPlayCard);
-        }
     }
 }
