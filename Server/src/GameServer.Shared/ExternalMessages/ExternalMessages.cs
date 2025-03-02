@@ -75,7 +75,7 @@ namespace GameServer.Shared.ExternalMessages
     
     /// <summary>
     /// Represents a player's current fight status including player ID, HP, AP, cards in hand,
-    /// remaining deck size, and discard pile size
+    /// remaining deck size, discard pile size, and active status effects
     /// </summary>
     public record OutPlayerFightState(
         string PlayerId,
@@ -83,7 +83,20 @@ namespace GameServer.Shared.ExternalMessages
         int ActionPoints,
         List<CardInfo> Hand,
         int DeckCount,
-        int DiscardPileCount
+        int DiscardPileCount,
+        List<StatusEffectInfo> StatusEffects = null
+    ) : ToClientMessage;
+    
+    /// <summary>
+    /// Contains information about a status effect for client display
+    /// </summary>
+    public record StatusEffectInfo(
+        string Id,
+        string Name,
+        string Description,
+        int Duration,
+        string Type,
+        int Magnitude
     ) : ToClientMessage;
 
     /// <summary>

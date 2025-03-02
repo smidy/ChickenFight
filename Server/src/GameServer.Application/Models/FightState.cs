@@ -49,7 +49,7 @@ namespace GameServer.Application.Models
         public bool IsPlayersTurn(string playerId) => CurrentTurnPlayerId == playerId;
 
         /// <summary>
-        /// Starts a new turn for the specified player, granting action points
+        /// Starts a new turn for the specified player, granting action points and processing status effects
         /// </summary>
         /// <param name="playerId">ID of the player whose turn is starting</param>
         /// <exception cref="InvalidOperationException">Thrown if player is not in the fight</exception>
@@ -60,7 +60,23 @@ namespace GameServer.Application.Models
 
             CurrentTurnPlayerId = playerId;
             var state = PlayerStates[playerId];
+            
+            // Process status effects for the player starting their turn
+            state.ProcessStatusEffects(this, playerId);
+            
+            // Grant action points
             state.ActionPoints += STARTING_ACTION_POINTS;
+        }
+        
+        /// <summary>
+        /// Applies a status effect to a player
+        /// </summary>
+        public void ApplyStatusEffect(string playerId, StatusEffect effect)
+        {
+            if (!PlayerStates.ContainsKey(playerId))
+                throw new InvalidOperationException($"Player {playerId} not in fight");
+                
+            PlayerStates[playerId].ApplyStatusEffect(effect);
         }
 
         /// <summary>
@@ -77,12 +93,25 @@ namespace GameServer.Application.Models
         }
 
         /// <summary>
-        /// Checks if a player can play a specific card based on action points and card possession
+        /// Checks if a player can play a specific card based on action points, card possession, and status effects
         /// </summary>
         public bool CanPlayCard(string playerId, Card card)
         {
             var state = PlayerStates[playerId];
-            return state.ActionPoints >= card.Cost && state.Hand.Contains(card);
+            
+            // Check if player has the card and enough action points
+            bool hasCardAndPoints = state.ActionPoints >= card.Cost && state.Hand.Contains(card);
+            if (!hasCardAndPoints) return false;
+            
+            // Check for card lock effects that might prevent playing this card
+            var cardLockEffects = state.ActiveEffects
+                .Where(e => e.Type == StatusEffectType.CardLock)
+                .ToList();
+                
+            // In a full implementation, we would check if the locked card type matches this card
+            // For now, we'll assume no cards are locked
+            
+            return true;
         }
 
         /// <summary>
@@ -115,21 +144,86 @@ namespace GameServer.Application.Models
         }
 
         /// <summary>
-        /// Applies damage to a player, ensuring HP doesn't go below 0
+        /// Applies damage to a player, considering damage boost, reduction, and dodge effects
         /// </summary>
-        public void ApplyDamage(string targetPlayerId, int amount)
+        public void ApplyDamage(string targetPlayerId, int amount, string attackerId = null)
         {
             var state = PlayerStates[targetPlayerId];
-            state.HitPoints = Math.Max(0, state.HitPoints - amount);
+            
+            // If attacker ID is not provided, find it (the other player)
+            if (attackerId == null)
+            {
+                attackerId = PlayerStates.Keys.First(id => id != targetPlayerId);
+            }
+            
+            var attackerState = PlayerStates[attackerId];
+            
+            // Apply damage boost effects from attacker
+            var damageBoostEffects = attackerState.ActiveEffects
+                .Where(e => e.Type == StatusEffectType.DamageBoost)
+                .ToList();
+                
+            float totalBoostPercentage = damageBoostEffects.Sum(e => e.Magnitude) / 100.0f;
+            int boostedDamage = amount + (int)(amount * totalBoostPercentage);
+            
+            // Check for dodge effects on target
+            var dodgeEffects = state.ActiveEffects
+                .Where(e => e.Type == StatusEffectType.DodgeChance)
+                .ToList();
+                
+            foreach (var effect in dodgeEffects)
+            {
+                // Simple implementation: if random number is less than dodge chance, avoid damage
+                var random = new Random();
+                if (random.Next(100) < effect.Magnitude)
+                {
+                    // Damage completely avoided
+                    return;
+                }
+            }
+            
+            // Apply damage reduction effects on target
+            var damageReductionEffects = state.ActiveEffects
+                .Where(e => e.Type == StatusEffectType.DamageReduction)
+                .ToList();
+                
+            int totalReduction = damageReductionEffects.Sum(e => e.Magnitude);
+            int actualDamage = Math.Max(0, boostedDamage - totalReduction);
+            
+            // Apply the damage
+            state.HitPoints = Math.Max(0, state.HitPoints - actualDamage);
+            
+            // Apply damage reflection effects from target back to attacker
+            var reflectionEffects = state.ActiveEffects
+                .Where(e => e.Type == StatusEffectType.DamageReflection)
+                .ToList();
+                
+            // Apply reflection damage to attacker
+            foreach (var effect in reflectionEffects)
+            {
+                attackerState.HitPoints = Math.Max(0, attackerState.HitPoints - effect.Magnitude);
+            }
         }
 
         /// <summary>
-        /// Heals a player, ensuring HP doesn't exceed starting HP
+        /// Heals a player, ensuring HP doesn't exceed maximum HP
         /// </summary>
         public void ApplyHealing(string targetPlayerId, int amount)
         {
             var state = PlayerStates[targetPlayerId];
-            state.HitPoints = Math.Min(STARTING_HP, state.HitPoints + amount);
+            state.HitPoints = Math.Min(state.MaxHitPoints, state.HitPoints + amount);
+        }
+        
+        /// <summary>
+        /// Increases a player's maximum hit points
+        /// </summary>
+        public void IncreaseMaxHitPoints(string targetPlayerId, int amount)
+        {
+            var state = PlayerStates[targetPlayerId];
+            state.MaxHitPoints += amount;
+            
+            // Also heal the player by the same amount
+            ApplyHealing(targetPlayerId, amount);
         }
 
         /// <summary>
@@ -154,18 +248,24 @@ namespace GameServer.Application.Models
 
     /// <summary>
     /// Tracks an individual player's state during a fight, including their
-    /// current HP, action points, and cards in hand
+    /// current HP, action points, cards in hand, and active status effects
     /// </summary>
     public class PlayerFightState
     {
         /// <summary>Current health points of the player</summary>
         public int HitPoints { get; set; }
         
+        /// <summary>Maximum health points of the player</summary>
+        public int MaxHitPoints { get; set; }
+        
         /// <summary>Current action points available for playing cards</summary>
         public int ActionPoints { get; set; }
         
         /// <summary>Cards currently in the player's hand</summary>
         public List<Card> Hand { get; }
+        
+        /// <summary>Status effects currently affecting the player</summary>
+        public List<StatusEffect> ActiveEffects { get; }
 
         /// <summary>
         /// Initializes a new player state with starting HP and empty hand
@@ -173,8 +273,46 @@ namespace GameServer.Application.Models
         public PlayerFightState(int startingHp)
         {
             HitPoints = startingHp;
+            MaxHitPoints = startingHp;
             ActionPoints = 0;
             Hand = new List<Card>();
+            ActiveEffects = new List<StatusEffect>();
+        }
+        
+        /// <summary>
+        /// Applies a status effect to the player
+        /// </summary>
+        public void ApplyStatusEffect(StatusEffect effect)
+        {
+            // Check if this effect already exists
+            var existingEffect = ActiveEffects.FirstOrDefault(e => e.Id == effect.Id);
+            if (existingEffect != null)
+            {
+                // Remove the existing effect
+                ActiveEffects.Remove(existingEffect);
+            }
+            
+            // Add the new effect
+            ActiveEffects.Add(effect);
+        }
+        
+        /// <summary>
+        /// Processes all active status effects at the start of a turn
+        /// </summary>
+        public void ProcessStatusEffects(FightState state, string playerId)
+        {
+            // Apply each effect
+            foreach (var effect in ActiveEffects.ToList())
+            {
+                effect.Apply(state, playerId);
+                effect.Tick();
+                
+                // Remove expired effects
+                if (effect.IsExpired)
+                {
+                    ActiveEffects.Remove(effect);
+                }
+            }
         }
     }
 }

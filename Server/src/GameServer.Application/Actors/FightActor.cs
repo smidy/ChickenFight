@@ -2,6 +2,7 @@ using Proto;
 using GameServer.Application.Models;
 using GameServer.Application.Messages.Internal;
 using GameServer.Shared.ExternalMessages;
+using GameServer.Application.Models.CardEffects;
 
 namespace GameServer.Application.Actors
 {
@@ -19,6 +20,7 @@ namespace GameServer.Application.Actors
         private readonly PID mapActor;
         private readonly FightState state;
         private readonly Dictionary<PID, Player> players;
+        private readonly ICardEffectHandlerFactory cardEffectHandlerFactory;
         private bool isActive;
 
         public FightActor(PID player1Actor, Player player1, PID player2Actor, Player player2, PID mapActor)
@@ -36,6 +38,11 @@ namespace GameServer.Application.Actors
                 { this.player1Actor, player1 },
                 { this.player2Actor, player2 }
             };
+            
+            // Initialize card effect handler factory
+            var registry = new CardEffectHandlerRegistry(() => new DefaultCardEffectHandler());
+            CardEffectHandlerRegistration.RegisterAllHandlers(registry);
+            cardEffectHandlerFactory = registry;
         }
         
         // Cache for card SVG data
@@ -111,9 +118,24 @@ namespace GameServer.Application.Actors
             if (!isActive) return Task.CompletedTask;
 
             var playerId = msg.PlayerActor.Id;
+            var playerState = state.GetPlayerState(playerId);
+            
+            // Get status effects before they're processed
+            var activeEffects = new List<StatusEffect>(playerState.ActiveEffects);
 
-            // Update fight state for new turn
+            // Update fight state for new turn (this will process status effects)
             state.StartTurn(playerId);
+            
+            // Send notifications about status effects that were applied
+            foreach (var effect in activeEffects)
+            {
+                // Only send notifications for effects that apply at turn start
+                if (effect.Type == StatusEffectType.DamageOverTime || effect.Type == StatusEffectType.HealOverTime)
+                {
+                    string effectType = effect.Type == StatusEffectType.DamageOverTime ? "DamageOverTime" : "HealOverTime";
+                    context.Send(mapActor, new OutEffectApplied(playerId, effectType, effect.Magnitude, effect.Source));
+                }
+            }
 
             // Draw cards for active player
             var player = players[msg.PlayerActor];
@@ -209,44 +231,28 @@ namespace GameServer.Application.Actors
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Applies the effects of a card using the appropriate handler
+        /// </summary>
         private string ApplyCardEffects(IContext context, PID playerActor, Card card)
         {
+            string playerId = players[playerActor].Id;
             PID targetActor = playerActor.Equals(player1Actor) ? player2Actor : player1Actor;
             string targetId = players[targetActor].Id;
-            string effect = "";
-
-            switch (card.Type)
+            
+            // Get the appropriate handler for this card
+            var handler = cardEffectHandlerFactory.CreateHandler(card);
+            
+            // Apply the effect and get the result
+            var result = handler.ApplyEffect(context, state, playerId, targetId, card);
+            
+            // Forward notifications to the map actor
+            foreach (var notification in result.Notifications)
             {
-                case CardType.Attack:
-                    int damage = GetDamageForCard(card);
-                    state.ApplyDamage(targetId, damage);
-                    effect = $"Dealt {damage} damage";
-                    context.Send(mapActor, new OutEffectApplied(targetId, "Damage", damage, card.Name));
-                    break;
-
-                case CardType.Defense:
-                    int healing = GetHealingForCard(card);
-                    state.ApplyHealing(players[playerActor].Id, healing);
-                    effect = $"Healed for {healing}";
-                    context.Send(mapActor, new OutEffectApplied(players[playerActor].Id, "Heal", healing, card.Name));
-                    break;
-
-                    // Add other card type effects as needed
+                context.Send(mapActor, notification);
             }
-
-            return effect;
-        }
-
-        private int GetDamageForCard(Card card)
-        {
-            // Basic damage values based on card cost
-            return card.Cost * 2;
-        }
-
-        private int GetHealingForCard(Card card)
-        {
-            // Basic healing values based on card cost
-            return card.Cost * 2;
+            
+            return result.Description;
         }
 
         private void SendFightStateUpdate(IContext context)
@@ -254,22 +260,47 @@ namespace GameServer.Application.Actors
             var player1State = state.GetPlayerState(player1Actor.Id);
             var player2State = state.GetPlayerState(player2Actor.Id);
 
+            // Convert status effects to client format
+            var p1StatusEffects = player1State.ActiveEffects.Select(e => 
+                new StatusEffectInfo(
+                    e.Id,
+                    e.Name,
+                    e.Description,
+                    e.Duration,
+                    e.Type.ToString(),
+                    e.Magnitude
+                )
+            ).ToList();
+            
+            var p2StatusEffects = player2State.ActiveEffects.Select(e => 
+                new StatusEffectInfo(
+                    e.Id,
+                    e.Name,
+                    e.Description,
+                    e.Duration,
+                    e.Type.ToString(),
+                    e.Magnitude
+                )
+            ).ToList();
+
             var p1State = new OutPlayerFightState(
-                players[player1Actor].Id,  // Add player ID
+                players[player1Actor].Id,
                 player1State.HitPoints,
                 player1State.ActionPoints,
                 player1State.Hand.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList(),
                 players[player1Actor].Deck.RemainingCards,
-                players[player1Actor].Deck.DiscardPile.Count  // Add discard pile count
+                players[player1Actor].Deck.DiscardPile.Count,
+                p1StatusEffects
             );
 
             var p2State = new OutPlayerFightState(
-                players[player2Actor].Id,  // Add player ID
+                players[player2Actor].Id,
                 player2State.HitPoints,
                 player2State.ActionPoints,
                 player2State.Hand.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList(),
                 players[player2Actor].Deck.RemainingCards,
-                players[player2Actor].Deck.DiscardPile.Count  // Add discard pile count
+                players[player2Actor].Deck.DiscardPile.Count,
+                p2StatusEffects
             );
 
             var outFightStateUpdate = new OutFightStateUpdate(
