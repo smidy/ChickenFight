@@ -11,7 +11,7 @@ namespace GameServer.Application.Models
     public class FightState
     {
         /// <summary>Starting health points for each player</summary>
-        public const int STARTING_HP = 50;
+        public const int STARTING_HP = 10;
         
         /// <summary>Action points granted at the start of each turn</summary>
         public const int STARTING_ACTION_POINTS = 3;
@@ -97,6 +97,21 @@ namespace GameServer.Application.Models
 
             state.ActionPoints -= card.Cost;
             state.Hand.Remove(card);
+        }
+        
+        /// <summary>
+        /// Discards all cards from a player's hand to their discard pile
+        /// </summary>
+        /// <param name="playerId">ID of the player whose hand to discard</param>
+        /// <param name="deck">The player's deck to discard cards to</param>
+        public void DiscardHand(string playerId, Deck deck)
+        {
+            var state = PlayerStates[playerId];
+            foreach (var card in state.Hand.ToList())
+            {
+                deck.DiscardCard(card);
+            }
+            state.Hand.Clear();
         }
 
         /// <summary>

@@ -73,10 +73,10 @@ public partial class CardBattle : Control
     private void UpdateUI()
     {
         // Update player stats
-        _playerStatsLabel.Text = $"Player: {_gameState.PlayerHitPoints} HP | {_gameState.PlayerActionPoints} AP | {_gameState.PlayerDeckCount} cards in deck";
+        _playerStatsLabel.Text = $"Player: {_gameState.PlayerHitPoints} HP | {_gameState.PlayerActionPoints} AP | {_gameState.PlayerDeckCount} cards in deck | {_gameState.PlayerDiscardPileCount} in discard";
         
         // Update opponent stats
-        _opponentStatsLabel.Text = $"Opponent: {_gameState.OpponentHitPoints} HP | {_gameState.OpponentActionPoints} AP | {_gameState.OpponentDeckCount} cards in deck";
+        _opponentStatsLabel.Text = $"Opponent: {_gameState.OpponentHitPoints} HP | {_gameState.OpponentActionPoints} AP | {_gameState.OpponentDeckCount} cards in deck | {_gameState.OpponentDiscardPileCount} in discard";
         
         // Update turn label
         if (_gameState.CurrentTurnPlayerId == _gameState.PlayerId)
@@ -96,13 +96,19 @@ public partial class CardBattle : Control
     
     private void UpdateCardDisplay()
     {
+        // Debug log the current hand state
+        GD.Print($"Updating card display. Cards in hand: {_gameState.CardsInHand.Count} Cardnodes: {_cardNodes.Count}  CardChildren {_cardContainer.GetChildren().Count}");
+        
         // Clear existing cards
         foreach (var node in _cardNodes.Values)
         {
             node.QueueFree();
         }
         _cardNodes.Clear();
-        _cardContainer.GetChildren().Clear();
+        foreach (var thing in _cardContainer.GetChildren())
+        {
+            _cardContainer.RemoveChild( thing );
+        }
         
         // Add cards from hand
         foreach (var cardInfo in _gameState.CardsInHand)
@@ -111,13 +117,21 @@ public partial class CardBattle : Control
             
             // Check if we have SVG data for this card
             if (!_gameState.CardSvgData.ContainsKey(cardId))
+            {
+                GD.PrintErr($"Missing SVG data for card {cardId}");
                 continue;
+            }
                 
             // Create card visual
             var cardNode = CreateCardVisual(cardId, cardInfo);
             _cardContainer.AddChild(cardNode);
             _cardNodes[cardId] = cardNode;
+            
+            GD.Print($"Added card to display: {cardId}");
         }
+        
+        // Verify the card container has the correct number of children
+        GD.Print($"Card container now has {_cardContainer.GetChildCount()} cards");
     }
     
     private TextureRect CreateCardVisual(string cardId, Dictionary cardInfo)
@@ -212,13 +226,25 @@ public partial class CardBattle : Control
         UpdateCardDisplay();
     }
     
-    private void OnTurnStarted(string activePlayerId, Godot.Collections.Array drawnCards)
+    private void OnTurnStarted(string activePlayerId)
     {
+        // Force clear the card display at the start of a turn to ensure a clean state
+        GD.Print($"Turn started for player {activePlayerId}. Ensuring card display is clean.");
+        
+        // Clear existing cards immediately
+        foreach (var node in _cardNodes.Values)
+        {
+            node.QueueFree();
+        }
+        _cardNodes.Clear();
+        _cardContainer.GetChildren().Clear();
+        
+        // Then update the UI which will reflect the current game state
         UpdateUI();
         
         if (activePlayerId == _gameState.PlayerId)
         {
-            _statusLabel.Text = "Your turn! Draw cards.";
+            _statusLabel.Text = "Your turn!";
         }
         else
         {
@@ -228,6 +254,18 @@ public partial class CardBattle : Control
     
     private void OnTurnEnded(string playerId)
     {
+        // Force clear the card display when a turn ends
+        GD.Print($"Turn ended for player {playerId}. Clearing card display.");
+        
+        // Clear existing cards immediately
+        foreach (var node in _cardNodes.Values)
+        {
+            node.QueueFree();
+        }
+        _cardNodes.Clear();
+        _cardContainer.GetChildren().Clear();
+        
+        // Then update the UI which will reflect the current game state
         UpdateUI();
     }
     
@@ -270,6 +308,19 @@ public partial class CardBattle : Control
     
     private void OnFightStateUpdated(string currentTurnPlayerId, Dictionary playerState, Dictionary opponentState)
     {
+        // Log the fight state update
+        GD.Print($"Fight state updated. Current turn: {currentTurnPlayerId}");
+        GD.Print($"Player hand size from server: {((Godot.Collections.Array)playerState["Hand"]).Count}");
+        
+        // Force clear the card display before updating from the server state
+        foreach (var node in _cardNodes.Values)
+        {
+            node.QueueFree();
+        }
+        _cardNodes.Clear();
+        _cardContainer.GetChildren().Clear();
+        
+        // Update the UI with the latest state from the server
         UpdateUI();
     }
     

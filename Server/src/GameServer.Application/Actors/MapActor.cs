@@ -171,7 +171,7 @@ namespace GameServer.Application.Actors
             // Create fight
             string fightId = $"fight_{++fightCounter}";
             var props = Props.FromProducer(() => 
-                new FightActor(fightId, msg.ChallengerActor, msg.Challenger, msg.TargetActor, msg.Target, context.Self));
+                new FightActor(msg.ChallengerActor, msg.Challenger, msg.TargetActor, msg.Target, context.Self));
             
             var fightActor = context.SpawnNamed(props, fightId);
             activeFights.Add(fightId, fightActor);
@@ -183,6 +183,11 @@ namespace GameServer.Application.Actors
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Handles the completion of a fight between players.
+        /// Clears fight state for both players, allowing them to move again.
+        /// Broadcasts the fight result to all players and stops the fight actor.
+        /// </summary>
         private Task OnFightCompleted(IContext context, FightCompleted msg)
         {
             if (activeFights.Remove(msg.FightId.Id, out var fightActor))
@@ -190,10 +195,18 @@ namespace GameServer.Application.Actors
                 var winnerPlayerId = players.GetValueOrDefault(msg.WinnerActor);
                 var loserPlayerId = players.GetValueOrDefault(msg.LoserActor);
 
+                // Clear fight IDs to allow movement
                 if (winnerPlayerId != null)
+                {
                     map.SetPlayerFightId(winnerPlayerId, null);
+                    Console.WriteLine($"Player {winnerPlayerId} can now move after fight");
+                }
+                    
                 if (loserPlayerId != null)
+                {
                     map.SetPlayerFightId(loserPlayerId, null);
+                    Console.WriteLine($"Player {loserPlayerId} can now move after fight");
+                }
 
                 // Notify players of fight completion
                 BroadcastToAllPlayers(context, new OutFightEnded(winnerPlayerId ?? "unknown", msg.Reason));

@@ -74,14 +74,16 @@ namespace GameServer.Shared.ExternalMessages
     public record CardInfo(string Id, string Name, string Description, int Cost) : ToClientMessage;
     
     /// <summary>
-    /// Represents a player's current fight status including HP, AP, cards in hand,
-    /// and remaining deck size
+    /// Represents a player's current fight status including player ID, HP, AP, cards in hand,
+    /// remaining deck size, and discard pile size
     /// </summary>
-    public record ExPlayerFightState(
+    public record OutPlayerFightState(
+        string PlayerId,
         int HitPoints,
         int ActionPoints,
         List<CardInfo> Hand,
-        int DeckCount
+        int DeckCount,
+        int DiscardPileCount
     ) : ToClientMessage;
 
     /// <summary>
@@ -90,16 +92,15 @@ namespace GameServer.Shared.ExternalMessages
     /// </summary>
     public record OutFightStateUpdate(
         string CurrentTurnPlayerId,
-        ExPlayerFightState PlayerState,
-        ExPlayerFightState OpponentState
+        OutPlayerFightState PlayerState,
+        OutPlayerFightState OpponentState
     ) : ToClientMessage;
 
     /// <summary>
-    /// Notifies that a player's turn has begun and shows their newly drawn cards
+    /// Notifies that a player's turn has begun
     /// </summary>
     public record OutTurnStarted(
-        string ActivePlayerId,
-        List<CardInfo> DrawnCards
+        string ActivePlayerId
     ) : ToClientMessage;
 
     /// <summary>Notifies that a player's turn has ended</summary>

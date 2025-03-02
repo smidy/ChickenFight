@@ -56,6 +56,7 @@ namespace GameServer.Application.Actors
 
                 FightChallengeRequest msg => OnFightChallengeRequestReceived(context, msg),
                 FightStarted msg => OnFightStarted(context, msg),
+                FightCompleted msg => OnFightCompleted(context, msg),
 
                 FromClientMessage msg => OnIncommingClientMessage(context, msg),
 
@@ -97,6 +98,10 @@ namespace GameServer.Application.Actors
                 pendingMapJoin = null;
             }
         }
+        /// <summary>
+        /// Handles the player's request to challenge another player to a fight.
+        /// Finds the target player and sends a challenge request to the map.
+        /// </summary>
         private async Task OnFightChallengeSend(IContext context, InFightChallengeSend msg)
         {
             if (currentMap == null)
@@ -110,6 +115,10 @@ namespace GameServer.Application.Actors
             }
         }
 
+        /// <summary>
+        /// Handles a fight challenge request received from another player.
+        /// Currently auto-accepts all challenges, but could be modified to wait for player input.
+        /// </summary>
         private async Task OnFightChallengeRequestReceived(IContext context, FightChallengeRequest msg)
         {
             if (currentMap == null)
@@ -119,13 +128,43 @@ namespace GameServer.Application.Actors
             context.Send(currentMap, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, context.Self, player, true));
         }
 
+        /// <summary>
+        /// Handles the FightStarted message received when a fight begins.
+        /// Updates the player's fight state and notifies the client.
+        /// </summary>
         private async Task OnFightStarted(IContext context, FightStarted msg)
         {
             currentFight = msg.FightActor;
-            var opponentId = msg.Player1 == this.player ? msg.Player1.Id : msg.Player2.Id;
+            // Update player's fight state
+            player.EnterFight(msg.FightActor.Id);
+            
+            // Determine opponent ID
+            var opponentId = msg.Player1.Id == player.Id ? msg.Player2.Id : msg.Player1.Id;
             await _sendToClient(new OutFightStarted(opponentId));
         }
 
+        /// <summary>
+        /// Handles the FightCompleted message received when a fight ends.
+        /// Resets the player's fight state and notifies the client about the fight outcome.
+        /// </summary>
+        private async Task OnFightCompleted(IContext context, FightCompleted msg)
+        {
+            // Reset fight state
+            currentFight = null;
+            player.LeaveFight();
+            
+            // Determine if this player won or lost
+            bool isWinner = msg.WinnerActor.Equals(context.Self);
+            string winnerId = isWinner ? player.Id : msg.WinnerActor.Id;
+            
+            // Send fight ended message to client
+            await _sendToClient(new OutFightEnded(winnerId, msg.Reason));
+        }
+
+        /// <summary>
+        /// Forwards the OutFightEnded message to the client.
+        /// This is used when the fight ended message is received from another source.
+        /// </summary>
         private async Task OnFightEnded(IContext context, OutFightEnded msg)
         {
             await _sendToClient(msg);
@@ -190,6 +229,10 @@ namespace GameServer.Application.Actors
 
         }
 
+        /// <summary>
+        /// Handles the player's request to play a card during a fight.
+        /// Forwards the request to the current fight actor if in a fight.
+        /// </summary>
         private async Task OnPlayCard(IContext context, InPlayCard msg)
         {
             if (currentFight != null)
@@ -198,6 +241,10 @@ namespace GameServer.Application.Actors
             }
         }
 
+        /// <summary>
+        /// Handles the player's request to end their turn during a fight.
+        /// Forwards the request to the current fight actor if in a fight.
+        /// </summary>
         private async Task OnEndTurn(IContext context, InEndTurn msg)
         {
             if (currentFight != null)

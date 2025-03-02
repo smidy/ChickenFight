@@ -28,9 +28,11 @@ public partial class GameState : Node
     public int PlayerHitPoints { get; private set; } = 50;
     public int PlayerActionPoints { get; private set; } = 0;
     public int PlayerDeckCount { get; private set; } = 0;
+    public int PlayerDiscardPileCount { get; private set; } = 0;
     public int OpponentHitPoints { get; private set; } = 50;
     public int OpponentActionPoints { get; private set; } = 0;
     public int OpponentDeckCount { get; private set; } = 0;
+    public int OpponentDiscardPileCount { get; private set; } = 0;
     public Godot.Collections.Array<Dictionary> OpponentCardsInHand { get; private set; } = new();
     public string? CurrentTurnPlayerId { get; private set; }
     public bool IsPlayerTurn => CurrentTurnPlayerId == PlayerId;
@@ -86,9 +88,11 @@ public partial class GameState : Node
         PlayerHitPoints = 50;
         PlayerActionPoints = 0;
         PlayerDeckCount = 0;
+        PlayerDiscardPileCount = 0;
         OpponentHitPoints = 50;
         OpponentActionPoints = 0;
         OpponentDeckCount = 0;
+        OpponentDiscardPileCount = 0;
         OpponentCardsInHand.Clear();
         CurrentTurnPlayerId = null;
     }
@@ -149,9 +153,11 @@ public partial class GameState : Node
         PlayerHitPoints = 50;
         PlayerActionPoints = 0;
         PlayerDeckCount = 0;
+        PlayerDiscardPileCount = 0;
         OpponentHitPoints = 50;
         OpponentActionPoints = 0;
         OpponentDeckCount = 0;
+        OpponentDiscardPileCount = 0;
         OpponentCardsInHand.Clear();
         CurrentTurnPlayerId = null;
     }
@@ -172,9 +178,11 @@ public partial class GameState : Node
         PlayerHitPoints = 50;
         PlayerActionPoints = 0;
         PlayerDeckCount = 0;
+        PlayerDiscardPileCount = 0;
         OpponentHitPoints = 50;
         OpponentActionPoints = 0;
         OpponentDeckCount = 0;
+        OpponentDiscardPileCount = 0;
         OpponentCardsInHand.Clear();
         CurrentTurnPlayerId = null;
     }
@@ -190,34 +198,18 @@ public partial class GameState : Node
     
     private void OnCardDrawn(Dictionary cardInfo, string svgData)
     {
+        // Only update the SVG data cache, don't modify the hand
         string cardId = cardInfo["Id"].AsString();
         CardSvgData[cardId] = svgData;
         
-        // Check if this card is already in hand (avoid duplicates)
-        if (!CardsInHand.Any(c => c["Id"].AsString() == cardId))
-        {
-            CardsInHand.Add(cardInfo);
-        }
+        // No longer adding cards to hand here - this is now handled by OnFightStateUpdate
     }
     
-    private void OnTurnStarted(string activePlayerId, Godot.Collections.Array drawnCards)
+    private void OnTurnStarted(string activePlayerId)
     {
         CurrentTurnPlayerId = activePlayerId;
         
-        // If it's the player's turn, add the drawn cards to their hand
-        if (IsPlayerTurn)
-        {
-            foreach (Dictionary card in drawnCards)
-            {
-                string cardId = card["Id"].AsString();
-                
-                // Check if this card is already in hand (avoid duplicates)
-                if (!CardsInHand.Any(c => c["Id"].AsString() == cardId))
-                {
-                    CardsInHand.Add(card);
-                }
-            }
-        }
+        // Card handling is now managed by OnFightStateUpdate
     }
     
     private void OnTurnEnded(string playerId)
@@ -226,11 +218,17 @@ public partial class GameState : Node
         {
             // Player's turn ended
             CurrentTurnPlayerId = OpponentId;
+            
+            // Clear player's hand as it's moved to discard pile
+            CardsInHand.Clear();
         }
         else
         {
             // Opponent's turn ended
             CurrentTurnPlayerId = PlayerId;
+            
+            // Clear opponent's hand as it's moved to discard pile
+            OpponentCardsInHand.Clear();
         }
     }
     
@@ -301,10 +299,25 @@ public partial class GameState : Node
     {
         CurrentTurnPlayerId = currentTurnPlayerId;
         
+        // Determine which state belongs to the player and which to the opponent
+        string playerStateId = playerState["PlayerId"].AsString();
+        string opponentStateId = opponentState["PlayerId"].AsString();
+        
+        // If the player state ID doesn't match the player's ID, swap the states
+        if (playerStateId != PlayerId)
+        {
+            var temp = playerState;
+            playerState = opponentState;
+            opponentState = temp;
+        }
+        
         // Update player state
         PlayerHitPoints = playerState["HitPoints"].AsInt32();
         PlayerActionPoints = playerState["ActionPoints"].AsInt32();
         PlayerDeckCount = playerState["DeckCount"].AsInt32();
+        // Check if DiscardPileCount exists in the dictionary
+        PlayerDiscardPileCount = playerState.ContainsKey("DiscardPileCount") ? 
+            playerState["DiscardPileCount"].AsInt32() : 0;
         
         // Update player hand
         CardsInHand.Clear();
@@ -318,6 +331,9 @@ public partial class GameState : Node
         OpponentHitPoints = opponentState["HitPoints"].AsInt32();
         OpponentActionPoints = opponentState["ActionPoints"].AsInt32();
         OpponentDeckCount = opponentState["DeckCount"].AsInt32();
+        // Check if DiscardPileCount exists in the dictionary
+        OpponentDiscardPileCount = opponentState.ContainsKey("DiscardPileCount") ? 
+            opponentState["DiscardPileCount"].AsInt32() : 0;
         
         // Update opponent hand
         OpponentCardsInHand.Clear();

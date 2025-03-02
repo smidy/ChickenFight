@@ -119,11 +119,8 @@ namespace GameServer.Application.Actors
             var player = players[msg.PlayerActor];
             var drawnCards = state.DrawCards(playerId, player.Deck);
 
-            // Convert to CardInfo for client
-            var cardInfos = drawnCards.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList();
-
-            // Send turn started notification
-            context.Send(msg.PlayerActor, new OutTurnStarted(playerId, cardInfos));
+            // Send turn started notification (without drawn cards)
+            context.Send(msg.PlayerActor, new OutTurnStarted(playerId));
             
             // Send card SVG data for the drawn cards
             var cardSvgData = new Dictionary<string, string>();
@@ -139,7 +136,7 @@ namespace GameServer.Application.Actors
             // Send all card SVGs in one message
             context.Send(msg.PlayerActor, new OutCardImages(cardSvgData));
 
-            // Send updated fight state
+            // Send updated fight state (which now has the sole responsibility for informing about hand contents)
             SendFightStateUpdate(context);
 
             return Task.CompletedTask;
@@ -150,6 +147,9 @@ namespace GameServer.Application.Actors
             if (!isActive) return Task.CompletedTask;
 
             var playerId = players[msg.PlayerActor].Id;
+            
+            // Discard the player's hand at the end of their turn
+            state.DiscardHand(playerId, players[msg.PlayerActor].Deck);
 
             // Notify clients
             context.Send(msg.PlayerActor, new OutTurnEnded(playerId));
@@ -254,27 +254,38 @@ namespace GameServer.Application.Actors
             var player1State = state.GetPlayerState(player1Actor.Id);
             var player2State = state.GetPlayerState(player2Actor.Id);
 
-            var p1State = new ExPlayerFightState(
+            var p1State = new OutPlayerFightState(
+                players[player1Actor].Id,  // Add player ID
                 player1State.HitPoints,
                 player1State.ActionPoints,
                 player1State.Hand.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList(),
-                players[player1Actor].Deck.RemainingCards
+                players[player1Actor].Deck.RemainingCards,
+                players[player1Actor].Deck.DiscardPile.Count  // Add discard pile count
             );
 
-            var p2State = new ExPlayerFightState(
+            var p2State = new OutPlayerFightState(
+                players[player2Actor].Id,  // Add player ID
                 player2State.HitPoints,
                 player2State.ActionPoints,
                 player2State.Hand.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList(),
-                players[player2Actor].Deck.RemainingCards
+                players[player2Actor].Deck.RemainingCards,
+                players[player2Actor].Deck.DiscardPile.Count  // Add discard pile count
             );
 
-            //context.Send(mapActor, new OutFightStateUpdate(
-            //    state.CurrentTurnPlayerId,
-            //    p1State,
-            //    p2State
-            //));
+            var outFightStateUpdate = new OutFightStateUpdate(
+                state.CurrentTurnPlayerId,
+                p1State,
+                p2State
+            );
+
+            context.Send(player1Actor, outFightStateUpdate);
+            context.Send(player2Actor, outFightStateUpdate);
         }
 
+        /// <summary>
+        /// Handles player disconnection during a fight.
+        /// Ends the fight and notifies all relevant actors.
+        /// </summary>
         private Task OnPlayerDisconnected(IContext context, PlayerDisconnected msg)
         {
             if (!isActive) return Task.CompletedTask;
@@ -282,16 +293,32 @@ namespace GameServer.Application.Actors
             PID winnerActor = msg.PlayerActor.Equals(player1Actor) ? player2Actor : player1Actor;
 
             isActive = false;
-            context.Send(mapActor, new FightCompleted(context.Self, winnerActor, msg.PlayerActor, "Player disconnected"));
+            var fightCompletedMessage = new FightCompleted(context.Self, winnerActor, msg.PlayerActor, "Player disconnected");
+            
+            // Send fight completed message to both players and the map
+            context.Send(player1Actor, fightCompletedMessage);
+            context.Send(player2Actor, fightCompletedMessage);
+            context.Send(mapActor, fightCompletedMessage);  // Also notify the map actor
+            
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Handles the end of a fight.
+        /// Notifies all relevant actors about the fight outcome.
+        /// </summary>
         private Task OnEndFight(IContext context, EndFight msg)
         {
             if (!isActive) return Task.CompletedTask;
 
             isActive = false;
-            context.Send(mapActor, new FightCompleted(context.Self, msg.WinnerActor, msg.LoserActor, msg.Reason));
+            var fightCompletedMessage = new FightCompleted(context.Self, msg.WinnerActor, msg.LoserActor, msg.Reason);
+            
+            // Send fight completed message to both players and the map
+            context.Send(player1Actor, fightCompletedMessage);
+            context.Send(player2Actor, fightCompletedMessage);
+            context.Send(mapActor, fightCompletedMessage);  // Also notify the map actor
+            
             return Task.CompletedTask;
         }
     }

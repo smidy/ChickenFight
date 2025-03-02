@@ -202,19 +202,7 @@ public partial class NetworkManager : Node
                     break;
                     
                 case OutTurnStarted msg:
-                    var cardsArray = new Godot.Collections.Array();
-                    foreach (var card in msg.DrawnCards)
-                    {
-                        var turnCardDict = new Dictionary
-                        {
-                            ["Id"] = card.Id,
-                            ["Name"] = card.Name,
-                            ["Description"] = card.Description,
-                            ["Cost"] = card.Cost
-                        };
-                        cardsArray.Add(turnCardDict);
-                    }
-                    EmitSignal(SignalName.TurnStarted, msg.ActivePlayerId, cardsArray);
+                    EmitSignal(SignalName.TurnStarted, msg.ActivePlayerId);
                     break;
                     
                 case OutTurnEnded msg:
@@ -243,6 +231,7 @@ public partial class NetworkManager : Node
                 case OutFightStateUpdate msg:
                     var playerStateDict = new Dictionary
                     {
+                        ["PlayerId"] = msg.PlayerState.PlayerId,
                         ["HitPoints"] = msg.PlayerState.HitPoints,
                         ["ActionPoints"] = msg.PlayerState.ActionPoints,
                         ["DeckCount"] = msg.PlayerState.DeckCount
@@ -264,6 +253,7 @@ public partial class NetworkManager : Node
                     
                     var opponentStateDict = new Dictionary
                     {
+                        ["PlayerId"] = msg.OpponentState.PlayerId,
                         ["HitPoints"] = msg.OpponentState.HitPoints,
                         ["ActionPoints"] = msg.OpponentState.ActionPoints,
                         ["DeckCount"] = msg.OpponentState.DeckCount
@@ -348,7 +338,7 @@ public partial class NetworkManager : Node
     [Signal]
     public delegate void CardDrawnEventHandler(Dictionary cardInfo, string svgData);
     [Signal]
-    public delegate void TurnStartedEventHandler(string activePlayerId, Godot.Collections.Array drawnCards);
+    public delegate void TurnStartedEventHandler(string activePlayerId);
     [Signal]
     public delegate void TurnEndedEventHandler(string playerId);
     [Signal]
