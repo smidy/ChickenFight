@@ -215,7 +215,8 @@ public partial class NetworkManager : Node
                         ["Id"] = msg.PlayedCard.Id,
                         ["Name"] = msg.PlayedCard.Name,
                         ["Description"] = msg.PlayedCard.Description,
-                        ["Cost"] = msg.PlayedCard.Cost
+                        ["Cost"] = msg.PlayedCard.Cost,
+                        ["IsVisible"] = msg.IsVisible
                     };
                     EmitSignal(SignalName.CardPlayCompleted, msg.PlayerId, playedCardDict, msg.Effect);
                     break;
@@ -251,6 +252,26 @@ public partial class NetworkManager : Node
                     }
                     playerStateDict["Hand"] = playerHandArray;
                     
+                    // Add player status effects if available
+                    if (msg.PlayerState.StatusEffects != null && msg.PlayerState.StatusEffects.Count > 0)
+                    {
+                        var playerStatusEffectsArray = new Godot.Collections.Array();
+                        foreach (var effect in msg.PlayerState.StatusEffects)
+                        {
+                            var effectDict = new Dictionary
+                            {
+                                ["Id"] = effect.Id,
+                                ["Name"] = effect.Name,
+                                ["Description"] = effect.Description,
+                                ["Duration"] = effect.Duration,
+                                ["Type"] = effect.Type,
+                                ["Magnitude"] = effect.Magnitude
+                            };
+                            playerStatusEffectsArray.Add(effectDict);
+                        }
+                        playerStateDict["StatusEffects"] = playerStatusEffectsArray;
+                    }
+                    
                     var opponentStateDict = new Dictionary
                     {
                         ["PlayerId"] = msg.OpponentState.PlayerId,
@@ -272,6 +293,26 @@ public partial class NetworkManager : Node
                         opponentHandArray.Add(opponentCardDict);
                     }
                     opponentStateDict["Hand"] = opponentHandArray;
+                    
+                    // Add opponent status effects if available
+                    if (msg.OpponentState.StatusEffects != null && msg.OpponentState.StatusEffects.Count > 0)
+                    {
+                        var opponentStatusEffectsArray = new Godot.Collections.Array();
+                        foreach (var effect in msg.OpponentState.StatusEffects)
+                        {
+                            var effectDict = new Dictionary
+                            {
+                                ["Id"] = effect.Id,
+                                ["Name"] = effect.Name,
+                                ["Description"] = effect.Description,
+                                ["Duration"] = effect.Duration,
+                                ["Type"] = effect.Type,
+                                ["Magnitude"] = effect.Magnitude
+                            };
+                            opponentStatusEffectsArray.Add(effectDict);
+                        }
+                        opponentStateDict["StatusEffects"] = opponentStatusEffectsArray;
+                    }
                     
                     EmitSignal(SignalName.FightStateUpdated, msg.CurrentTurnPlayerId, playerStateDict, opponentStateDict);
                     break;

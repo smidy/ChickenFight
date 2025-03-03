@@ -174,11 +174,11 @@ namespace GameServer.Application.Actors
                 new FightActor(msg.ChallengerActor, msg.Challenger, msg.TargetActor, msg.Target, context.Self));
             
             var fightActor = context.SpawnNamed(props, fightId);
-            activeFights.Add(fightId, fightActor);
+            activeFights.Add(fightActor.Id, fightActor);
 
             // Update player states
-            map.SetPlayerFightId(challengerPlayerId, fightId);
-            map.SetPlayerFightId(targetPlayerId, fightId);
+            map.SetPlayerFightId(challengerPlayerId, fightActor.Id);
+            map.SetPlayerFightId(targetPlayerId, fightActor.Id);
 
             return Task.CompletedTask;
         }

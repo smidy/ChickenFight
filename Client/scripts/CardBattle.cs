@@ -11,10 +11,19 @@ public partial class CardBattle : Control
     private Button _endTurnButton = null!;
     private Label _statusLabel = null!;
     private Control _effectsContainer = null!;
+    private HBoxContainer _opponentCardContainer = null!;
+    private HBoxContainer _playerStatusEffectsContainer = null!;
+    private HBoxContainer _opponentStatusEffectsContainer = null!;
     
     // Card display
     private System.Collections.Generic.Dictionary<string, TextureRect> _cardNodes = new System.Collections.Generic.Dictionary<string, TextureRect>();
+    private System.Collections.Generic.Dictionary<string, TextureRect> _opponentCardNodes = new System.Collections.Generic.Dictionary<string, TextureRect>();
+    private System.Collections.Generic.Dictionary<string, Control> _playerStatusEffectNodes = new System.Collections.Generic.Dictionary<string, Control>();
+    private System.Collections.Generic.Dictionary<string, Control> _opponentStatusEffectNodes = new System.Collections.Generic.Dictionary<string, Control>();
     private string _selectedCardId = null;
+    
+    // Last played card tracking
+    private Dictionary _lastOpponentPlayedCard = null;
     
     // References
     private NetworkManager _network = null!;
@@ -39,6 +48,9 @@ public partial class CardBattle : Control
         _endTurnButton = GetNode<Button>("EndTurnButton");
         _statusLabel = GetNode<Label>("StatusLabel");
         _effectsContainer = GetNode<Control>("EffectsContainer");
+        _opponentCardContainer = GetNode<HBoxContainer>("OpponentArea/OpponentCardContainer");
+        _playerStatusEffectsContainer = GetNode<HBoxContainer>("PlayerStatusEffectsContainer");
+        _opponentStatusEffectsContainer = GetNode<HBoxContainer>("OpponentStatusEffectsContainer");
         
         // Connect signals
         _endTurnButton.Pressed += OnEndTurnPressed;
@@ -92,6 +104,9 @@ public partial class CardBattle : Control
         
         // Update cards in hand
         UpdateCardDisplay();
+        
+        // Update status effects display
+        UpdateStatusEffectsDisplay();
     }
     
     private void UpdateCardDisplay()
@@ -281,6 +296,13 @@ public partial class CardBattle : Control
         else
         {
             _statusLabel.Text = $"Opponent played {cardName}. {effect}";
+            
+            // Display the opponent's played card if it's visible
+            bool isVisible = playedCard.ContainsKey("IsVisible") ? playedCard["IsVisible"].AsBool() : true;
+            if (isVisible)
+            {
+                DisplayOpponentPlayedCard(playedCard);
+            }
         }
         
         // Show effect animation
@@ -320,8 +342,34 @@ public partial class CardBattle : Control
         _cardNodes.Clear();
         _cardContainer.GetChildren().Clear();
         
+        // Clear opponent card display
+        foreach (var node in _opponentCardNodes.Values)
+        {
+            node.QueueFree();
+        }
+        _opponentCardNodes.Clear();
+        foreach (var child in _opponentCardContainer.GetChildren())
+        {
+            _opponentCardContainer.RemoveChild(child);
+        }
+        
         // Update the UI with the latest state from the server
         UpdateUI();
+        
+        // If there's a last played card by the opponent, display it
+        if (_gameState.LastPlayedCard != null && _gameState.LastPlayedCard.ContainsKey("Id"))
+        {
+            // Only display if it's the opponent's card and it's visible
+            string playerId = _gameState.LastPlayedCard.ContainsKey("PlayerId") ? 
+                _gameState.LastPlayedCard["PlayerId"].AsString() : "";
+            bool isVisible = _gameState.LastPlayedCard.ContainsKey("IsVisible") ? 
+                _gameState.LastPlayedCard["IsVisible"].AsBool() : true;
+                
+            if (playerId != _gameState.PlayerId && isVisible)
+            {
+                DisplayOpponentPlayedCard(_gameState.LastPlayedCard);
+            }
+        }
     }
     
     private void ShowEffectAnimation(string targetPlayerId, string effectText)
@@ -348,5 +396,184 @@ public partial class CardBattle : Control
         tween.TweenProperty(effectLabel, "position:y", effectLabel.Position.Y - 40, 1.0f);
         tween.Parallel().TweenProperty(effectLabel, "modulate:a", 0.0f, 1.0f);
         tween.TweenCallback(Callable.From(() => effectLabel.QueueFree()));
+    }
+    
+    // Method to update status effects display for both players
+    private void UpdateStatusEffectsDisplay()
+    {
+        // Clear existing status effect displays
+        ClearStatusEffects();
+        
+        // Update player status effects if available in the fight state update
+        if (_gameState.PlayerStatusEffects != null)
+        {
+            foreach (var effect in _gameState.PlayerStatusEffects)
+            {
+                DisplayStatusEffect(effect, true);
+            }
+        }
+        
+        // Update opponent status effects if available in the fight state update
+        if (_gameState.OpponentStatusEffects != null)
+        {
+            foreach (var effect in _gameState.OpponentStatusEffects)
+            {
+                DisplayStatusEffect(effect, false);
+            }
+        }
+    }
+    
+    // Clear all status effect displays
+    private void ClearStatusEffects()
+    {
+        // Clear player status effects
+        foreach (var node in _playerStatusEffectNodes.Values)
+        {
+            node.QueueFree();
+        }
+        _playerStatusEffectNodes.Clear();
+        foreach (var child in _playerStatusEffectsContainer.GetChildren())
+        {
+            _playerStatusEffectsContainer.RemoveChild(child);
+        }
+        
+        // Clear opponent status effects
+        foreach (var node in _opponentStatusEffectNodes.Values)
+        {
+            node.QueueFree();
+        }
+        _opponentStatusEffectNodes.Clear();
+        foreach (var child in _opponentStatusEffectsContainer.GetChildren())
+        {
+            _opponentStatusEffectsContainer.RemoveChild(child);
+        }
+    }
+    
+    // Display a single status effect
+    private void DisplayStatusEffect(Dictionary effectInfo, bool isPlayer)
+    {
+        string effectId = effectInfo["Id"].AsString();
+        string effectName = effectInfo["Name"].AsString();
+        string effectDescription = effectInfo["Description"].AsString();
+        int duration = effectInfo["Duration"].AsInt32();
+        string effectType = effectInfo["Type"].AsString();
+        
+        // Create a visual representation of the status effect
+        var effectNode = new PanelContainer();
+        effectNode.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        {
+            BgColor = GetColorForEffectType(effectType),
+            CornerRadiusTopLeft = 5,
+            CornerRadiusTopRight = 5,
+            CornerRadiusBottomLeft = 5,
+            CornerRadiusBottomRight = 5
+        });
+        
+        // Add a label with the effect name and duration
+        var label = new Label
+        {
+            Text = $"{effectName}\n{duration}",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            CustomMinimumSize = new Vector2(50, 40)
+        };
+        effectNode.AddChild(label);
+        
+        // Add tooltip with detailed description
+        effectNode.TooltipText = $"{effectName} ({duration} turns)\n{effectDescription}";
+        
+        // Add to the appropriate container
+        if (isPlayer)
+        {
+            _playerStatusEffectsContainer.AddChild(effectNode);
+            _playerStatusEffectNodes[effectId] = effectNode;
+        }
+        else
+        {
+            _opponentStatusEffectsContainer.AddChild(effectNode);
+            _opponentStatusEffectNodes[effectId] = effectNode;
+        }
+    }
+    
+    // Get color based on effect type
+    private Color GetColorForEffectType(string effectType)
+    {
+        return effectType switch
+        {
+            "DamageOverTime" => new Color(0.8f, 0.2f, 0.2f, 0.7f),    // Red
+            "HealOverTime" => new Color(0.2f, 0.8f, 0.2f, 0.7f),      // Green
+            "DamageReduction" => new Color(0.2f, 0.2f, 0.8f, 0.7f),   // Blue
+            "DamageBoost" => new Color(0.8f, 0.4f, 0.0f, 0.7f),       // Orange
+            "DodgeChance" => new Color(0.8f, 0.8f, 0.2f, 0.7f),       // Yellow
+            "DamageReflection" => new Color(0.8f, 0.2f, 0.8f, 0.7f),  // Purple
+            "CardLock" => new Color(0.5f, 0.5f, 0.5f, 0.7f),          // Gray
+            "MaxHealthBoost" => new Color(0.2f, 0.6f, 0.2f, 0.7f),    // Dark Green
+            "ActionPointBoost" => new Color(0.2f, 0.6f, 0.8f, 0.7f),  // Cyan
+            "EnvironmentEffect" => new Color(0.4f, 0.4f, 0.4f, 0.7f), // Dark Gray
+            _ => new Color(0.5f, 0.5f, 0.5f, 0.7f)                    // Default Gray
+        };
+    }
+    
+    // Display opponent's played card
+    private void DisplayOpponentPlayedCard(Dictionary playedCard)
+    {
+        // Store the last played card
+        _lastOpponentPlayedCard = playedCard;
+        
+        // Clear existing opponent cards
+        foreach (var node in _opponentCardNodes.Values)
+        {
+            node.QueueFree();
+        }
+        _opponentCardNodes.Clear();
+        foreach (var child in _opponentCardContainer.GetChildren())
+        {
+            _opponentCardContainer.RemoveChild(child);
+        }
+        
+        // Get card details
+        string cardId = playedCard["Id"].AsString();
+        
+        // Check if we have SVG data for this card
+        if (!_gameState.CardSvgData.ContainsKey(cardId))
+        {
+            GD.PrintErr($"Missing SVG data for opponent's played card {cardId}");
+            return;
+        }
+        
+        // Create a smaller version of the card for the opponent area
+        var cardNode = new TextureRect
+        {
+            CustomMinimumSize = new Vector2(CARD_WIDTH * 0.7f, CARD_HEIGHT * 0.7f),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
+        };
+        
+        // Get SVG data and convert to texture
+        string svgData = _gameState.CardSvgData[cardId];
+        var image = new Image();
+        var error = image.LoadSvgFromString(svgData, 1.2f);
+        
+        if (error != Error.Ok)
+        {
+            GD.PrintErr($"Failed to load SVG for opponent's played card {cardId}: {error}");
+        }
+        else
+        {
+            var texture = ImageTexture.CreateFromImage(image);
+            cardNode.Texture = texture;
+        }
+        
+        // Add card info as tooltip
+        string name = playedCard["Name"].AsString();
+        string description = playedCard["Description"].AsString();
+        int cost = playedCard["Cost"].AsInt32();
+        cardNode.TooltipText = $"{name} (Cost: {cost})\n{description}";
+        
+        // Add to opponent card container
+        _opponentCardContainer.AddChild(cardNode);
+        _opponentCardNodes[cardId] = cardNode;
+        
+        GD.Print($"Displayed opponent's played card: {cardId}");
     }
 }

@@ -207,9 +207,27 @@ namespace GameServer.Application.Actors
                 // Apply card effects
                 string effect = ApplyCardEffects(context, msg.PlayerActor, card);
 
-                // Send notifications
+                // Send notifications to both players and the map actor
                 var cardInfo = new CardInfo(card.Id, card.Name, card.Description, card.Cost);
-                context.Send(mapActor, new OutCardPlayCompleted(playerId, cardInfo, effect));
+                
+                // Send to the map actor (for broadcasting to clients)
+                context.Send(mapActor, new OutCardPlayCompleted(playerId, cardInfo, effect, true));
+                
+                // Get opponent actor
+                PID opponentActor = msg.PlayerActor.Equals(player1Actor) ? player2Actor : player1Actor;
+                
+                // Send card SVG data to opponent so they can display the card
+                if (!cardSvgCache.TryGetValue(card.Id, out var svgData))
+                {
+                    svgData = GetCardSvgData(card.Id);
+                }
+                
+                // Send card images to opponent
+                var cardSvgData = new Dictionary<string, string> { { card.Id, svgData } };
+                context.Send(opponentActor, new OutCardImages(cardSvgData));
+                
+                // Send card play completed to opponent directly
+                context.Send(opponentActor, new OutCardPlayCompleted(playerId, cardInfo, effect, true));
 
                 // Check for game over
                 if (state.IsGameOver)

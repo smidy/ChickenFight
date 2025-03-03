@@ -131,7 +131,8 @@ namespace GameServer.Shared.ExternalMessages
     public record OutCardPlayCompleted(
         string PlayerId,
         CardInfo PlayedCard,
-        string Effect
+        string Effect,
+        bool IsVisible = true  // Flag to indicate if the card should be visible to the opponent
     ) : ToClientMessage;
     
     /// <summary>

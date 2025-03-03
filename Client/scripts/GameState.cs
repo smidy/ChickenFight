@@ -34,6 +34,9 @@ public partial class GameState : Node
     public int OpponentDeckCount { get; private set; } = 0;
     public int OpponentDiscardPileCount { get; private set; } = 0;
     public Godot.Collections.Array<Dictionary> OpponentCardsInHand { get; private set; } = new();
+    public Godot.Collections.Array<Dictionary> PlayerStatusEffects { get; private set; } = new();
+    public Godot.Collections.Array<Dictionary> OpponentStatusEffects { get; private set; } = new();
+    public Dictionary LastPlayedCard { get; private set; } = null;
     public string? CurrentTurnPlayerId { get; private set; }
     public bool IsPlayerTurn => CurrentTurnPlayerId == PlayerId;
 
@@ -236,6 +239,14 @@ public partial class GameState : Node
     {
         string cardId = playedCard["Id"].AsString();
         
+        // Store the last played card with player ID
+        LastPlayedCard = new Dictionary();
+        foreach (var key in playedCard.Keys)
+        {
+            LastPlayedCard[key] = playedCard[key];
+        }
+        LastPlayedCard["PlayerId"] = playerId;
+        
         if (playerId == PlayerId)
         {
             // Remove the card from the player's hand
@@ -327,6 +338,17 @@ public partial class GameState : Node
             CardsInHand.Add(card);
         }
         
+        // Update player status effects if available
+        PlayerStatusEffects.Clear();
+        if (playerState.ContainsKey("StatusEffects"))
+        {
+            var statusEffects = (Godot.Collections.Array)playerState["StatusEffects"];
+            foreach (Dictionary effect in statusEffects)
+            {
+                PlayerStatusEffects.Add(effect);
+            }
+        }
+        
         // Update opponent state
         OpponentHitPoints = opponentState["HitPoints"].AsInt32();
         OpponentActionPoints = opponentState["ActionPoints"].AsInt32();
@@ -341,6 +363,17 @@ public partial class GameState : Node
         foreach (Dictionary card in opponentHand)
         {
             OpponentCardsInHand.Add(card);
+        }
+        
+        // Update opponent status effects if available
+        OpponentStatusEffects.Clear();
+        if (opponentState.ContainsKey("StatusEffects"))
+        {
+            var statusEffects = (Godot.Collections.Array)opponentState["StatusEffects"];
+            foreach (Dictionary effect in statusEffects)
+            {
+                OpponentStatusEffects.Add(effect);
+            }
         }
     }
 
