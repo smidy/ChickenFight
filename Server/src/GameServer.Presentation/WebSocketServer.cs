@@ -98,6 +98,5 @@ namespace GameServer.Presentation
             SendTextAsync(json);
             return Task.CompletedTask;
         }
-
     }
 }
