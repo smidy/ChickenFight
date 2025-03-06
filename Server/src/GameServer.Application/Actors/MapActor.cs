@@ -124,7 +124,7 @@ namespace GameServer.Application.Actors
 
             if (challengerPlayerId == null || targetPlayerId == null)
             {
-                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, msg.TargetActor, null, false));
+                context.Send(msg.ChallengerActor, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, msg.TargetActor, null, false));
                 return Task.CompletedTask;
             }
 
@@ -133,13 +133,13 @@ namespace GameServer.Application.Actors
 
             if (challengerPosition == null || targetPosition == null)
             {
-                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, msg.TargetActor, null, false));
+                context.Send(msg.ChallengerActor, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, msg.TargetActor, null, false));
                 return Task.CompletedTask;
             }
 
             if (map.IsPlayerInFight(challengerPlayerId) || map.IsPlayerInFight(targetPlayerId))
             {
-                context.Send(context.Sender, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, msg.TargetActor, null, false));
+                context.Send(msg.ChallengerActor, new FightChallengeResponse(msg.ChallengerActor, msg.Challenger, msg.TargetActor, null, false));
                 return Task.CompletedTask;
             }
 
