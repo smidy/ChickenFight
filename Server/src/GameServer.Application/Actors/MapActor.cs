@@ -69,16 +69,16 @@ namespace GameServer.Application.Actors
         private Task OnRemovePlayer(IContext context, LeaveMap msg)
         {
             var playerId = players.GetValueOrDefault(msg.PlayerActor);
-            if (playerId != null && map.RemovePlayer(playerId))
+            if (playerId != null)
             {
-                players.Remove(msg.PlayerActor);
-                
                 // Handle player disconnection if they're in a fight
                 var fightId = map.GetPlayerFightId(playerId);
                 if (fightId != null && activeFights.TryGetValue(fightId, out var fightActor))
                 {
                     context.Send(fightActor, new PlayerDisconnected(msg.PlayerActor));
                 }
+                map.RemovePlayer(playerId);
+                players.Remove(msg.PlayerActor);
 
                 BroadcastToAllPlayers(context, new OutPlayerLeftMap(playerId));
                 context.Send(msg.Requester, new PlayerRemovedFromMap(this.map.Id, msg.PlayerActor));

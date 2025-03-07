@@ -328,6 +328,22 @@ public partial class CardBattle : Control
         ShowEffectAnimation(targetPlayerId, $"{effectType}: {value}");
     }
     
+    // Add a method to handle opponent disconnection
+    public void HandleOpponentDisconnection()
+    {
+        // Show a message
+        _statusLabel.Text = "Opponent disconnected. You win!";
+        
+        // Disable end turn button
+        _endTurnButton.Disabled = true;
+        
+        // Add a visual effect to show the battle is ending
+        var tween = CreateTween();
+        tween.TweenProperty(this, "modulate:a", 0.5f, 1.0f);
+        
+        // The battle UI will be removed by the Game.OnFightEnded method
+    }
+    
     private void OnFightStateUpdated(string currentTurnPlayerId, Dictionary playerState, Dictionary opponentState)
     {
         // Log the fight state update

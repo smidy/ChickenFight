@@ -323,11 +323,47 @@ public partial class Game : Node2D
 
     private void OnFightEnded(string winnerId, string reason)
     {
-        UpdateStatusLabel($"Fight ended. Winner: {winnerId}. Reason: {reason}");
-        if (_gameState.OpponentId != null && _otherPlayers.TryGetValue(_gameState.OpponentId, out var sprite))
+        // Add specific handling for disconnection
+        if (reason == "Player disconnected")
         {
-            sprite.Modulate = Colors.White;
+            // Show a more specific message
+            UpdateStatusLabel($"Opponent disconnected. You win!");
+            
+            // Notify the card battle UI about the disconnection if it's active
+            if (_cardBattleActive && _cardBattle != null)
+            {
+                _cardBattle.HandleOpponentDisconnection();
+            }
+            
+            // Remove the disconnected player's sprite if it still exists
+            if (_gameState.OpponentId != null && _otherPlayers.TryGetValue(_gameState.OpponentId, out var sprite))
+            {
+                // Add a visual effect to show disconnection
+                var tween = CreateTween();
+                tween.TweenProperty(sprite, "modulate:a", 0.0f, 0.5f);
+                tween.TweenCallback(Callable.From(() => {
+                    if (_otherPlayers.ContainsKey(_gameState.OpponentId))
+                    {
+                        sprite.QueueFree();
+                        _otherPlayers.Remove(_gameState.OpponentId);
+                        _otherPlayersTargetPositions.Remove(_gameState.OpponentId);
+                    }
+                }));
+            }
         }
+        else
+        {
+            // Regular fight end handling
+            UpdateStatusLabel($"Fight ended. Winner: {winnerId}. Reason: {reason}");
+            
+            // Reset opponent sprite color if they're still in the game
+            if (_gameState.OpponentId != null && _otherPlayers.TryGetValue(_gameState.OpponentId, out var sprite))
+            {
+                sprite.Modulate = Colors.White;
+            }
+        }
+        
+        // Reset player color
         _player.Modulate = new Color(0, 0.6f, 1);
         
         // Hide the card battle UI

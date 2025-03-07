@@ -167,11 +167,23 @@ public partial class GameState : Node
 
     private void OnFightEnded(string winnerId, string reason)
     {
-        if (OpponentId != null)
+        // Special handling for disconnection
+        if (reason == "Player disconnected" && OpponentId != null)
         {
+            // Remove the disconnected player from the PlayersInFight dictionary
+            PlayersInFight.Remove(OpponentId);
+            
+            // Also remove from OtherPlayers if needed
+            OtherPlayers.Remove(OpponentId);
+        }
+        else if (OpponentId != null)
+        {
+            // Normal cleanup for both players
             PlayersInFight.Remove(PlayerId);
             PlayersInFight.Remove(OpponentId);
         }
+        
+        // Reset fight state
         CurrentFightId = null;
         OpponentId = null;
         
