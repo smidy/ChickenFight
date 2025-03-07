@@ -203,6 +203,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\GameServer.Infrastructure\GameServer.Infrastructure.csproj" />
     <ProjectReference Include="..\GameServer.Shared\GameServer.Shared.csproj" />
   </ItemGroup>
 

@@ -1,7 +1,8 @@
-using System;
-using System.Threading.Tasks;
 using Proto;
 using GameServer.Application.Actors;
+using Serilog;
+using Microsoft.Extensions.Logging;
+using GameServer.Infrastructure;
 
 namespace GameServer.Presentation
 {
@@ -11,6 +12,8 @@ namespace GameServer.Presentation
         {
             try
             {
+                Proto.Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddSerilog(LoggingService.Logger).SetMinimumLevel(LogLevel.Information)));
+
                 var system = new ActorSystem();
                 var gameProps = Props.FromProducer(() => new GameActor());
                 var gameActor = system.Root.Spawn(gameProps);

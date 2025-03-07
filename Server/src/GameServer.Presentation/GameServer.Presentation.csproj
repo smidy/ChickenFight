@@ -8,13 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.2" />
     <PackageReference Include="NetCoreServer" Version="8.0.7" />
     <PackageReference Include="Proto.Actor" Version="1.7.0" />
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\GameServer.Application\GameServer.Application.csproj" />
+    <ProjectReference Include="..\GameServer.Infrastructure\GameServer.Infrastructure.csproj" />
     <ProjectReference Include="..\GameServer.Shared\GameServer.Shared.csproj" />
   </ItemGroup>
 
