@@ -27,7 +27,9 @@ namespace GameServer.Application.Actors
         {
             // Create initial maps
             CreateMap(context, "map1", "Small Arena", 32, 32);
-            CreateMap(context, "map2", "Large Arena", 64, 64);
+            //CreateMap(context, "map2", "Large Arena", 64, 64);
+            this.LogInformation("Created {0} initial maps", maps.Count);
+            
             return Task.CompletedTask;
         }
 
