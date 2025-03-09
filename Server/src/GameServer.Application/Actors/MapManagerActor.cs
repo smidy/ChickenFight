@@ -1,6 +1,7 @@
-﻿using GameServer.Application.Messages.Internal;
+﻿﻿using GameServer.Application.Messages.Internal;
 using GameServer.Application.Models;
 using Proto;
+using GameServer.Application.Extensions;
 
 namespace GameServer.Application.Actors
 {
@@ -25,9 +26,11 @@ namespace GameServer.Application.Actors
 
         private Task OnStarted(IContext context)
         {
+            this.LogInformation("Map manager actor started");
+            
             // Create initial maps
+            this.LogInformation("Creating initial maps");
             CreateMap(context, "map1", "Small Arena", 32, 32);
-            //CreateMap(context, "map2", "Large Arena", 64, 64);
             this.LogInformation("Created {0} initial maps", maps.Count);
             
             return Task.CompletedTask;
@@ -35,12 +38,16 @@ namespace GameServer.Application.Actors
 
         private Task OnGetMapList(IContext context, RequestMapList requestMapList)
         {
+            this.LogDebug("Received map list request from {0}", requestMapList.Requester.Id);
             context.Send(requestMapList.Requester, new MapListResponse(maps.Values.Select(m => m.Map).ToList()));
+            this.LogDebug("Sent map list response with {0} maps", maps.Count);
             return Task.CompletedTask;
         }
 
         private void CreateMap(IContext context, string id, string name, int width, int height)
         {
+            this.LogInformation("Creating map: {0} ({1}) with dimensions {2}x{3}", name, id, width, height);
+            
             // Create a sample tilemap - for now just alternating grass (0) and stone path (1)
             var tileData = new int[width * height];
             for (int y = 0; y < height; y++)
@@ -63,6 +70,8 @@ namespace GameServer.Application.Actors
             var props = Props.FromProducer(() => new MapActor(id, name, width, height, tileData));
             var pid = context.SpawnNamed(props, id);
             maps[id] = (map, pid);
+            
+            this.LogInformation("Map created successfully: {0} ({1})", name, id);
         }
     }
 }

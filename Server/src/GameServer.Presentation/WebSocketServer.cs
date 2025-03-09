@@ -8,6 +8,8 @@ using Proto;
 using GameServer.Shared;
 using GameServer.Application.Messages.Internal;
 using GameServer.Shared.ExternalMessages;
+using GameServer.Infrastructure;
+using System.Security.Cryptography;
 
 namespace GameServer.Presentation
 {
@@ -45,7 +47,7 @@ namespace GameServer.Presentation
 
         public override async void OnWsConnected(HttpRequest request)
         {
-            Console.WriteLine($"WebSocket session connected: {sessionId}");
+            LoggingService.Logger.Information($"WebSocket session connected: {sessionId}");
 
             // Create player actor immediately on connection
             var createResponse = await actorSystem.Root.RequestAsync<CreatePlayerResponse>(
@@ -54,11 +56,12 @@ namespace GameServer.Presentation
                 TimeSpan.FromMilliseconds(CreatePlayerTimeout)
             );
             playerActor = createResponse.PlayerActor;
+            await SendResponse(new OutConnectionConfirmed(playerActor.Id));
         }
 
         public override void OnWsDisconnected()
         {
-            Console.WriteLine($"WebSocket session disconnected: {sessionId}");
+            LoggingService.Logger.Information($"WebSocket session disconnected: {sessionId}");
 
             if (playerActor != null)
             {
@@ -66,7 +69,7 @@ namespace GameServer.Presentation
                 actorSystem.Root.Send(playerActor, new InLeaveMap(null)); // null mapId will force leave from any map
 
                 // Stop the player actor
-                actorSystem.Root.Stop(playerActor);
+                actorSystem.Root.Poison(playerActor);
                 playerActor = null;
             }
         }
@@ -83,18 +86,22 @@ namespace GameServer.Presentation
             {
                 //todo validate message security
                 var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
+                // Log incoming JSON message at debug level
+                LoggingService.Logger.Debug($"Received message: {message}");
                 var baseMessage = JsonConfig.Deserialize<FromClientMessage>(message);
                 actorSystem.Root.Send(playerActor, baseMessage);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error processing message: {ex.Message}");
+                LoggingService.Logger.Error($"Error processing message: {ex.Message}", ex);
             }
         }
 
         private Task SendResponse<T>(T response)
         {
             var json = JsonConfig.Serialize(response);
+            // Log outgoing JSON message at debug level
+            LoggingService.Logger.Debug($"Sending message: {json}");
             SendTextAsync(json);
             return Task.CompletedTask;
         }

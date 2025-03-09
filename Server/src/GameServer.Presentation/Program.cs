@@ -19,12 +19,12 @@ namespace GameServer.Presentation
                 var gameActor = system.Root.Spawn(gameProps);
 
                 var server = new GameWebSocketServer(system, gameActor, "127.0.0.1", 8080);
-                Console.WriteLine("Game server starting...");
+                LoggingService.Logger.Information("Game server starting...");
 
                 if (server.Start())
                 {
-                    Console.WriteLine($"Game server is listening on port {server.Port}");
-                    Console.WriteLine("Press Enter to stop the server or '?' to restart the server");
+                    LoggingService.Logger.Information("Game server is listening on port {Port}", server.Port);
+                    LoggingService.Logger.Information("Press Enter to stop the server or '?' to restart the server");
 
                     for (;;)
                     {
@@ -35,26 +35,26 @@ namespace GameServer.Presentation
                         // Restart the server
                         if (line == "?")
                         {
-                            Console.Write("Server restarting...");
+                            LoggingService.Logger.Information("Server restarting...");
                             server.Restart();
-                            Console.WriteLine("Done!");
+                            LoggingService.Logger.Information("Server restart completed");
                             continue;
                         }
                     }
 
                     // Stop the server
-                    Console.Write("Server stopping...");
+                    LoggingService.Logger.Information("Server stopping...");
                     server.Stop();
-                    Console.WriteLine("Done!");
+                    LoggingService.Logger.Information("Server stopped");
                 }
                 else
                 {
-                    Console.WriteLine("Game server failed to start");
+                    LoggingService.Logger.Error("Game server failed to start");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                LoggingService.Logger.Error(ex, "Error starting game server: {ErrorMessage}", ex.Message);
             }
         }
     }

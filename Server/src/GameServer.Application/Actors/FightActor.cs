@@ -3,6 +3,8 @@ using GameServer.Application.Models;
 using GameServer.Application.Messages.Internal;
 using GameServer.Shared.ExternalMessages;
 using GameServer.Application.Models.CardEffects;
+using GameServer.Application.Extensions;
+using GameServer.Shared;
 
 namespace GameServer.Application.Actors
 {
@@ -73,11 +75,14 @@ namespace GameServer.Application.Actors
                 return svgData;
             }
             
+            this.LogDebug("Loading SVG data for card: {0}", cardId);
+            
             // Read the SVG data from the file
             var filePath = $"Assets\\{cardId}.txt";
             if (!File.Exists(filePath))
             {
                 // If the specific card file doesn't exist, use the template
+                this.LogDebug("Card file not found, using template for card: {0}", cardId);
                 filePath = "Assets\\card_template.txt";
             }
             
@@ -94,6 +99,7 @@ namespace GameServer.Application.Actors
         /// </summary>
         private Dictionary<string, string> GetCardSvgsForHand(List<Card> hand)
         {
+            this.LogDebug("Getting SVG data for {0} cards in hand", hand.Count);
             var svgData = new Dictionary<string, string>();
             
             foreach (var card in hand)
@@ -106,6 +112,9 @@ namespace GameServer.Application.Actors
 
         private Task OnStarted(IContext context)
         {
+            this.LogInformation("Fight started between players {0} and {1}", 
+                players[player1Actor].Id, players[player2Actor].Id);
+                
             context.Send(player1Actor, new FightStarted(context.Self, player1Actor, players[player1Actor], player2Actor, players[player2Actor]));
             context.Send(player2Actor, new FightStarted(context.Self, player1Actor, players[player1Actor], player2Actor, players[player2Actor]));
 
@@ -118,6 +127,8 @@ namespace GameServer.Application.Actors
             if (!isActive) return Task.CompletedTask;
 
             var playerId = msg.PlayerActor.Id;
+            this.LogInformation("Starting turn for player: {0}", playerId);
+            
             var playerState = state.GetPlayerState(playerId);
             
             // Get status effects before they're processed
@@ -133,6 +144,8 @@ namespace GameServer.Application.Actors
                 if (effect.Type == StatusEffectType.DamageOverTime || effect.Type == StatusEffectType.HealOverTime)
                 {
                     string effectType = effect.Type == StatusEffectType.DamageOverTime ? "DamageOverTime" : "HealOverTime";
+                    this.LogDebug("Applying status effect: {0} with magnitude {1} to player {2}", 
+                        effectType, effect.Magnitude, playerId);
                     context.Send(mapActor, new OutEffectApplied(playerId, effectType, effect.Magnitude, effect.Source));
                 }
             }
@@ -140,6 +153,7 @@ namespace GameServer.Application.Actors
             // Draw cards for active player
             var player = players[msg.PlayerActor];
             var drawnCards = state.DrawCards(playerId, player.Deck);
+            this.LogDebug("Player {0} drew {1} cards", playerId, drawnCards.Count);
 
             // Send turn started notification (without drawn cards)
             context.Send(msg.PlayerActor, new OutTurnStarted(playerId));
@@ -169,6 +183,7 @@ namespace GameServer.Application.Actors
             if (!isActive) return Task.CompletedTask;
 
             var playerId = players[msg.PlayerActor].Id;
+            this.LogInformation("Ending turn for player: {0}", playerId);
             
             // Discard the player's hand at the end of their turn
             state.DiscardHand(playerId, players[msg.PlayerActor].Deck);
@@ -186,26 +201,39 @@ namespace GameServer.Application.Actors
             if (!isActive) return Task.CompletedTask;
 
             var playerId = players[msg.PlayerActor].Id;
-            if (!state.IsPlayersTurn(playerId)) return Task.CompletedTask;
+            if (!state.IsPlayersTurn(playerId))
+            {
+                this.LogWarning("Player {0} attempted to play card {1} out of turn", playerId, msg.CardId);
+                return Task.CompletedTask;
+            }
+
+            this.LogInformation("Player {0} playing card: {1}", playerId, msg.CardId);
 
             try
             {
                 // Get the card from player's hand
                 var playerState = state.GetPlayerState(playerId);
                 var card = playerState.Hand.FirstOrDefault(c => c.Id == msg.CardId);
-                if (card == null) return Task.CompletedTask;
+                if (card == null)
+                {
+                    this.LogWarning("Card {0} not found in player {1}'s hand", msg.CardId, playerId);
+                    return Task.CompletedTask;
+                }
 
                 // Validate and play the card
                 if (!state.CanPlayCard(playerId, card))
                 {
+                    this.LogWarning("Player {0} cannot play card {1}: Not enough action points", playerId, msg.CardId);
                     context.Send(mapActor, new OutCardPlayFailed(msg.CardId, "Not enough action points"));
                     return Task.CompletedTask;
                 }
 
                 state.PlayCard(playerId, card);
+                this.LogDebug("Player {0} played card {1} ({2})", playerId, card.Id, card.Name);
 
                 // Apply card effects
                 string effect = ApplyCardEffects(context, msg.PlayerActor, card);
+                this.LogDebug("Card effect applied: {0}", effect);
 
                 // Send notifications to both players and the map actor
                 var cardInfo = new CardInfo(card.Id, card.Name, card.Description, card.Cost);
@@ -235,6 +263,7 @@ namespace GameServer.Application.Actors
                     string winnerPlayerId = state.GetWinnerId();
                     PID winnerActor = winnerPlayerId == players[player1Actor].Id ? player1Actor : player2Actor;
                     PID loserActor = winnerActor.Equals(player1Actor) ? player2Actor : player1Actor;
+                    this.LogInformation("Game over. Winner: {0}", winnerPlayerId);
                     return OnEndFight(context, new EndFight(winnerActor, loserActor, "Player defeated"));
                 }
 
@@ -243,6 +272,7 @@ namespace GameServer.Application.Actors
             }
             catch (Exception ex)
             {
+                this.LogError(ex, "Error playing card {0} by player {1}: {2}", msg.CardId, playerId, ex.Message);
                 context.Send(mapActor, new OutCardPlayFailed(msg.CardId, ex.Message));
             }
 
@@ -257,6 +287,9 @@ namespace GameServer.Application.Actors
             string playerId = players[playerActor].Id;
             PID targetActor = playerActor.Equals(player1Actor) ? player2Actor : player1Actor;
             string targetId = players[targetActor].Id;
+            
+            this.LogDebug("Applying card effects for card {0} from player {1} to target {2}", 
+                card.Id, playerId, targetId);
             
             // Get the appropriate handler for this card
             var handler = cardEffectHandlerFactory.CreateHandler(card);
@@ -275,6 +308,8 @@ namespace GameServer.Application.Actors
 
         private void SendFightStateUpdate(IContext context)
         {
+            this.LogDebug("Sending fight state update");
+            
             var player1State = state.GetPlayerState(player1Actor.Id);
             var player2State = state.GetPlayerState(player2Actor.Id);
 
@@ -327,6 +362,9 @@ namespace GameServer.Application.Actors
                 p2State
             );
 
+            // Log fight state at debug level with JSON
+            this.LogDebug("Fight state update: {0}", JsonConfig.Serialize(outFightStateUpdate));
+
             context.Send(player1Actor, outFightStateUpdate);
             context.Send(player2Actor, outFightStateUpdate);
         }
@@ -340,6 +378,11 @@ namespace GameServer.Application.Actors
             if (!isActive) return Task.CompletedTask;
 
             PID winnerActor = msg.PlayerActor.Equals(player1Actor) ? player2Actor : player1Actor;
+            string disconnectedPlayerId = players[msg.PlayerActor].Id;
+            string winnerPlayerId = players[winnerActor].Id;
+            
+            this.LogInformation("Player {0} disconnected from fight. Winner: {1}", 
+                disconnectedPlayerId, winnerPlayerId);
 
             isActive = false;
             var fightCompletedMessage = new FightCompleted(context.Self, winnerActor, msg.PlayerActor, "Player disconnected");
@@ -359,6 +402,12 @@ namespace GameServer.Application.Actors
         private Task OnEndFight(IContext context, EndFight msg)
         {
             if (!isActive) return Task.CompletedTask;
+
+            string winnerPlayerId = players[msg.WinnerActor].Id;
+            string loserPlayerId = players[msg.LoserActor].Id;
+            
+            this.LogInformation("Fight ended. Winner: {0}, Loser: {1}, Reason: {2}", 
+                winnerPlayerId, loserPlayerId, msg.Reason);
 
             isActive = false;
             var fightCompletedMessage = new FightCompleted(context.Self, msg.WinnerActor, msg.LoserActor, msg.Reason);
