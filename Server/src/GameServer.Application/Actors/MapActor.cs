@@ -220,6 +220,11 @@ namespace GameServer.Application.Actors
             // Update player states
             map.SetPlayerFightId(challengerPlayerId, fightActor.Id);
             map.SetPlayerFightId(targetPlayerId, fightActor.Id);
+            
+            // Broadcast to all players on the map that a fight has started
+            this.LogInformation("Broadcasting fight start between players {0} and {1}", 
+                challengerPlayerId, targetPlayerId);
+            BroadcastToAllPlayers(context, new OutFightStarted(challengerPlayerId, targetPlayerId));
 
             return Task.CompletedTask;
         }
@@ -252,7 +257,10 @@ namespace GameServer.Application.Actors
                 }
 
                 // Notify players of fight completion
-                BroadcastToAllPlayers(context, new OutFightEnded(winnerPlayerId ?? "unknown", msg.Reason));
+                BroadcastToAllPlayers(context, new OutFightEnded(
+                    winnerPlayerId ?? "unknown", 
+                    loserPlayerId ?? "unknown", 
+                    msg.Reason));
                 
                 // Stop the fight actor
                 context.Stop(fightActor);

@@ -308,20 +308,32 @@ public partial class Game : Node2D
         _network.SendMessage(new InFightChallengeAccepted(challengerId));
     }
 
-    private void OnFightStarted(string opponentId)
+    private void OnFightStarted(string player1Id, string player2Id)
     {
         UpdateStatusLabel();
-        if (_otherPlayers.TryGetValue(opponentId, out var sprite))
-        {
-            sprite.Modulate = Colors.Red;
-        }
-        _player.Modulate = Colors.Red;
         
-        // Show the card battle UI
-        ShowCardBattleUI();
+        // Set both players' sprites to red
+        if (_otherPlayers.TryGetValue(player1Id, out var player1Sprite))
+        {
+            player1Sprite.Modulate = Colors.Red;
+        }
+        
+        if (_otherPlayers.TryGetValue(player2Id, out var player2Sprite))
+        {
+            player2Sprite.Modulate = Colors.Red;
+        }
+        
+        // Set main player's sprite to red if they're in the fight
+        if (player1Id == _gameState.PlayerId || player2Id == _gameState.PlayerId)
+        {
+            _player.Modulate = Colors.Red;
+            
+            // Show the card battle UI only if the main player is in the fight
+            ShowCardBattleUI();
+        }
     }
 
-    private void OnFightEnded(string winnerId, string reason)
+    private void OnFightEnded(string winnerId, string loserId, string reason)
     {
         // Add specific handling for disconnection
         if (reason == "Player disconnected")
@@ -336,17 +348,17 @@ public partial class Game : Node2D
             }
             
             // Remove the disconnected player's sprite if it still exists
-            if (_gameState.OpponentId != null && _otherPlayers.TryGetValue(_gameState.OpponentId, out var sprite))
+            if (_otherPlayers.TryGetValue(loserId, out var sprite))
             {
                 // Add a visual effect to show disconnection
                 var tween = CreateTween();
                 tween.TweenProperty(sprite, "modulate:a", 0.0f, 0.5f);
                 tween.TweenCallback(Callable.From(() => {
-                    if (_otherPlayers.ContainsKey(_gameState.OpponentId))
+                    if (_otherPlayers.ContainsKey(loserId))
                     {
                         sprite.QueueFree();
-                        _otherPlayers.Remove(_gameState.OpponentId);
-                        _otherPlayersTargetPositions.Remove(_gameState.OpponentId);
+                        _otherPlayers.Remove(loserId);
+                        _otherPlayersTargetPositions.Remove(loserId);
                     }
                 }));
             }
@@ -356,15 +368,24 @@ public partial class Game : Node2D
             // Regular fight end handling
             UpdateStatusLabel($"Fight ended. Winner: {winnerId}. Reason: {reason}");
             
-            // Reset opponent sprite color if they're still in the game
-            if (_gameState.OpponentId != null && _otherPlayers.TryGetValue(_gameState.OpponentId, out var sprite))
+            // Reset winner sprite if they're not the main player
+            if (_otherPlayers.TryGetValue(winnerId, out var winnerSprite))
             {
-                sprite.Modulate = Colors.White;
+                winnerSprite.Modulate = Colors.White;
+            }
+            
+            // Reset loser sprite if they're not the main player
+            if (_otherPlayers.TryGetValue(loserId, out var loserSprite))
+            {
+                loserSprite.Modulate = Colors.White;
             }
         }
         
-        // Reset player color
-        _player.Modulate = new Color(0, 0.6f, 1);
+        // Reset main player's color if they were in this fight
+        if (_gameState.PlayerId == winnerId || _gameState.PlayerId == loserId)
+        {
+            _player.Modulate = new Color(0, 0.6f, 1);
+        }
         
         // Hide the card battle UI
         HideCardBattleUI();

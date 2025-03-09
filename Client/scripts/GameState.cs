@@ -143,63 +143,72 @@ public partial class GameState : Node
         PlayerPosition = position;
     }
 
-    private void OnFightStarted(string opponentId)
+    private void OnFightStarted(string player1Id, string player2Id)
     {
-        CurrentFightId = $"fight_{PlayerId}_{opponentId}";
-        OpponentId = opponentId;
-        PlayersInFight[PlayerId] = true;
-        PlayersInFight[opponentId] = true;
+        // Mark both players as in a fight
+        PlayersInFight[player1Id] = true;
+        PlayersInFight[player2Id] = true;
         
-        // Reset card battle state for new fight
-        CardSvgData.Clear();
-        CardsInHand.Clear();
-        PlayerHitPoints = 50;
-        PlayerActionPoints = 0;
-        PlayerDeckCount = 0;
-        PlayerDiscardPileCount = 0;
-        OpponentHitPoints = 50;
-        OpponentActionPoints = 0;
-        OpponentDeckCount = 0;
-        OpponentDiscardPileCount = 0;
-        OpponentCardsInHand.Clear();
-        CurrentTurnPlayerId = null;
+        // Set fight state for the main player if they're involved
+        if (player1Id == PlayerId || player2Id == PlayerId)
+        {
+            CurrentFightId = $"fight_{player1Id}_{player2Id}";
+            OpponentId = player1Id == PlayerId ? player2Id : player1Id;
+            
+            // Reset card battle state for new fight
+            CardSvgData.Clear();
+            CardsInHand.Clear();
+            PlayerHitPoints = 50;
+            PlayerActionPoints = 0;
+            PlayerDeckCount = 0;
+            PlayerDiscardPileCount = 0;
+            OpponentHitPoints = 50;
+            OpponentActionPoints = 0;
+            OpponentDeckCount = 0;
+            OpponentDiscardPileCount = 0;
+            OpponentCardsInHand.Clear();
+            CurrentTurnPlayerId = null;
+        }
     }
 
-    private void OnFightEnded(string winnerId, string reason)
+    private void OnFightEnded(string winnerId, string loserId, string reason)
     {
         // Special handling for disconnection
-        if (reason == "Player disconnected" && OpponentId != null)
+        if (reason == "Player disconnected")
         {
             // Remove the disconnected player from the PlayersInFight dictionary
-            PlayersInFight.Remove(OpponentId);
+            PlayersInFight.Remove(loserId);
             
             // Also remove from OtherPlayers if needed
-            OtherPlayers.Remove(OpponentId);
+            OtherPlayers.Remove(loserId);
         }
-        else if (OpponentId != null)
+        else
         {
             // Normal cleanup for both players
-            PlayersInFight.Remove(PlayerId);
-            PlayersInFight.Remove(OpponentId);
+            PlayersInFight.Remove(winnerId);
+            PlayersInFight.Remove(loserId);
         }
         
-        // Reset fight state
-        CurrentFightId = null;
-        OpponentId = null;
-        
-        // Reset card battle state
-        CardSvgData.Clear();
-        CardsInHand.Clear();
-        PlayerHitPoints = 50;
-        PlayerActionPoints = 0;
-        PlayerDeckCount = 0;
-        PlayerDiscardPileCount = 0;
-        OpponentHitPoints = 50;
-        OpponentActionPoints = 0;
-        OpponentDeckCount = 0;
-        OpponentDiscardPileCount = 0;
-        OpponentCardsInHand.Clear();
-        CurrentTurnPlayerId = null;
+        // Reset fight state if the main player was involved
+        if (winnerId == PlayerId || loserId == PlayerId)
+        {
+            CurrentFightId = null;
+            OpponentId = null;
+            
+            // Reset card battle state
+            CardSvgData.Clear();
+            CardsInHand.Clear();
+            PlayerHitPoints = 50;
+            PlayerActionPoints = 0;
+            PlayerDeckCount = 0;
+            PlayerDiscardPileCount = 0;
+            OpponentHitPoints = 50;
+            OpponentActionPoints = 0;
+            OpponentDeckCount = 0;
+            OpponentDiscardPileCount = 0;
+            OpponentCardsInHand.Clear();
+            CurrentTurnPlayerId = null;
+        }
     }
     
     // Card battle event handlers

@@ -179,10 +179,10 @@ public partial class NetworkManager : Node
                     EmitSignal(SignalName.FightChallengeReceived, msg.ChallengerId);
                     break;
                 case OutFightStarted msg:
-                    EmitSignal(SignalName.FightStarted, msg.OpponentId);
+                    EmitSignal(SignalName.FightStarted, msg.Player1Id, msg.Player2Id);
                     break;
                 case OutFightEnded msg:
-                    EmitSignal(SignalName.FightEnded, msg.WinnerId, msg.Reason);
+                    EmitSignal(SignalName.FightEnded, msg.WinnerId, msg.LoserId, msg.Reason);
                     break;
                     
                 // Card battle messages
@@ -369,9 +369,9 @@ public partial class NetworkManager : Node
     [Signal]
     public delegate void FightChallengeReceivedEventHandler(string challengerId);
     [Signal]
-    public delegate void FightStartedEventHandler(string opponentId);
+    public delegate void FightStartedEventHandler(string player1Id, string player2Id);
     [Signal]
-    public delegate void FightEndedEventHandler(string winnerId, string reason);
+    public delegate void FightEndedEventHandler(string winnerId, string loserId, string reason);
     
     // Card battle signals
     [Signal]

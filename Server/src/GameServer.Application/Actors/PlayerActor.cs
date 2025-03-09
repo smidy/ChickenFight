@@ -162,8 +162,8 @@ namespace GameServer.Application.Actors
             player.EnterFight(msg.FightActor.Id);
             
             // Determine opponent ID
-            var opponentId = msg.Player1.Id == player.Id ? msg.Player2.Id : msg.Player1.Id;
-            await _sendToClient(new OutFightStarted(opponentId));
+            //var opponentId = msg.Player1.Id == player.Id ? msg.Player2.Id : msg.Player1.Id;
+            //await _sendToClient(new OutFightStarted(opponentId));
         }
 
         /// <summary>
@@ -175,15 +175,11 @@ namespace GameServer.Application.Actors
             // Reset fight state
             currentFight = null;
             player.LeaveFight();
-            
-            // Determine if this player won or lost
-            bool isWinner = msg.WinnerActor.Equals(context.Self);
-            string winnerId = isWinner ? player.Id : msg.WinnerActor.Id;
-            
-            this.LogInformation("Fight completed. Winner: {0}. Reason: {1}", winnerId, msg.Reason);
+                        
+            this.LogInformation("Fight completed. Winner: {0}. Reason: {1}", msg.WinnerActor.Id, msg.Reason);
             
             // Send fight ended message to client
-            await _sendToClient(new OutFightEnded(winnerId, msg.Reason));
+            await _sendToClient(new OutFightEnded(msg.WinnerActor.Id, msg.LoserActor.Id, msg.Reason));
         }
 
         /// <summary>
@@ -224,7 +220,7 @@ namespace GameServer.Application.Actors
             {
                 this.LogDebug("Player move validated to position {0},{1}", msg.NewPosition.X, msg.NewPosition.Y);
                 player.UpdatePosition(msg.NewPosition);
-                await _sendToClient(new OutPlayerInfo(new PlayerState(player.Id, player.Name, player.Position)));
+                await _sendToClient(new OutPlayerInfo(new PlayerState(player.Id, player.Name, player.Position, player.CurrentFightId)));
                 await _sendToClient(new OutMoveCompleted(msg.NewPosition));
                 pendingMove = null;
             }

@@ -392,26 +392,30 @@ namespace GameServer.Shared.ExternalMessages
         }
     }
 
-    /// <summary>Notifies players that a fight has begun</summary>
+    /// <summary>Notifies players that a fight has begun with both player IDs</summary>
     public class OutFightStarted : ToClientMessage
     {
-        public string OpponentId { get; }
+        public string Player1Id { get; }
+        public string Player2Id { get; }
 
-        public OutFightStarted(string opponentId) : base()
+        public OutFightStarted(string player1Id, string player2Id) : base()
         {
-            OpponentId = opponentId;
+            Player1Id = player1Id;
+            Player2Id = player2Id;
         }
     }
 
-    /// <summary>Notifies players that a fight has ended with a winner</summary>
+    /// <summary>Notifies players that a fight has ended with a winner and loser</summary>
     public class OutFightEnded : ToClientMessage
     {
         public string WinnerId { get; }
+        public string LoserId { get; }
         public string Reason { get; }
 
-        public OutFightEnded(string winnerId, string reason) : base()
+        public OutFightEnded(string winnerId, string loserId, string reason) : base()
         {
             WinnerId = winnerId;
+            LoserId = loserId;
             Reason = reason;
         }
     }
