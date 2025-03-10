@@ -113,9 +113,30 @@ public partial class Game : Node2D
 
     private void SetupOtherPlayers()
     {
-        foreach(var player in this._gameState.OtherPlayers)
+        foreach(var player in this._gameState.OtherPlayerInfo)
         {
-            OnPlayerJoined(player.Key, player.Value);
+            var playerId = player.Key;
+            var playerInfo = player.Value;
+            var position = (Vector2I)playerInfo["Position"];
+            var fightId = playerInfo["FightId"].AsString();
+            
+            // Create sprite for the player
+            var sprite = new Sprite2D
+            {
+                Texture = _player.Texture,
+                Position = position * 32 + new Vector2(16, 16)
+            };
+            
+            // If the player is in a fight, color them red
+            if (!string.IsNullOrEmpty(fightId))
+            {
+                sprite.Modulate = Colors.Red;
+                _gameState.PlayersInFight[playerId] = true;
+            }
+            
+            AddChild(sprite);
+            _otherPlayers[playerId] = sprite;
+            _otherPlayersTargetPositions[playerId] = position * 32 + new Vector2(16, 16);
         }
     }
 
@@ -220,6 +241,13 @@ public partial class Game : Node2D
     {
         if (_gameState.PlayerId == playerId) return;
 
+        // Create a dictionary with position and empty fightId
+        var playerInfo = new Godot.Collections.Dictionary
+        {
+            ["Position"] = position,
+            ["FightId"] = ""  // Empty string instead of null
+        };
+
         var sprite = new Sprite2D
         {
             Texture = _player.Texture,
@@ -228,7 +256,7 @@ public partial class Game : Node2D
         AddChild(sprite);
         _otherPlayers[playerId] = sprite;
         _otherPlayersTargetPositions[playerId] = position * 32 + new Vector2(16, 16);
-        _gameState.AddPlayer(playerId, position);
+        _gameState.AddPlayer(playerId, playerInfo);
     }
 
     private void OnPlayerPositionChanged(string playerId, Vector2I position)

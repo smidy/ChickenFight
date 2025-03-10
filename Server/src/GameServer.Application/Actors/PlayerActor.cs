@@ -87,8 +87,9 @@ namespace GameServer.Application.Actors
                 this.LogInformation("Player added to map: {0} at position {1},{2}", msg.MapId, msg.StartPosition.X, msg.StartPosition.Y);
                 currentMap = msg.MapPID;
                 player.JoinMap(pendingMapJoin, msg.StartPosition);
-                var exPlayerPositions = msg.PlayerPositions.ToDictionary(y => y.Key.Id, y => new MapPosition(y.Value.X, y.Value.Y));
-                await _sendToClient(new OutJoinMapCompleted(msg.MapId, player.Id, msg.StartPosition, msg.TilemapData, exPlayerPositions));
+                
+                // Pass the player info directly to the client
+                await _sendToClient(new OutJoinMapCompleted(msg.MapId, player.Id, msg.StartPosition, msg.TilemapData, msg.PlayerInfo));
                 pendingMapJoin = null;
             }
         }
@@ -220,7 +221,7 @@ namespace GameServer.Application.Actors
             {
                 this.LogDebug("Player move validated to position {0},{1}", msg.NewPosition.X, msg.NewPosition.Y);
                 player.UpdatePosition(msg.NewPosition);
-                await _sendToClient(new OutPlayerInfo(new PlayerState(player.Id, player.Name, player.Position, player.CurrentFightId)));
+                await _sendToClient(new OutPlayerInfo(new PlayerState(player.Id, player.Name, player.Position)));
                 await _sendToClient(new OutMoveCompleted(msg.NewPosition));
                 pendingMove = null;
             }

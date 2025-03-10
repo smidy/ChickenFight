@@ -15,6 +15,7 @@ public partial class GameState : Node
     
     // Other players
     public Godot.Collections.Dictionary<string, Vector2I> OtherPlayers = new();
+    public Godot.Collections.Dictionary<string, Dictionary> OtherPlayerInfo = new();
     public Godot.Collections.Dictionary<string, bool> PlayersInFight = new();
 
     // Fight state
@@ -81,6 +82,7 @@ public partial class GameState : Node
         PlayerPosition = Vector2I.Zero;
         PendingMove = null;
         OtherPlayers.Clear();
+        OtherPlayerInfo.Clear();
         PlayersInFight.Clear();
         CurrentFightId = null;
         OpponentId = null;
@@ -100,11 +102,21 @@ public partial class GameState : Node
         CurrentTurnPlayerId = null;
     }
 
-    public void AddPlayer(string playerId, Vector2I position)
+    public void AddPlayer(string playerId, Dictionary playerInfo)
     {
         if (playerId != PlayerId)
         {
-            OtherPlayers[playerId] = position;
+            // Store the complete player info
+            OtherPlayerInfo[playerId] = playerInfo;
+            
+            // Extract position for backward compatibility
+            OtherPlayers[playerId] = (Vector2I)playerInfo["Position"];
+            
+            // If the player is in a fight, add them to the PlayersInFight dictionary
+            if (!string.IsNullOrEmpty(playerInfo["FightId"].AsString()))
+            {
+                PlayersInFight[playerId] = true;
+            }
         }
     }
 
@@ -119,6 +131,8 @@ public partial class GameState : Node
     public void RemovePlayer(string playerId)
     {
         OtherPlayers.Remove(playerId);
+        OtherPlayerInfo.Remove(playerId);
+        PlayersInFight.Remove(playerId);
     }
 
     private void OnMoveInitiated(Vector2I newPosition)
@@ -145,14 +159,28 @@ public partial class GameState : Node
 
     private void OnFightStarted(string player1Id, string player2Id)
     {
+        // Generate a fight ID
+        string fightId = $"fight_{player1Id}_{player2Id}";
+        
         // Mark both players as in a fight
         PlayersInFight[player1Id] = true;
         PlayersInFight[player2Id] = true;
         
+        // Update the fight ID in OtherPlayerInfo for both players
+        if (OtherPlayerInfo.ContainsKey(player1Id))
+        {
+            OtherPlayerInfo[player1Id]["FightId"] = fightId;
+        }
+        
+        if (OtherPlayerInfo.ContainsKey(player2Id))
+        {
+            OtherPlayerInfo[player2Id]["FightId"] = fightId;
+        }
+        
         // Set fight state for the main player if they're involved
         if (player1Id == PlayerId || player2Id == PlayerId)
         {
-            CurrentFightId = $"fight_{player1Id}_{player2Id}";
+            CurrentFightId = fightId;
             OpponentId = player1Id == PlayerId ? player2Id : player1Id;
             
             // Reset card battle state for new fight
@@ -179,14 +207,26 @@ public partial class GameState : Node
             // Remove the disconnected player from the PlayersInFight dictionary
             PlayersInFight.Remove(loserId);
             
-            // Also remove from OtherPlayers if needed
+            // Also remove from OtherPlayers and OtherPlayerInfo if needed
             OtherPlayers.Remove(loserId);
+            OtherPlayerInfo.Remove(loserId);
         }
         else
         {
             // Normal cleanup for both players
             PlayersInFight.Remove(winnerId);
             PlayersInFight.Remove(loserId);
+            
+            // Clear fight IDs in OtherPlayerInfo
+            if (OtherPlayerInfo.ContainsKey(winnerId))
+            {
+                OtherPlayerInfo[winnerId]["FightId"] = "";  // Empty string instead of null
+            }
+            
+            if (OtherPlayerInfo.ContainsKey(loserId))
+            {
+                OtherPlayerInfo[loserId]["FightId"] = "";  // Empty string instead of null
+            }
         }
         
         // Reset fight state if the main player was involved

@@ -4,6 +4,7 @@ using GameServer.Application.Messages.Internal;
 using GameServer.Shared.ExternalMessages;
 using GameServer.Application.Extensions;
 using GameServer.Shared;
+using GameServer.Shared.Models;
 
 namespace GameServer.Application.Actors
 {
@@ -60,13 +61,18 @@ namespace GameServer.Application.Actors
                 BroadcastToAllPlayers(context, new OutPlayerJoinedMap(playerId, startPosition));
                 var tilemapData = new GameServer.Shared.ExternalMessages.TilemapData(map.Width, map.Height, map.TileData);
                 
-                // Convert player positions to use PIDs
-                var pidPositions = map.PlayerPositions.ToDictionary(
-                    kvp => players.First(p => p.Value == kvp.Key).Key,
-                    kvp => kvp.Value
-                );
+                // Create a dictionary of player info including positions and fight IDs
+                var playerInfo = new Dictionary<string, PlayerMapInfo>();
+                foreach (var kvp in map.PlayerPositions.Where(x => x.Key != playerId))
+                {
+                    // Get the player's fight ID if they're in a fight
+                    var fightId = map.GetPlayerFightId(kvp.Key);
+                    
+                    // Add the player info to the dictionary with their ID as the key
+                    playerInfo[kvp.Key] = new PlayerMapInfo(kvp.Value, fightId);
+                }
                 
-                context.Send(msg.Requester, new PlayerAddedToMap(msg.PlayerActor, context.Self, map.Id, startPosition, tilemapData, pidPositions));
+                context.Send(msg.Requester, new PlayerAddedToMap(msg.PlayerActor, context.Self, map.Id, startPosition, tilemapData, playerInfo));
             }
             else
             {

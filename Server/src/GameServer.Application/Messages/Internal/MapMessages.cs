@@ -7,12 +7,12 @@ namespace GameServer.Application.Messages.Internal
 {
     // Player management messages
     public record JoinMap(PID PlayerActor, string PlayerName, PID Requester);
-    public record PlayerAddedToMap(PID PlayerActor,
+public record PlayerAddedToMap(PID PlayerActor,
         PID MapPID,
         string MapId, 
         MapPosition StartPosition, 
         Shared.ExternalMessages.TilemapData TilemapData,
-        IReadOnlyDictionary<PID, MapPosition> PlayerPositions);
+        IReadOnlyDictionary<string, PlayerMapInfo> PlayerInfo);
     public record PlayerAddFailure(PID PlayerActor, string MapId, string Error);
     
     public record LeaveMap(PID PlayerActor, PID Requester);

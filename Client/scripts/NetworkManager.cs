@@ -130,11 +130,20 @@ public partial class NetworkManager : Node
                         ["Height"] = msg.TilemapData.Height,
                         ["TileData"] = new Godot.Collections.Array<int>(msg.TilemapData.TileData)
                     };
-                    var playerPositions = new Godot.Collections.Dictionary<string, Vector2I>(
-                        msg.PlayerPositions.Select( x => KeyValuePair.Create(x.Key, new Vector2I(x.Value.X, x.Value.Y))
-                        ).ToDictionary());
+                    
+                    // Create a dictionary of player info including positions and fight IDs
+                    var playerInfo = new Godot.Collections.Dictionary<string, Dictionary>();
+                    foreach (var kvp in msg.PlayerInfo)
+                    {
+                        var infoDict = new Dictionary
+                        {
+                            ["Position"] = new Vector2I(kvp.Value.Position.X, kvp.Value.Position.Y),
+                            ["FightId"] = kvp.Value.FightId
+                        };
+                        playerInfo[kvp.Key] = infoDict;
+                    }
 
-                    EmitSignal(SignalName.JoinMapCompleted, msg.PlayerId, new Vector2I(msg.Position.X, msg.Position.Y), tilemapDict, playerPositions);
+                    EmitSignal(SignalName.JoinMapCompleted, msg.PlayerId, new Vector2I(msg.Position.X, msg.Position.Y), tilemapDict, playerInfo);
                     break;
                 case OutJoinMapFailed msg:
                     EmitSignal(SignalName.JoinMapFailed, msg.Error);
@@ -152,11 +161,11 @@ public partial class NetworkManager : Node
                     break;
 
                 // Player state messages
-                case OutPlayerInfo playerInfo:
-                    if (playerInfo.State != null)
+                case OutPlayerInfo pInfo:
+                    if (pInfo.State != null)
                     {
                         EmitSignal(SignalName.PlayerStateUpdated, 
-                            new Vector2I(playerInfo.State.Position.X, playerInfo.State.Position.Y));
+                            new Vector2I(pInfo.State.Position.X, pInfo.State.Position.Y));
                     }
                     break;
 
@@ -338,7 +347,7 @@ public partial class NetworkManager : Node
     [Signal]
     public delegate void JoinMapInitiatedEventHandler(string mapId);
     [Signal]
-    public delegate void JoinMapCompletedEventHandler(string playerId, Vector2I playerPosition, Dictionary tilemapData, Godot.Collections.Dictionary<string, Vector2I> playerPositions);
+    public delegate void JoinMapCompletedEventHandler(string playerId, Vector2I playerPosition, Dictionary tilemapData, Godot.Collections.Dictionary<string, Dictionary> playerInfo);
     [Signal]
     public delegate void JoinMapFailedEventHandler(string error);
 

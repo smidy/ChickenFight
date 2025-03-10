@@ -135,26 +135,26 @@ namespace GameServer.Shared.ExternalMessages
         }
     }
 
-    /// <summary>
-    /// Server notification that map join has completed successfully
-    /// </summary>
-    public class OutJoinMapCompleted : ToClientMessage
-    {
-        public string MapId { get; }
-        public string PlayerId { get; }
-        public MapPosition Position { get; }
-        public TilemapData TilemapData { get; }
-        public IReadOnlyDictionary<string, MapPosition> PlayerPositions { get; }
+/// <summary>
+/// Server notification that map join has completed successfully
+/// </summary>
+public class OutJoinMapCompleted : ToClientMessage
+{
+    public string MapId { get; }
+    public string PlayerId { get; }
+    public MapPosition Position { get; }
+    public TilemapData TilemapData { get; }
+    public IReadOnlyDictionary<string, PlayerMapInfo> PlayerInfo { get; }
 
-        public OutJoinMapCompleted(string mapId, string playerId, MapPosition position, TilemapData tilemapData, IReadOnlyDictionary<string, MapPosition> playerPositions) : base()
-        {
-            MapId = mapId;
-            PlayerId = playerId;
-            Position = position;
-            TilemapData = tilemapData;
-            PlayerPositions = playerPositions;
-        }
+    public OutJoinMapCompleted(string mapId, string playerId, MapPosition position, TilemapData tilemapData, IReadOnlyDictionary<string, PlayerMapInfo> playerInfo) : base()
+    {
+        MapId = mapId;
+        PlayerId = playerId;
+        Position = position;
+        TilemapData = tilemapData;
+        PlayerInfo = playerInfo;
     }
+}
 
     /// <summary>
     /// Server notification that map join has failed
@@ -319,12 +319,14 @@ namespace GameServer.Shared.ExternalMessages
         public string Id { get; }
         public string Name { get; }
         public MapPosition Position { get; }
+        public string? FightId { get; }
 
-        public PlayerState(string id, string name, MapPosition position)
+        public PlayerState(string id, string name, MapPosition position, string? fightId = null)
         {
             Id = id;
             Name = name;
             Position = position;
+            FightId = fightId;
         }
     }
 
