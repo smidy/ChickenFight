@@ -112,7 +112,7 @@ Client                Server
 ### Fight Messages
 - `InFightChallengeSend`: Client challenges another player to a fight
 - `OutFightChallengeReceived`: Server notifies target player about challenge
-- `OutFightStarted`: Server notifies both players that fight has started
+- `OutFightStarted`: Server notifies all players that fight has started
 
 ### Card Battle Messages
 - `OutCardImages`: Provides SVG data for card rendering

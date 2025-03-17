@@ -292,6 +292,12 @@ namespace GameServer.Application.Actors
             }
         }
 
+        private async Task OnRequestConnection(IContext context, InPlayerIdRequest msg)
+        {
+            this.LogInformation("Player requested connection confirmation");
+            await _sendToClient(new OutPlayerIdResponse(player.Id));
+        }
+
         private async Task OnIncommingClientMessage(IContext context, FromClientMessage fromClientMessage)
         {
             // Log incoming message at debug level with JSON
@@ -299,6 +305,7 @@ namespace GameServer.Application.Actors
             
             var handle = fromClientMessage switch
             {
+                InPlayerIdRequest msg => OnRequestConnection(context, msg),
                 InRequestMapList msg => OnRequestMapList(context, msg),
                 InJoinMap msg => OnJoinMap(context, msg),
                 InLeaveMap msg => OnLeaveMap(context, msg),

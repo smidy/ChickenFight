@@ -40,7 +40,28 @@ namespace GameServer.Shared.ExternalMessages
 
     // Connection messages
     /// <summary>
-    /// Confirms a successful connection to the client
+    /// Client request for connection confirmation
+    /// </summary>
+    public class InPlayerIdRequest : FromClientMessage
+    {
+        public InPlayerIdRequest() : base() { }
+    }
+
+    /// <summary>
+    /// Server response with connection confirmation
+    /// </summary>
+    public class OutPlayerIdResponse : ToClientMessage
+    {
+        public string PlayerId { get; }
+
+        public OutPlayerIdResponse(string playerId) : base()
+        {
+            PlayerId = playerId;
+        }
+    }
+
+    /// <summary>
+    /// Confirms a successful connection to the client (legacy, to be removed)
     /// </summary>
     public class OutConnectionConfirmed : ToClientMessage
     {

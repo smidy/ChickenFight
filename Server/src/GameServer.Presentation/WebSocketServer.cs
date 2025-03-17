@@ -56,7 +56,9 @@ namespace GameServer.Presentation
                 TimeSpan.FromMilliseconds(CreatePlayerTimeout)
             );
             playerActor = createResponse.PlayerActor;
-            await SendResponse(new OutConnectionConfirmed(playerActor.Id));
+            
+            // Connection is now established, but client must request the player ID
+            // by sending an InRequestConnection message
         }
 
         public override void OnWsDisconnected()

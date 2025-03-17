@@ -73,6 +73,14 @@ public partial class NetworkManager : Node
         }
 
         GD.Print("Connected to WebSocket server");
+        
+        // Request connection confirmation
+        RequestConnection();
+    }
+    
+    public void RequestConnection()
+    {
+        SendMessage(new InPlayerIdRequest());
     }
 
     public void SendMessage<T>(T message) where T : FromClientMessage
@@ -98,7 +106,12 @@ public partial class NetworkManager : Node
 
             switch (typedMessage)
             {
+                case OutPlayerIdResponse connectionResponse:
+                    EmitSignal(SignalName.ConnectionConfirmed, connectionResponse.PlayerId);
+                    break;
+                    
                 case OutConnectionConfirmed connectionConfirmed:
+                    // Legacy support for OutConnectionConfirmed
                     EmitSignal(SignalName.ConnectionConfirmed, connectionConfirmed.PlayerId);
                     break;
 
