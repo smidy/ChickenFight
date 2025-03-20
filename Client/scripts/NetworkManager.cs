@@ -109,11 +109,6 @@ public partial class NetworkManager : Node
                 case OutPlayerIdResponse connectionResponse:
                     EmitSignal(SignalName.ConnectionConfirmed, connectionResponse.PlayerId);
                     break;
-                    
-                case OutConnectionConfirmed connectionConfirmed:
-                    // Legacy support for OutConnectionConfirmed
-                    EmitSignal(SignalName.ConnectionConfirmed, connectionConfirmed.PlayerId);
-                    break;
 
                 case OutRequestMapListResponse mapListResponse:
                     var mapsArray = new Godot.Collections.Array();

@@ -60,19 +60,6 @@ namespace GameServer.Shared.ExternalMessages
         }
     }
 
-    /// <summary>
-    /// Confirms a successful connection to the client (legacy, to be removed)
-    /// </summary>
-    public class OutConnectionConfirmed : ToClientMessage
-    {
-        public string PlayerId { get; }
-
-        public OutConnectionConfirmed(string playerId) : base()
-        {
-            PlayerId = playerId;
-        }
-    }
-
     // Map listing messages
     /// <summary>
     /// Client request for available maps
