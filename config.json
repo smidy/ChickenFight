@@ -1,0 +1,32 @@
+{
+    "server": {
+        "host": "127.0.0.1",
+        "port": 8080,
+        "use_ssl": false
+    },
+    "training": {
+        "num_agents": 1,
+        "total_episodes": 10000,
+        "save_interval": 100,
+        "eval_interval": 50,
+        "checkpoint_dir": "checkpoints",
+        "learning_rate": 0.001,
+        "gamma": 0.99,
+        "entropy_coef": 0.01,
+        "value_loss_coef": 0.5,
+        "max_grad_norm": 0.5,
+        "initial_epsilon": 1.0,
+        "final_epsilon": 0.05,
+        "epsilon_decay_episodes": 5000,
+        "use_replay_buffer": true,
+        "replay_buffer_size": 10000,
+        "batch_size": 64
+    },
+    "model": {
+        "state_dim": 128,
+        "hidden_dim": 256,
+        "num_layers": 2,
+        "use_cuda": true,
+        "cuda_device": 0
+    }
+}
