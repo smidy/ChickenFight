@@ -48,7 +48,7 @@ Status effects can be applied to players and persist across turns:
    - Process active status effects
    - Grant 3 action points
    - Draw cards (up to hand limit of 10)
-   - Send `OutTurnStarted` and `OutFightStateUpdate`
+   - Send `TurnStarted` and `FightStateUpdate`
 
 2. **Player Actions**:
    - Player can play any number of cards if they have sufficient AP
@@ -56,19 +56,19 @@ Status effects can be applied to players and persist across turns:
      - Validates action point cost
      - Applies card effect
      - Updates game state
-     - Sends notifications (`OutCardPlayCompleted`, `OutEffectApplied`)
-     - Sends updated state (`OutFightStateUpdate`)
+     - Sends notifications (`CardPlayCompleted`, `EffectApplied`)
+     - Sends updated state (`FightStateUpdate`)
 
 3. **Turn End**:
-   - Player sends `InEndTurn`
+   - Player sends `EndTurnRequest`
    - Discard remaining cards in hand
-   - Send `OutTurnEnded`
+   - Send `TurnEnded`
    - Start opponent's turn
 
 ### Battle Resolution
 
 - Battle ends when a player's HP reaches 0
-- Winner is determined and `OutFightEnded` is sent to both players
+- Winner is determined and `FightEnded` is sent to both players
 - Players return to the map
 
 ## 4. Card Effect System
@@ -136,7 +136,7 @@ The `CardBattle.cs` script handles UI interactions and sends card play requests 
 Cards are visually represented using SVG data sent from the server:
 
 1. Server reads SVG templates from text files in the Assets directory
-2. SVG data is sent to clients via `OutCardImages` and `OutCardDrawn` messages
+2. SVG data is sent to clients via `CardImages` and `CardDrawn` messages
 3. Client caches SVG data for efficient rendering
 4. Cards are rendered in the UI with their name, description, and cost
 
@@ -147,12 +147,12 @@ Cards are visually represented using SVG data sent from the server:
 ```
 Client                                Server
   │                                     │
-  │─── InPlayCard(cardId) ────────────>│
+  │─── PlayCardRequest(cardId) ────────>│
   │                                     │ Validate card play
   │                                     │ Apply card effects
-  │<── OutCardPlayCompleted ────────────│
-  │<── OutEffectApplied ─────────────────│ (multiple if needed)
-  │<── OutFightStateUpdate ──────────────│
+  │<── CardPlayCompleted ────────────────│
+  │<── EffectApplied ─────────────────────│ (multiple if needed)
+  │<── FightStateUpdate ──────────────────│
 ```
 
 ### Turn Change Sequence
@@ -160,13 +160,13 @@ Client                                Server
 ```
 Client                                Server
   │                                     │
-  │─── InEndTurn ─────────────────────>│
+  │─── EndTurnRequest ─────────────────>│
   │                                     │ Process turn end
-  │<── OutTurnEnded ────────────────────│
+  │<── TurnEnded ────────────────────────│
   │                                     │ Process turn start
-  │<── OutTurnStarted ───────────────────│ (for opponent)
-  │<── OutCardDrawn ────────────────────│ (multiple)
-  │<── OutFightStateUpdate ──────────────│
+  │<── TurnStarted ───────────────────────│ (for opponent)
+  │<── CardDrawn ────────────────────────│ (multiple)
+  │<── FightStateUpdate ──────────────────│
 ```
 
 ## 8. Edge Cases and Special Considerations

@@ -32,25 +32,41 @@ Each actor has a specific responsibility and only processes messages relevant to
 - Each client connection creates a dedicated WebSocket session on the server
 - When a client connects, the server creates a PlayerActor to represent that client
 
+### Message Organization
+
+Messages are organized by domain in separate files:
+- `Base`: Base message classes and interfaces
+- `Connection`: Connection-related messages
+- `Map`: Map navigation messages
+- `Movement`: Player movement messages
+- `Fight`: Fight challenge messages
+- `CardBattle`: Card battle gameplay messages
+- `State`: State update messages
+
 ### Message Format
 
 All messages are serialized to JSON and follow these base types:
-- `FromClientMessage`: Base type for all client-to-server messages
-- `ToClientMessage`: Base type for all server-to-client messages
+- `ClientMessage`: Base type for all client-to-server messages
+- `ServerMessage`: Base type for all server-to-client messages
+
+Messages implement interfaces that define their purpose:
+- `IRequest`: Messages that represent requests from client to server
+- `IResponse`: Messages that represent responses to requests
+- `INotification`: Messages that represent notifications (no response expected)
 
 Messages include:
-- Connection messages (e.g., `OutConnectionConfirmed`)
-- Map-related messages (e.g., `InJoinMap`, `OutJoinMapCompleted`)
-- Movement messages (e.g., `InPlayerMove`, `OutMoveCompleted`)
-- Fight messages (e.g., `InFightChallengeSend`, `OutFightStarted`)
-- Card battle messages (e.g., `InPlayCard`, `OutCardPlayCompleted`)
+- Connection messages (e.g., `PlayerIdResponse`)
+- Map-related messages (e.g., `JoinMapRequest`, `JoinMapCompleted`)
+- Movement messages (e.g., `PlayerMoveRequest`, `MoveCompleted`)
+- Fight messages (e.g., `FightChallengeRequest`, `FightStarted`)
+- Card battle messages (e.g., `PlayCardRequest`, `CardPlayCompleted`)
 
 ### Message Flow Example
 
-1. Client sends `InJoinMap` to join a specific map
-2. Server processes request and sends `OutJoinMapInitiated`
-3. Server adds player to map and sends `OutJoinMapCompleted` with map data
-4. Server broadcasts `OutPlayerJoinedMap` to other players on the map
+1. Client sends `JoinMapRequest` to join a specific map
+2. Server processes request and sends `JoinMapInitiated`
+3. Server adds player to map and sends `JoinMapCompleted` with map data
+4. Server broadcasts `PlayerJoinedMap` to other players on the map
 
 ## 4. Game State Management
 
@@ -76,8 +92,8 @@ The server maintains the authoritative game state across multiple actors:
 
 ### Map Navigation
 
-- Players can join maps using `InJoinMap` messages
-- Players can move on maps using `InPlayerMove` messages
+- Players can join maps using `JoinMapRequest` messages
+- Players can move on maps using `PlayerMoveRequest` messages
 - The server validates movements and updates all clients
 
 ### Card Battle System
@@ -139,5 +155,6 @@ When reasoning about this system:
 3. **State Synchronization**: Server state is authoritative, client state is a reflection
 4. **Event-Driven Architecture**: System behavior is driven by events and messages
 5. **Concurrent Processing**: Multiple actors can process messages simultaneously
+6. **Domain-Driven Design**: Messages are organized by domain for better maintainability
 
 Understanding these concepts will help you reason about the system's behavior and interactions.

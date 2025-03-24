@@ -15,15 +15,30 @@ All communication is asynchronous and event-driven, with messages serialized as 
 ### Base Message Types
 
 ```
-- BaseMessage
-  ├── FromClientMessage (client → server)
-  └── ToClientMessage (server → client)
+- MessageBase
+  ├── ClientMessage (client → server)
+  └── ServerMessage (server → client)
 ```
 
-### Message Naming Conventions
+### Message Organization
 
-- `In*` prefix: Messages from client to server (e.g., `InJoinMap`)
-- `Out*` prefix: Messages from server to client (e.g., `OutJoinMapCompleted`)
+Messages are organized by domain in separate files:
+- `Base`: Base message classes and interfaces
+- `Connection`: Connection-related messages
+- `Map`: Map navigation messages
+- `Movement`: Player movement messages
+- `Fight`: Fight challenge messages
+- `CardBattle`: Card battle gameplay messages
+- `State`: State update messages
+
+### Message Interfaces
+
+Messages implement interfaces that define their purpose and common properties:
+- `IRequest`: Messages that represent requests from client to server
+- `IResponse`: Messages that represent responses to requests (with Success/Error properties)
+- `INotification`: Messages that represent notifications (no response expected)
+- `IMapRelated`: Messages related to a specific map
+- `IPlayerRelated`: Messages related to a specific player
 
 ### Internal Actor Messages
 
@@ -39,11 +54,11 @@ The server also uses internal messages between actors:
 ```
 Client                Server
   │                     │
-  │─── InJoinMap ─────>│
+  │─── JoinMapRequest ─────>│
   │                     │
-  │<── OutJoinMapInitiated ──│
+  │<── JoinMapInitiated ──│
   │                     │
-  │<── OutJoinMapCompleted ──│
+  │<── JoinMapCompleted ──│
 ```
 
 ### Broadcast Pattern
@@ -51,9 +66,9 @@ Client                Server
 ```
 Client A    Server    Client B
    │          │          │
-   │          │<─────────│ InPlayerMove
+   │          │<─────────│ PlayerMoveRequest
    │          │          │
-   │<─────────┼─────────>│ OutPlayerPositionChange
+   │<─────────┼─────────>│ PlayerPositionChange
 ```
 
 ### State Update Pattern
@@ -61,13 +76,13 @@ Client A    Server    Client B
 ```
 Client                Server
    │                    │
-   │─── InPlayCard ───>│
+   │─── PlayCardRequest ───>│
    │                    │
-   │<── OutCardPlayCompleted ──│
+   │<── CardPlayCompleted ──│
    │                    │
-   │<── OutEffectApplied ─────│
+   │<── EffectApplied ─────│
    │                    │
-   │<── OutFightStateUpdate ──│
+   │<── FightStateUpdate ──│
 ```
 
 ## 4. Message Processing Pipeline
@@ -94,35 +109,36 @@ Client                Server
 ## 5. Key Message Types and Their Purpose
 
 ### Connection Messages
-- `OutConnectionConfirmed`: Confirms client connection and provides player ID
+- `PlayerIdRequest`: Client requests connection confirmation
+- `PlayerIdResponse`: Server confirms connection and provides player ID
 
 ### Map Navigation Messages
-- `InRequestMapList`: Client requests available maps
-- `OutRequestMapListResponse`: Server provides list of available maps
-- `InJoinMap`: Client requests to join a specific map
-- `OutJoinMapCompleted`: Server confirms map join with map data
-- `OutPlayerJoinedMap`: Notifies other players about a new player
+- `MapListRequest`: Client requests available maps
+- `MapListResponse`: Server provides list of available maps
+- `JoinMapRequest`: Client requests to join a specific map
+- `JoinMapCompleted`: Server confirms map join with map data
+- `PlayerJoinedMap`: Notifies other players about a new player
 
 ### Movement Messages
-- `InPlayerMove`: Client requests to move to a new position
-- `OutMoveInitiated`: Server acknowledges movement request
-- `OutMoveCompleted`: Server confirms movement was successful
-- `OutPlayerPositionChange`: Notifies other players about position change
+- `PlayerMoveRequest`: Client requests to move to a new position
+- `MoveInitiated`: Server acknowledges movement request
+- `MoveCompleted`: Server confirms movement was successful
+- `PlayerPositionChange`: Notifies other players about position change
 
 ### Fight Messages
-- `InFightChallengeSend`: Client challenges another player to a fight
-- `OutFightChallengeReceived`: Server notifies target player about challenge
-- `OutFightStarted`: Server notifies all players that fight has started
+- `FightChallengeRequest`: Client challenges another player to a fight
+- `FightChallengeReceived`: Server notifies target player about challenge
+- `FightStarted`: Server notifies all players that fight has started
 
 ### Card Battle Messages
-- `OutCardImages`: Provides SVG data for card rendering
-- `OutCardDrawn`: Notifies player about a newly drawn card
-- `InPlayCard`: Client requests to play a specific card
-- `OutCardPlayCompleted`: Server confirms card was played
-- `OutEffectApplied`: Notifies about card effect application
-- `OutFightStateUpdate`: Provides complete fight state update
-- `InEndTurn`: Client requests to end their turn
-- `OutTurnStarted`/`OutTurnEnded`: Notifies about turn changes
+- `CardImages`: Provides SVG data for card rendering
+- `CardDrawn`: Notifies player about a newly drawn card
+- `PlayCardRequest`: Client requests to play a specific card
+- `CardPlayCompleted`: Server confirms card was played
+- `EffectApplied`: Notifies about card effect application
+- `FightStateUpdate`: Provides complete fight state update
+- `EndTurnRequest`: Client requests to end their turn
+- `TurnStarted`/`TurnEnded`: Notifies about turn changes
 
 ## 6. State Synchronization
 
@@ -142,11 +158,13 @@ The server maintains the authoritative state, while clients maintain a local rep
 ## 7. Error Handling
 
 The system uses explicit error messages for failed operations:
-- `OutJoinMapFailed`: Map join failed (e.g., map full)
-- `OutMoveFailed`: Movement failed (e.g., obstacle)
-- `OutCardPlayFailed`: Card play failed (e.g., not enough action points)
+- `JoinMapFailed`: Map join failed (e.g., map full)
+- `MoveFailed`: Movement failed (e.g., obstacle)
+- `CardPlayFailed`: Card play failed (e.g., not enough action points)
 
-Errors include descriptive messages to explain the failure reason.
+All response messages implement the `IResponse` interface, which includes:
+- `Success`: Boolean indicating whether the operation succeeded
+- `ErrorMessage`: String containing the reason for failure (if any)
 
 ## 8. Optimizations
 
@@ -154,6 +172,13 @@ Errors include descriptive messages to explain the failure reason.
 - Only essential data is sent in messages
 - Card SVG data is cached on the client
 - Complete state updates are only sent when necessary
+
+### Shared Data Transfer Objects
+- Common data structures are extracted into shared DTOs
+- `MapInfo`: Information about a map
+- `CardInfo`: Information about a card
+- `StatusEffectInfo`: Information about a status effect
+- `PlayerFightState`: Information about a player's fight state
 
 ### Batching
 - Multiple card images sent in a single message
@@ -168,5 +193,6 @@ When analyzing this system, consider:
 3. **Validation Chain**: Client requests → Server validation → Success/failure response
 4. **Broadcast Propagation**: Actions by one client affect all connected clients
 5. **Asynchronous Nature**: Messages may arrive out of order or be delayed
+6. **Interface Contracts**: Messages implement interfaces that define their purpose and properties
 
 Understanding these patterns will help you reason about the system's behavior and potential edge cases.
