@@ -30,12 +30,12 @@ class Message:
 # Connection Messages
 class PlayerIdRequest(Message):
     """Client request for connection confirmation."""
-    message_type = "PlayerIdRequest"
+    message_type = "ExtPlayerIdRequest"
 
 
 class PlayerIdResponse(Message):
     """Server response with connection confirmation."""
-    message_type = "PlayerIdResponse"
+    message_type = "ExtPlayerIdResponse"
     
     def __init__(self, player_id: str = ""):
         self.player_id = player_id
@@ -53,7 +53,7 @@ class PlayerIdResponse(Message):
 # Map Messages
 class MapListRequest(Message):
     """Client request for available maps."""
-    message_type = "MapListRequest"
+    message_type = "ExtMapListRequest"
 
 
 class MapInfo:
@@ -78,7 +78,7 @@ class MapInfo:
 
 class MapListResponse(Message):
     """Server response with available maps."""
-    message_type = "MapListResponse"
+    message_type = "ExtMapListResponse"
     
     def __init__(self, maps: List[MapInfo] = None):
         self.maps = maps or []
@@ -109,7 +109,7 @@ class MapPosition:
 
 class JoinMapRequest(Message):
     """Client request to join a map."""
-    message_type = "JoinMapRequest"
+    message_type = "ExtJoinMapRequest"
     
     def __init__(self, map_id: str = ""):
         self.map_id = map_id
@@ -154,7 +154,7 @@ class PlayerMapInfo:
 
 class JoinMapCompleted(Message):
     """Server notification that map join has completed successfully."""
-    message_type = "JoinMapCompleted"
+    message_type = "ExtJoinMapCompleted"
     
     def __init__(self, map_id: str = "", player_id: str = "", position: MapPosition = None,
                 tilemap_data: TilemapData = None, player_info: Dict[str, PlayerMapInfo] = None):
@@ -189,7 +189,7 @@ class JoinMapCompleted(Message):
 # Movement Messages
 class PlayerMoveRequest(Message):
     """Client request to move player to a new position."""
-    message_type = "PlayerMoveRequest"
+    message_type = "ExtPlayerMoveRequest"
     
     def __init__(self, new_position: MapPosition = None):
         self.new_position = new_position or MapPosition()
@@ -202,7 +202,7 @@ class PlayerMoveRequest(Message):
 
 class PlayerPositionChange(Message):
     """Server notification of a player position change."""
-    message_type = "PlayerPositionChange"
+    message_type = "ExtPlayerPositionChange"
     
     def __init__(self, player_id: str = "", position: Optional[MapPosition] = None):
         self.player_id = player_id
@@ -221,7 +221,7 @@ class PlayerPositionChange(Message):
 # Fight Messages
 class FightChallengeRequest(Message):
     """Client request to send a fight challenge to another player."""
-    message_type = "FightChallengeRequest"
+    message_type = "ExtFightChallengeRequest"
     
     def __init__(self, target_id: str = ""):
         self.target_id = target_id
@@ -234,7 +234,7 @@ class FightChallengeRequest(Message):
 
 class FightChallengeReceived(Message):
     """Server notification that a fight challenge was received."""
-    message_type = "FightChallengeReceived"
+    message_type = "ExtFightChallengeReceived"
     
     def __init__(self, challenger_id: str = ""):
         self.challenger_id = challenger_id
@@ -246,7 +246,7 @@ class FightChallengeReceived(Message):
 
 class FightChallengeAccepted(Message):
     """Client request to accept a fight challenge."""
-    message_type = "FightChallengeAccepted"
+    message_type = "ExtFightChallengeAccepted"
     
     def __init__(self, target_id: str = ""):
         self.target_id = target_id
@@ -259,7 +259,7 @@ class FightChallengeAccepted(Message):
 
 class FightStarted(Message):
     """Server notification that a fight has started."""
-    message_type = "FightStarted"
+    message_type = "ExtFightStarted"
     
     def __init__(self, player1_id: str = "", player2_id: str = ""):
         self.player1_id = player1_id
@@ -275,7 +275,7 @@ class FightStarted(Message):
 
 class FightEnded(Message):
     """Server notification that a fight has ended."""
-    message_type = "FightEnded"
+    message_type = "ExtFightEnded"
     
     def __init__(self, winner_id: str = "", loser_id: str = "", reason: str = ""):
         self.winner_id = winner_id
@@ -367,7 +367,7 @@ class PlayerFightState:
 
 class CardImages(Message):
     """Server notification with SVG data for multiple cards."""
-    message_type = "CardImages"
+    message_type = "ExtCardImages"
     
     def __init__(self, card_svg_data: Dict[str, str] = None):
         self.card_svg_data = card_svg_data or {}
@@ -379,7 +379,7 @@ class CardImages(Message):
 
 class CardDrawn(Message):
     """Server notification about a newly drawn card."""
-    message_type = "CardDrawn"
+    message_type = "ExtCardDrawn"
     
     def __init__(self, card_info: CardInfo = None, svg_data: str = ""):
         self.card_info = card_info or CardInfo()
@@ -397,7 +397,7 @@ class CardDrawn(Message):
 
 class FightStateUpdate(Message):
     """Server notification with complete fight state update."""
-    message_type = "FightStateUpdate"
+    message_type = "ExtFightStateUpdate"
     
     def __init__(self, current_turn_player_id: str = "", 
                 player_state: PlayerFightState = None,
@@ -423,7 +423,7 @@ class FightStateUpdate(Message):
 
 class TurnStarted(Message):
     """Server notification that a turn has started."""
-    message_type = "TurnStarted"
+    message_type = "ExtTurnStarted"
     
     def __init__(self, active_player_id: str = ""):
         self.active_player_id = active_player_id
@@ -435,7 +435,7 @@ class TurnStarted(Message):
 
 class TurnEnded(Message):
     """Server notification that a turn has ended."""
-    message_type = "TurnEnded"
+    message_type = "ExtTurnEnded"
     
     def __init__(self, player_id: str = ""):
         self.player_id = player_id
@@ -447,7 +447,7 @@ class TurnEnded(Message):
 
 class PlayCardRequest(Message):
     """Client request to play a card."""
-    message_type = "PlayCardRequest"
+    message_type = "ExtPlayCardRequest"
     
     def __init__(self, card_id: str = ""):
         self.card_id = card_id
@@ -460,7 +460,7 @@ class PlayCardRequest(Message):
 
 class CardPlayCompleted(Message):
     """Server notification that card play has completed successfully."""
-    message_type = "CardPlayCompleted"
+    message_type = "ExtCardPlayCompleted"
     
     def __init__(self, player_id: str = "", played_card: CardInfo = None, 
                 effect: str = "", is_visible: bool = True):
@@ -483,7 +483,7 @@ class CardPlayCompleted(Message):
 
 class EffectApplied(Message):
     """Server notification that a card effect was applied."""
-    message_type = "EffectApplied"
+    message_type = "ExtEffectApplied"
     
     def __init__(self, target_player_id: str = "", effect_type: str = "", 
                 value: int = 0, source: str = ""):
@@ -504,7 +504,7 @@ class EffectApplied(Message):
 
 class EndTurnRequest(Message):
     """Client request to end the current turn."""
-    message_type = "EndTurnRequest"
+    message_type = "ExtEndTurnRequest"
 
 
 class GameMessageHandler:
@@ -526,36 +526,36 @@ class GameMessageHandler:
         # Message type to class mapping
         self.message_classes: Dict[str, Type[Message]] = {
             # Connection messages
-            "PlayerIdRequest": PlayerIdRequest,
-            "PlayerIdResponse": PlayerIdResponse,
+            "ExtPlayerIdRequest": PlayerIdRequest,
+            "ExtPlayerIdResponse": PlayerIdResponse,
             
             # Map messages
-            "MapListRequest": MapListRequest,
-            "MapListResponse": MapListResponse,
-            "JoinMapRequest": JoinMapRequest,
-            "JoinMapCompleted": JoinMapCompleted,
+            "ExtMapListRequest": MapListRequest,
+            "ExtMapListResponse": MapListResponse,
+            "ExtJoinMapRequest": JoinMapRequest,
+            "ExtJoinMapCompleted": JoinMapCompleted,
             
             # Movement messages
-            "PlayerMoveRequest": PlayerMoveRequest,
-            "PlayerPositionChange": PlayerPositionChange,
+            "ExtPlayerMoveRequest": PlayerMoveRequest,
+            "ExtPlayerPositionChange": PlayerPositionChange,
             
             # Fight messages
-            "FightChallengeRequest": FightChallengeRequest,
-            "FightChallengeReceived": FightChallengeReceived,
-            "FightChallengeAccepted": FightChallengeAccepted,
-            "FightStarted": FightStarted,
-            "FightEnded": FightEnded,
+            "ExtFightChallengeRequest": FightChallengeRequest,
+            "ExtFightChallengeReceived": FightChallengeReceived,
+            "ExtFightChallengeAccepted": FightChallengeAccepted,
+            "ExtFightStarted": FightStarted,
+            "ExtFightEnded": FightEnded,
             
             # Card battle messages
-            "CardImages": CardImages,
-            "CardDrawn": CardDrawn,
-            "FightStateUpdate": FightStateUpdate,
-            "TurnStarted": TurnStarted,
-            "TurnEnded": TurnEnded,
-            "PlayCardRequest": PlayCardRequest,
-            "CardPlayCompleted": CardPlayCompleted,
-            "EffectApplied": EffectApplied,
-            "EndTurnRequest": EndTurnRequest
+            "ExtCardImages": CardImages,
+            "ExtCardDrawn": CardDrawn,
+            "ExtFightStateUpdate": FightStateUpdate,
+            "ExtTurnStarted": TurnStarted,
+            "ExtTurnEnded": TurnEnded,
+            "ExtPlayCardRequest": PlayCardRequest,
+            "ExtCardPlayCompleted": CardPlayCompleted,
+            "ExtEffectApplied": EffectApplied,
+            "ExtEndTurnRequest": EndTurnRequest
         }
     
     def send_message(self, message: Message, wait_for_response: bool = False,

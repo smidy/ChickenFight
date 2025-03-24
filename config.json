@@ -5,11 +5,11 @@
         "use_ssl": false
     },
     "training": {
-        "num_agents": 1,
+        "num_agents": 10,
         "total_episodes": 10000,
         "save_interval": 100,
         "eval_interval": 50,
-        "checkpoint_dir": "checkpoints",
+        "checkpoint_dir": "AI/checkpoints",
         "learning_rate": 0.001,
         "gamma": 0.99,
         "entropy_coef": 0.01,

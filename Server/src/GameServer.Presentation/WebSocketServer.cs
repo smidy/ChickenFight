@@ -7,7 +7,8 @@ using System.Net;
 using Proto;
 using GameServer.Shared;
 using GameServer.Application.Messages.Internal;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.Base;
+using GameServer.Shared.Messages.Map;
 using GameServer.Infrastructure;
 using System.Security.Cryptography;
 
@@ -52,7 +53,7 @@ namespace GameServer.Presentation
             // Create player actor immediately on connection
             var createResponse = await actorSystem.Root.RequestAsync<CreatePlayerResponse>(
                 server.gameActor,
-                new CreatePlayer(sessionId, $"Player_{sessionId}", (ToClientMessage msg) => SendResponse((dynamic)msg)),
+                new CreatePlayer(sessionId, $"Player_{sessionId}", (ExtServerMessage msg) => SendResponse((dynamic)msg)),
                 TimeSpan.FromMilliseconds(CreatePlayerTimeout)
             );
             playerActor = createResponse.PlayerActor;
@@ -68,7 +69,7 @@ namespace GameServer.Presentation
             if (playerActor != null)
             {
                 // If player is in a map, ensure they leave properly
-                actorSystem.Root.Send(playerActor, new InLeaveMap(null)); // null mapId will force leave from any map
+                actorSystem.Root.Send(playerActor, new ExtLeaveMapRequest(null)); // null mapId will force leave from any map
 
                 // Stop the player actor
                 actorSystem.Root.Poison(playerActor);
@@ -90,7 +91,7 @@ namespace GameServer.Presentation
                 var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
                 // Log incoming JSON message at debug level
                 LoggingService.Logger.Debug($"Received message: {message}");
-                var baseMessage = JsonConfig.Deserialize<FromClientMessage>(message);
+                var baseMessage = JsonConfig.Deserialize<ExtClientMessage>(message);
                 actorSystem.Root.Send(playerActor, baseMessage);
             }
             catch (Exception ex)

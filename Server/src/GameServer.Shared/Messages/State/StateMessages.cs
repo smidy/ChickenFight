@@ -25,11 +25,11 @@ namespace GameServer.Shared.Messages.State
     /// <summary>
     /// Server notification with player information
     /// </summary>
-    public class PlayerInfo : ServerMessage, INotification
+    public class ExtPlayerInfo : ExtServerMessage, IExtNotification
     {
         public PlayerState? State { get; }
 
-        public PlayerInfo(PlayerState? state) : base()
+        public ExtPlayerInfo(PlayerState? state) : base()
         {
             State = state;
         }

@@ -4,7 +4,13 @@ using System.Threading.Tasks;
 using Godot.Collections;
 using GameServer.Shared;
 using GameServer.Shared.Models;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.Base;
+using GameServer.Shared.Messages.Connection;
+using GameServer.Shared.Messages.Map;
+using GameServer.Shared.Messages.Movement;
+using GameServer.Shared.Messages.Fight;
+using GameServer.Shared.Messages.CardBattle;
+using GameServer.Shared.Messages.State;
 
 public partial class NetworkManager : Node
 {
@@ -80,10 +86,10 @@ public partial class NetworkManager : Node
     
     public void RequestConnection()
     {
-        SendMessage(new InPlayerIdRequest());
+        SendMessage(new ExtPlayerIdRequest());
     }
 
-    public void SendMessage<T>(T message) where T : FromClientMessage
+    public void SendMessage<T>(T message) where T : ExtClientMessage
     {
         if (!IsConnected) return;
 
@@ -97,7 +103,7 @@ public partial class NetworkManager : Node
     {
         try
         {
-            var message = JsonConfig.Deserialize<ToClientMessage>(json);
+            var message = JsonConfig.Deserialize<ExtServerMessage>(json);
             if (message == null) return;
 
             // Re-deserialize with concrete type based on Type property
@@ -106,11 +112,11 @@ public partial class NetworkManager : Node
 
             switch (typedMessage)
             {
-                case OutPlayerIdResponse connectionResponse:
+                case ExtPlayerIdResponse connectionResponse:
                     EmitSignal(SignalName.ConnectionConfirmed, connectionResponse.PlayerId);
                     break;
 
-                case OutRequestMapListResponse mapListResponse:
+                case ExtMapListResponse mapListResponse:
                     var mapsArray = new Godot.Collections.Array();
                     foreach (var map in mapListResponse.Maps)
                     {
@@ -128,10 +134,10 @@ public partial class NetworkManager : Node
                     break;
 
                 // Map join messages
-                case OutJoinMapInitiated msg:
+                case ExtJoinMapInitiated msg:
                     EmitSignal(SignalName.JoinMapInitiated, msg.MapId);
                     break;
-                case OutJoinMapCompleted msg:
+                case ExtJoinMapCompleted msg:
                     var tilemapDict = new Dictionary
                     {
                         ["Width"] = msg.TilemapData.Width,
@@ -153,23 +159,23 @@ public partial class NetworkManager : Node
 
                     EmitSignal(SignalName.JoinMapCompleted, msg.PlayerId, new Vector2I(msg.Position.X, msg.Position.Y), tilemapDict, playerInfo);
                     break;
-                case OutJoinMapFailed msg:
-                    EmitSignal(SignalName.JoinMapFailed, msg.Error);
+                case ExtJoinMapFailed msg:
+                    EmitSignal(SignalName.JoinMapFailed, msg.ErrorMessage);
                     break;
 
                 // Movement messages
-                case OutMoveInitiated msg:
+                case ExtMoveInitiated msg:
                     EmitSignal(SignalName.MoveInitiated, new Vector2I(msg.NewPosition.X, msg.NewPosition.Y));
                     break;
-                case OutMoveCompleted msg:
+                case ExtMoveCompleted msg:
                     EmitSignal(SignalName.MoveCompleted, new Vector2I(msg.NewPosition.X, msg.NewPosition.Y));
                     break;
-                case OutMoveFailed msg:
-                    EmitSignal(SignalName.MoveFailed, msg.Error);
+                case ExtMoveFailed msg:
+                    EmitSignal(SignalName.MoveFailed, msg.ErrorMessage);
                     break;
 
                 // Player state messages
-                case OutPlayerInfo pInfo:
+                case ExtPlayerInfo pInfo:
                     if (pInfo.State != null)
                     {
                         EmitSignal(SignalName.PlayerStateUpdated, 
@@ -177,37 +183,37 @@ public partial class NetworkManager : Node
                     }
                     break;
 
-                case OutPlayerJoinedMap msg:
+                case ExtPlayerJoinedMap msg:
                     EmitSignal(SignalName.PlayerJoinedMap, msg.PlayerId, 
                         new Vector2I(msg.Position.X, msg.Position.Y));
                     break;
 
-                case OutPlayerPositionChange msg:
+                case ExtPlayerPositionChange msg:
                     EmitSignal(SignalName.PlayerPositionChanged, msg.PlayerId,
                         new Vector2I(msg.Position.X, msg.Position.Y));
                     break;
 
-                case OutPlayerLeftMap msg:
+                case ExtPlayerLeftMap msg:
                     EmitSignal(SignalName.PlayerLeftMap, msg.PlayerId);
                     break;
 
                 // Fight messages
-                case OutFightChallengeReceived msg:
+                case ExtFightChallengeReceived msg:
                     EmitSignal(SignalName.FightChallengeReceived, msg.ChallengerId);
                     break;
-                case OutFightStarted msg:
+                case ExtFightStarted msg:
                     EmitSignal(SignalName.FightStarted, msg.Player1Id, msg.Player2Id);
                     break;
-                case OutFightEnded msg:
+                case ExtFightEnded msg:
                     EmitSignal(SignalName.FightEnded, msg.WinnerId, msg.LoserId, msg.Reason);
                     break;
                     
                 // Card battle messages
-                case OutCardImages msg:
+                case ExtCardImages msg:
                     EmitSignal(SignalName.CardImagesReceived, new Godot.Collections.Dictionary<string, string>(msg.CardSvgData));
                     break;
                     
-                case OutCardDrawn msg:
+                case ExtCardDrawn msg:
                     var drawnCardDict = new Dictionary
                     {
                         ["Id"] = msg.CardInfo.Id,
@@ -218,15 +224,15 @@ public partial class NetworkManager : Node
                     EmitSignal(SignalName.CardDrawn, drawnCardDict, msg.SvgData);
                     break;
                     
-                case OutTurnStarted msg:
+                case ExtTurnStarted msg:
                     EmitSignal(SignalName.TurnStarted, msg.ActivePlayerId);
                     break;
                     
-                case OutTurnEnded msg:
+                case ExtTurnEnded msg:
                     EmitSignal(SignalName.TurnEnded, msg.PlayerId);
                     break;
                     
-                case OutCardPlayCompleted msg:
+                case ExtCardPlayCompleted msg:
                     var playedCardDict = new Dictionary
                     {
                         ["Id"] = msg.PlayedCard.Id,
@@ -238,15 +244,15 @@ public partial class NetworkManager : Node
                     EmitSignal(SignalName.CardPlayCompleted, msg.PlayerId, playedCardDict, msg.Effect);
                     break;
                     
-                case OutCardPlayFailed msg:
-                    EmitSignal(SignalName.CardPlayFailed, msg.CardId, msg.Error);
+                case ExtCardPlayFailed msg:
+                    EmitSignal(SignalName.CardPlayFailed, msg.CardId, msg.ErrorMessage);
                     break;
                     
-                case OutEffectApplied msg:
+                case ExtEffectApplied msg:
                     EmitSignal(SignalName.EffectApplied, msg.TargetPlayerId, msg.EffectType, msg.Value, msg.Source);
                     break;
                     
-                case OutFightStateUpdate msg:
+                case ExtFightStateUpdate msg:
                     var playerStateDict = new Dictionary
                     {
                         ["PlayerId"] = msg.PlayerState.PlayerId,
@@ -420,11 +426,11 @@ public partial class NetworkManager : Node
     // Card battle methods
     public void PlayCard(string cardId)
     {
-        SendMessage(new InPlayCard(cardId));
+        SendMessage(new ExtPlayCardRequest(cardId));
     }
     
     public void EndTurn()
     {
-        SendMessage(new InEndTurn());
+        SendMessage(new ExtEndTurnRequest());
     }
 }

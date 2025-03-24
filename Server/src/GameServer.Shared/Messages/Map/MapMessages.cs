@@ -7,21 +7,21 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Client request for available maps
     /// </summary>
-    public class MapListRequest : ClientMessage, IRequest
+    public class ExtMapListRequest : ExtClientMessage, IExtRequest
     {
-        public MapListRequest() : base() { }
+        public ExtMapListRequest() : base() { }
     }
 
     /// <summary>
     /// Server response with available maps
     /// </summary>
-    public class MapListResponse : ServerMessage, IResponse
+    public class ExtMapListResponse : ExtServerMessage, IExtResponse
     {
         public List<MapInfo> Maps { get; }
         public bool Success => true;
         public string ErrorMessage => string.Empty;
 
-        public MapListResponse(List<MapInfo> maps) : base()
+        public ExtMapListResponse(List<MapInfo> maps) : base()
         {
             Maps = maps;
         }
@@ -30,11 +30,11 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Client request to join a map
     /// </summary>
-    public class JoinMapRequest : ClientMessage, IRequest, IMapRelated
+    public class ExtJoinMapRequest : ExtClientMessage, IExtRequest, IExtMapRelated
     {
         public string MapId { get; }
 
-        public JoinMapRequest(string mapId) : base()
+        public ExtJoinMapRequest(string mapId) : base()
         {
             MapId = mapId;
         }
@@ -43,11 +43,11 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Client request to leave a map
     /// </summary>
-    public class LeaveMapRequest : ClientMessage, IRequest, IMapRelated
+    public class ExtLeaveMapRequest : ExtClientMessage, IExtRequest, IExtMapRelated
     {
         public string MapId { get; }
 
-        public LeaveMapRequest(string mapId) : base()
+        public ExtLeaveMapRequest(string mapId) : base()
         {
             MapId = mapId;
         }
@@ -56,11 +56,11 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Server notification that map join process has started
     /// </summary>
-    public class JoinMapInitiated : ServerMessage, INotification, IMapRelated
+    public class ExtJoinMapInitiated : ExtServerMessage, IExtNotification, IExtMapRelated
     {
         public string MapId { get; }
 
-        public JoinMapInitiated(string mapId) : base()
+        public ExtJoinMapInitiated(string mapId) : base()
         {
             MapId = mapId;
         }
@@ -69,7 +69,7 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Server notification that map join has completed successfully
     /// </summary>
-    public class JoinMapCompleted : ServerMessage, IResponse, IMapRelated, IPlayerRelated
+    public class ExtJoinMapCompleted : ExtServerMessage, IExtResponse, IExtMapRelated, IExtPlayerRelated
     {
         public string MapId { get; }
         public string PlayerId { get; }
@@ -79,7 +79,7 @@ namespace GameServer.Shared.Messages.Map
         public bool Success => true;
         public string ErrorMessage => string.Empty;
 
-        public JoinMapCompleted(
+        public ExtJoinMapCompleted(
             string mapId, 
             string playerId, 
             MapPosition position, 
@@ -97,13 +97,13 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Server notification that map join has failed
     /// </summary>
-    public class JoinMapFailed : ServerMessage, IResponse, IMapRelated
+    public class ExtJoinMapFailed : ExtServerMessage, IExtResponse, IExtMapRelated
     {
         public string MapId { get; }
         public bool Success => false;
         public string ErrorMessage { get; }
 
-        public JoinMapFailed(string mapId, string error) : base()
+        public ExtJoinMapFailed(string mapId, string error) : base()
         {
             MapId = mapId;
             ErrorMessage = error;
@@ -113,11 +113,11 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Server notification that map leave process has started
     /// </summary>
-    public class LeaveMapInitiated : ServerMessage, INotification, IMapRelated
+    public class ExtLeaveMapInitiated : ExtServerMessage, IExtNotification, IExtMapRelated
     {
         public string MapId { get; }
 
-        public LeaveMapInitiated(string mapId) : base()
+        public ExtLeaveMapInitiated(string mapId) : base()
         {
             MapId = mapId;
         }
@@ -126,13 +126,13 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Server notification that map leave has completed successfully
     /// </summary>
-    public class LeaveMapCompleted : ServerMessage, IResponse, IMapRelated
+    public class ExtLeaveMapCompleted : ExtServerMessage, IExtResponse, IExtMapRelated
     {
         public string MapId { get; }
         public bool Success => true;
         public string ErrorMessage => string.Empty;
 
-        public LeaveMapCompleted(string mapId) : base()
+        public ExtLeaveMapCompleted(string mapId) : base()
         {
             MapId = mapId;
         }
@@ -141,13 +141,13 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Server notification that map leave has failed
     /// </summary>
-    public class LeaveMapFailed : ServerMessage, IResponse, IMapRelated
+    public class ExtLeaveMapFailed : ExtServerMessage, IExtResponse, IExtMapRelated
     {
         public string MapId { get; }
         public bool Success => false;
         public string ErrorMessage { get; }
 
-        public LeaveMapFailed(string mapId, string error) : base()
+        public ExtLeaveMapFailed(string mapId, string error) : base()
         {
             MapId = mapId;
             ErrorMessage = error;
@@ -157,12 +157,12 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Server notification that a player has joined the map
     /// </summary>
-    public class PlayerJoinedMap : ServerMessage, INotification, IPlayerRelated
+    public class ExtPlayerJoinedMap : ExtServerMessage, IExtNotification, IExtPlayerRelated
     {
         public string PlayerId { get; }
         public MapPosition? Position { get; }
 
-        public PlayerJoinedMap(string playerId, MapPosition? position) : base()
+        public ExtPlayerJoinedMap(string playerId, MapPosition? position) : base()
         {
             PlayerId = playerId;
             Position = position;
@@ -172,11 +172,11 @@ namespace GameServer.Shared.Messages.Map
     /// <summary>
     /// Server notification that a player has left the map
     /// </summary>
-    public class PlayerLeftMap : ServerMessage, INotification, IPlayerRelated
+    public class ExtPlayerLeftMap : ExtServerMessage, IExtNotification, IExtPlayerRelated
     {
         public string PlayerId { get; }
 
-        public PlayerLeftMap(string playerId) : base()
+        public ExtPlayerLeftMap(string playerId) : base()
         {
             PlayerId = playerId;
         }

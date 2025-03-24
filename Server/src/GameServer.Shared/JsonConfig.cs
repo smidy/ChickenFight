@@ -1,4 +1,3 @@
-using GameServer.Shared.ExternalMessages;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -11,14 +10,14 @@ namespace GameServer.Shared
         private static Dictionary<string, Type> MessageTypes;
         public static DefaultContractResolver ContractResolver = new DefaultContractResolver
         {
-            NamingStrategy = new CamelCaseNamingStrategy()
+            //NamingStrategy = new CamelCaseNamingStrategy()
         };
 
         static JsonConfig()
         {
             MessageTypes = Assembly.GetExecutingAssembly()
                 .GetTypes()
-                .Where(t => t.IsClass && t.Namespace == "GameServer.Shared.ExternalMessages")
+                .Where(t => t.IsClass && t.Namespace != null && t.Namespace.Contains("GameServer.Shared.Messages"))
                 .ToDictionary(t => t.Name, t => t);
 
         }
@@ -41,13 +40,13 @@ namespace GameServer.Shared
                 return (T)result;
             }
 
-            return default(T);
+            throw new Exception("Unknown message type");
         }
 
         public static object? DeserializeInt(string json)
         {
             var jsonObject = JObject.Parse(json);
-            var typeName = jsonObject.Value<string>("messageType");
+            var typeName = jsonObject.Value<string>("MessageType");
             if (MessageTypes.TryGetValue(typeName, out Type type))
             {
                 return JsonConvert.DeserializeObject(json, type);

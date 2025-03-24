@@ -1,5 +1,5 @@
 using Proto;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.CardBattle;
 
 namespace GameServer.Application.Models.CardEffects.Defense
 {
@@ -46,8 +46,8 @@ namespace GameServer.Application.Models.CardEffects.Defense
             state.ApplyStatusEffect(playerId, shieldEffect);
             
             // Create notifications
-            var healNotification = new OutEffectApplied(playerId, "Heal", healing, card.Name);
-            var shieldNotification = new OutEffectApplied(playerId, "Shield", shieldAmount, card.Name);
+            var healNotification = new ExtEffectApplied(playerId, "Heal", healing, card.Name);
+            var shieldNotification = new ExtEffectApplied(playerId, "Shield", shieldAmount, card.Name);
             
             return new EffectResult(
                 $"Healed for {healing} and gained {shieldAmount} shield for {duration} turns",
@@ -88,9 +88,9 @@ namespace GameServer.Application.Models.CardEffects.Defense
             state.ApplyStatusEffect(playerId, redirectEffect);
             
             // Create notifications
-            var healNotification = new OutEffectApplied(playerId, "Heal", healing, card.Name);
-            var damageNotification = new OutEffectApplied(targetId, "RedirectDamage", redirectDamage, card.Name);
-            var reflectNotification = new OutEffectApplied(playerId, "DamageReflection", redirectDamage, card.Name);
+            var healNotification = new ExtEffectApplied(playerId, "Heal", healing, card.Name);
+            var damageNotification = new ExtEffectApplied(targetId, "RedirectDamage", redirectDamage, card.Name);
+            var reflectNotification = new ExtEffectApplied(playerId, "DamageReflection", redirectDamage, card.Name);
             
             return new EffectResult(
                 $"Healed for {healing}, redirected {redirectDamage} damage, and gained damage reflection for {duration} turns",
@@ -115,7 +115,7 @@ namespace GameServer.Application.Models.CardEffects.Defense
             state.ApplyHealing(playerId, totalHealing);
             
             // Create notification
-            var notification = new OutEffectApplied(playerId, "EnhancedHeal", totalHealing, card.Name);
+            var notification = new ExtEffectApplied(playerId, "EnhancedHeal", totalHealing, card.Name);
             
             return new EffectResult(
                 $"Healed for {totalHealing}",
@@ -153,8 +153,8 @@ namespace GameServer.Application.Models.CardEffects.Defense
             state.ApplyStatusEffect(playerId, dodgeEffect);
             
             // Create notifications
-            var healNotification = new OutEffectApplied(playerId, "Heal", healing, card.Name);
-            var dodgeNotification = new OutEffectApplied(playerId, "DodgeChance", dodgeChance, card.Name);
+            var healNotification = new ExtEffectApplied(playerId, "Heal", healing, card.Name);
+            var dodgeNotification = new ExtEffectApplied(playerId, "DodgeChance", dodgeChance, card.Name);
             
             return new EffectResult(
                 $"Healed for {healing} and gained {dodgeChance}% dodge chance for {duration} turns",
@@ -192,8 +192,8 @@ namespace GameServer.Application.Models.CardEffects.Defense
             state.ApplyStatusEffect(playerId, maxHealthEffect);
             
             // Create notifications
-            var healNotification = new OutEffectApplied(playerId, "Heal", healing, card.Name);
-            var fortifyNotification = new OutEffectApplied(playerId, "MaxHealthIncrease", maxHealthIncrease, card.Name);
+            var healNotification = new ExtEffectApplied(playerId, "Heal", healing, card.Name);
+            var fortifyNotification = new ExtEffectApplied(playerId, "MaxHealthIncrease", maxHealthIncrease, card.Name);
             
             return new EffectResult(
                 $"Healed for {healing} and permanently increased max health by {maxHealthIncrease}",

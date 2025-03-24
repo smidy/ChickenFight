@@ -2,13 +2,19 @@ using Proto;
 using GameServer.Application.Models;
 using GameServer.Application.Messages.Internal;
 using GameServer.Shared.Models;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.Base;
+using GameServer.Shared.Messages.Connection;
+using GameServer.Shared.Messages.Map;
+using GameServer.Shared.Messages.Movement;
+using GameServer.Shared.Messages.Fight;
+using GameServer.Shared.Messages.CardBattle;
+using GameServer.Shared.Messages.State;
 using GameServer.Application.Extensions;
 using GameServer.Shared;
 
 namespace GameServer.Application.Actors
 {
-    public delegate Task SendToClientDelegate<in T>(T message) where T : ToClientMessage;
+    public delegate Task SendToClientDelegate<in T>(T message) where T : ExtServerMessage;
 
     /// <summary>
     /// This actor represents a player in the game. 
@@ -19,13 +25,13 @@ namespace GameServer.Application.Actors
     {
         private readonly Player player;
         private readonly PID mapManagerActor;
-        private readonly SendToClientDelegate<ToClientMessage> _sendToClient;
+        private readonly SendToClientDelegate<ExtServerMessage> _sendToClient;
         private PID? currentMap;
         private PID? currentFight;
         private string? pendingMapJoin;
         private MapPosition? pendingMove;
 
-        public PlayerActor(PID mapManagerActor, string playerName, SendToClientDelegate<ToClientMessage> sendToClient)
+        public PlayerActor(PID mapManagerActor, string playerName, SendToClientDelegate<ExtServerMessage> sendToClient)
         {
             player = new Player(playerName);
             this.mapManagerActor = mapManagerActor;
@@ -60,10 +66,10 @@ namespace GameServer.Application.Actors
                 FightStarted msg => OnFightStarted(context, msg),
                 FightCompleted msg => OnFightCompleted(context, msg),
 
-                FromClientMessage msg => OnIncommingClientMessage(context, msg),
+                ExtClientMessage msg => OnIncommingClientMessage(context, msg),
 
                 //Send external messages to client
-                ToClientMessage msg => OnOutgoingClientMessage(context, msg),
+                ExtServerMessage msg => OnOutgoingClientMessage(context, msg),
 
                 _ => Task.CompletedTask
             };
@@ -89,7 +95,7 @@ namespace GameServer.Application.Actors
                 player.JoinMap(pendingMapJoin, msg.StartPosition);
                 
                 // Pass the player info directly to the client
-                await _sendToClient(new OutJoinMapCompleted(msg.MapId, player.Id, msg.StartPosition, msg.TilemapData, msg.PlayerInfo));
+                await _sendToClient(new ExtJoinMapCompleted(msg.MapId, player.Id, msg.StartPosition, msg.TilemapData, msg.PlayerInfo));
                 pendingMapJoin = null;
             }
         }
@@ -99,7 +105,7 @@ namespace GameServer.Application.Actors
             if (pendingMapJoin != null && msg.PlayerActor.Equals(context.Self))
             {
                 this.LogWarning("Failed to add player to map {0}: {1}", msg.MapId, msg.Error);
-                await _sendToClient(new OutJoinMapFailed(msg.MapId, msg.Error));
+                await _sendToClient(new ExtJoinMapFailed(msg.MapId, msg.Error));
                 pendingMapJoin = null;
             }
         }
@@ -107,7 +113,7 @@ namespace GameServer.Application.Actors
         /// Handles the player's request to challenge another player to a fight.
         /// Finds the target player and sends a challenge request to the map.
         /// </summary>
-        private async Task OnFightChallengeSend(IContext context, InFightChallengeSend msg)
+        private async Task OnFightChallengeSend(IContext context, ExtFightChallengeRequest msg)
         {
             if (currentMap == null)
             {
@@ -180,14 +186,14 @@ namespace GameServer.Application.Actors
             this.LogInformation("Fight completed. Winner: {0}. Reason: {1}", msg.WinnerActor.Id, msg.Reason);
             
             // Send fight ended message to client
-            await _sendToClient(new OutFightEnded(msg.WinnerActor.Id, msg.LoserActor.Id, msg.Reason));
+            await _sendToClient(new ExtFightEnded(msg.WinnerActor.Id, msg.LoserActor.Id, msg.Reason));
         }
 
         /// <summary>
         /// Forwards the OutFightEnded message to the client.
         /// This is used when the fight ended message is received from another source.
         /// </summary>
-        private async Task OnFightEnded(IContext context, OutFightEnded msg)
+        private async Task OnFightEnded(IContext context, ExtFightEnded msg)
         {
             this.LogInformation("Fight ended notification. Winner: {0}", msg.WinnerId);
             await _sendToClient(msg);
@@ -200,7 +206,7 @@ namespace GameServer.Application.Actors
                 this.LogInformation("Player removed from map: {0}", msg.MapId);
                 player.LeaveMap();
                 currentMap = null;
-                await _sendToClient(new OutLeaveMapCompleted(msg.MapId));
+                await _sendToClient(new ExtLeaveMapCompleted(msg.MapId));
             }
         }
 
@@ -209,7 +215,7 @@ namespace GameServer.Application.Actors
             if (msg.PlayerActor.Equals(context.Self))
             {
                 this.LogWarning("Failed to remove player from map {0}: {1}", msg.MapId, msg.Error);
-                await _sendToClient(new OutLeaveMapFailed(msg.MapId, msg.Error));
+                await _sendToClient(new ExtLeaveMapFailed(msg.MapId, msg.Error));
             }
         }
 
@@ -221,8 +227,8 @@ namespace GameServer.Application.Actors
             {
                 this.LogDebug("Player move validated to position {0},{1}", msg.NewPosition.X, msg.NewPosition.Y);
                 player.UpdatePosition(msg.NewPosition);
-                await _sendToClient(new OutPlayerInfo(new PlayerState(player.Id, player.Name, player.Position)));
-                await _sendToClient(new OutMoveCompleted(msg.NewPosition));
+                await _sendToClient(new ExtPlayerInfo(new PlayerState(player.Id, player.Name, player.Position)));
+                await _sendToClient(new ExtMoveCompleted(msg.NewPosition));
                 pendingMove = null;
             }
         }
@@ -235,7 +241,7 @@ namespace GameServer.Application.Actors
             {
                 this.LogWarning("Player move rejected to position {0},{1}: {2}", 
                     msg.AttemptedPosition.X, msg.AttemptedPosition.Y, msg.Error);
-                await _sendToClient(new OutMoveFailed(msg.AttemptedPosition, msg.Error));
+                await _sendToClient(new ExtMoveFailed(msg.AttemptedPosition, msg.Error));
                 pendingMove = null;
             }
         }
@@ -250,7 +256,7 @@ namespace GameServer.Application.Actors
                 m.Height,
                 m.PlayerPositions.Count
             ));
-            await _sendToClient(new OutRequestMapListResponse(mapInfos.ToList()));
+            await _sendToClient(new ExtMapListResponse(mapInfos.ToList()));
         }
 
         private async Task OnMapStateUpdate(IContext context, MapStateUpdate msg)
@@ -262,7 +268,7 @@ namespace GameServer.Application.Actors
         /// Handles the player's request to play a card during a fight.
         /// Forwards the request to the current fight actor if in a fight.
         /// </summary>
-        private async Task OnPlayCard(IContext context, InPlayCard msg)
+        private async Task OnPlayCard(IContext context, ExtPlayCardRequest msg)
         {
             if (currentFight != null)
             {
@@ -279,7 +285,7 @@ namespace GameServer.Application.Actors
         /// Handles the player's request to end their turn during a fight.
         /// Forwards the request to the current fight actor if in a fight.
         /// </summary>
-        private async Task OnEndTurn(IContext context, InEndTurn msg)
+        private async Task OnEndTurn(IContext context, ExtEndTurnRequest msg)
         {
             if (currentFight != null)
             {
@@ -292,113 +298,113 @@ namespace GameServer.Application.Actors
             }
         }
 
-        private async Task OnRequestConnection(IContext context, InPlayerIdRequest msg)
+        private async Task OnRequestPlayerId(IContext context, ExtPlayerIdRequest msg)
         {
-            this.LogInformation("Player requested connection confirmation");
-            await _sendToClient(new OutPlayerIdResponse(player.Id));
+            this.LogInformation("Player requested PlayerId");
+            await _sendToClient(new ExtPlayerIdResponse(player.Id));
         }
 
-        private async Task OnIncommingClientMessage(IContext context, FromClientMessage fromClientMessage)
+        private async Task OnIncommingClientMessage(IContext context, ExtClientMessage extClientMessage)
         {
             // Log incoming message at debug level with JSON
-            this.LogDebug("Received client message: {0}", JsonConfig.Serialize(fromClientMessage));
+            this.LogDebug("Received client message: {0}", JsonConfig.Serialize(extClientMessage));
             
-            var handle = fromClientMessage switch
+            var handle = extClientMessage switch
             {
-                InPlayerIdRequest msg => OnRequestConnection(context, msg),
-                InRequestMapList msg => OnRequestMapList(context, msg),
-                InJoinMap msg => OnJoinMap(context, msg),
-                InLeaveMap msg => OnLeaveMap(context, msg),
-                InPlayerMove msg => OnPlayerMove(context, msg),
-                InFightChallengeSend msg => OnFightChallengeSend(context, msg),
-                InPlayCard msg => OnPlayCard(context, msg),
-                InEndTurn msg => OnEndTurn(context, msg),
+                ExtPlayerIdRequest msg => OnRequestPlayerId(context, msg),
+                ExtMapListRequest msg => OnRequestMapList(context, msg),
+                ExtJoinMapRequest msg => OnJoinMap(context, msg),
+                ExtLeaveMapRequest msg => OnLeaveMap(context, msg),
+                ExtPlayerMoveRequest msg => OnPlayerMove(context, msg),
+                ExtFightChallengeRequest msg => OnFightChallengeSend(context, msg),
+                ExtPlayCardRequest msg => OnPlayCard(context, msg),
+                ExtEndTurnRequest msg => OnEndTurn(context, msg),
                 _ => Task.CompletedTask
             };
             await handle;
         }
 
-        private async Task OnOutgoingClientMessage(IContext context, ToClientMessage toClientMessage)
+        private async Task OnOutgoingClientMessage(IContext context, ExtServerMessage extServerMessage)
         {
             // Log outgoing message at debug level with JSON
-            this.LogDebug("Sending client message: {0}", JsonConfig.Serialize(toClientMessage));
-            await _sendToClient(toClientMessage);
+            this.LogDebug("Sending client message: {0}", JsonConfig.Serialize(extServerMessage));
+            await _sendToClient(extServerMessage);
         }
 
-        private async Task OnRequestMapList(IContext context, InRequestMapList inRequestMapList)
+        private async Task OnRequestMapList(IContext context, ExtMapListRequest extMapListRequest)
         {
             this.LogInformation("Player requested map list");
             context.Send(mapManagerActor, new RequestMapList(context.Self));
         }
 
-        private async Task OnJoinMap(IContext context, InJoinMap inJoinMap)
+        private async Task OnJoinMap(IContext context, ExtJoinMapRequest extJoinMapRequest)
         {
-            this.LogInformation("Player attempting to join map: {0}", inJoinMap.MapId);
+            this.LogInformation("Player attempting to join map: {0}", extJoinMapRequest.MapId);
             
             if (currentMap != null)
             {
                 this.LogWarning("Join map failed: Player already in map {0}", player.CurrentMapId);
-                await _sendToClient(new OutJoinMapFailed(inJoinMap.MapId, "Already in a map"));
+                await _sendToClient(new ExtJoinMapFailed(extJoinMapRequest.MapId, "Already in a map"));
             }
 
-            pendingMapJoin = inJoinMap.MapId;
+            pendingMapJoin = extJoinMapRequest.MapId;
 
-            var foundMap = GetMapPid(context, inJoinMap.MapId);
+            var foundMap = GetMapPid(context, extJoinMapRequest.MapId);
 
             if (foundMap == null)
             {
-                this.LogWarning("Join map failed: Invalid map ID {0}", inJoinMap.MapId);
-                await _sendToClient(new OutJoinMapFailed(inJoinMap.MapId, "Invalid Map Id"));
+                this.LogWarning("Join map failed: Invalid map ID {0}", extJoinMapRequest.MapId);
+                await _sendToClient(new ExtJoinMapFailed(extJoinMapRequest.MapId, "Invalid Map Id"));
                 return;
             }
 
-            this.LogInformation("Sending join request to map {0}", inJoinMap.MapId);
+            this.LogInformation("Sending join request to map {0}", extJoinMapRequest.MapId);
             context.Send(foundMap, new JoinMap(context.Self, player.Name, context.Self));
-            await _sendToClient(new OutJoinMapInitiated(inJoinMap.MapId));
+            await _sendToClient(new ExtJoinMapInitiated(extJoinMapRequest.MapId));
         }
 
-        private async Task OnLeaveMap(IContext context, InLeaveMap inLeaveMap)
+        private async Task OnLeaveMap(IContext context, ExtLeaveMapRequest extLeaveMapRequest)
         {
-            this.LogInformation("Player attempting to leave map: {0}", inLeaveMap.MapId ?? "current map");
+            this.LogInformation("Player attempting to leave map: {0}", extLeaveMapRequest.MapId ?? "current map");
             
             if (currentMap == null)
             {
                 this.LogWarning("Leave map failed: Player not in any map");
-                await _sendToClient(new OutLeaveMapFailed(inLeaveMap.MapId, "Player has not joined a map"));
+                await _sendToClient(new ExtLeaveMapFailed(extLeaveMapRequest.MapId, "Player has not joined a map"));
                 return;
             }
-            if (inLeaveMap.MapId != null && inLeaveMap.MapId != player.CurrentMapId)
+            if (extLeaveMapRequest.MapId != null && extLeaveMapRequest.MapId != player.CurrentMapId)
             {
-                this.LogWarning("Leave map failed: Invalid map ID {0}, player is in {1}", inLeaveMap.MapId, player.CurrentMapId);
-                await _sendToClient(new OutLeaveMapFailed(inLeaveMap.MapId, "Invalid map id specified"));
+                this.LogWarning("Leave map failed: Invalid map ID {0}, player is in {1}", extLeaveMapRequest.MapId, player.CurrentMapId);
+                await _sendToClient(new ExtLeaveMapFailed(extLeaveMapRequest.MapId, "Invalid map id specified"));
                 return;
             }
-            if (player.IsInFight && inLeaveMap.MapId != null)
+            if (player.IsInFight && extLeaveMapRequest.MapId != null)
             {
                 this.LogWarning("Leave map failed: Player is in a fight");
-                await _sendToClient(new OutLeaveMapFailed(inLeaveMap.MapId, "Cannot leave map while in a fight"));
+                await _sendToClient(new ExtLeaveMapFailed(extLeaveMapRequest.MapId, "Cannot leave map while in a fight"));
                 return;
             }
 
             this.LogInformation("Sending leave request for map {0}", player.CurrentMapId);
             context.Send(currentMap, new LeaveMap(context.Self, context.Self));
-            await _sendToClient(new OutLeaveMapInitiated(inLeaveMap.MapId));
+            await _sendToClient(new ExtLeaveMapInitiated(extLeaveMapRequest.MapId));
         }
 
-        private async Task OnPlayerMove(IContext context, InPlayerMove inPlayerMove)
+        private async Task OnPlayerMove(IContext context, ExtPlayerMoveRequest extPlayerMoveRequest)
         {
-            this.LogDebug("Player attempting to move to position: {0},{1}", inPlayerMove.NewPosition.X, inPlayerMove.NewPosition.Y);
+            this.LogDebug("Player attempting to move to position: {0},{1}", extPlayerMoveRequest.NewPosition.X, extPlayerMoveRequest.NewPosition.Y);
             
             if (currentMap == null)
             {
                 this.LogWarning("Move failed: Player not in any map");
-                await _sendToClient(new OutMoveFailed(inPlayerMove.NewPosition, "Not in a map"));
+                await _sendToClient(new ExtMoveFailed(extPlayerMoveRequest.NewPosition, "Not in a map"));
                 return;
             }
 
-            pendingMove = inPlayerMove.NewPosition;
-            context.Send(currentMap, new TryMove(context.Self, inPlayerMove.NewPosition, context.Self));
-            await _sendToClient(new OutMoveInitiated(inPlayerMove.NewPosition));
+            pendingMove = extPlayerMoveRequest.NewPosition;
+            context.Send(currentMap, new TryMove(context.Self, extPlayerMoveRequest.NewPosition, context.Self));
+            await _sendToClient(new ExtMoveInitiated(extPlayerMoveRequest.NewPosition));
         }
     }
 }

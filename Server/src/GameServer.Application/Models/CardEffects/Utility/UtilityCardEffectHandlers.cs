@@ -1,5 +1,5 @@
 using Proto;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.CardBattle;
 
 namespace GameServer.Application.Models.CardEffects.Utility
 {
@@ -32,7 +32,7 @@ namespace GameServer.Application.Models.CardEffects.Utility
             // For now, we'll just send a notification
             
             // Create notification
-            var notification = new OutEffectApplied(playerId, "DrawCards", cardsToDraw, card.Name);
+            var notification = new ExtEffectApplied(playerId, "DrawCards", cardsToDraw, card.Name);
             
             return new EffectResult(
                 $"Drew {cardsToDraw} cards",
@@ -73,8 +73,8 @@ namespace GameServer.Application.Models.CardEffects.Utility
             state.ApplyStatusEffect(playerId, apBoostEffect);
             
             // Create notifications
-            var immediateNotification = new OutEffectApplied(playerId, "ActionPoints", totalActionPoints, card.Name);
-            var boostNotification = new OutEffectApplied(playerId, "ActionPointBoost", futureActionPoints, card.Name);
+            var immediateNotification = new ExtEffectApplied(playerId, "ActionPoints", totalActionPoints, card.Name);
+            var boostNotification = new ExtEffectApplied(playerId, "ActionPointBoost", futureActionPoints, card.Name);
             
             return new EffectResult(
                 $"Gained {totalActionPoints} action points and +{futureActionPoints} action points per turn for {duration} turns",
@@ -97,7 +97,7 @@ namespace GameServer.Application.Models.CardEffects.Utility
             // For now, we'll just send a notification
             
             // Create notification
-            var notification = new OutEffectApplied(targetId, "ForceDiscard", cardsToDiscard, card.Name);
+            var notification = new ExtEffectApplied(targetId, "ForceDiscard", cardsToDiscard, card.Name);
             
             return new EffectResult(
                 $"Forced opponent to discard {cardsToDiscard} cards",
@@ -130,7 +130,7 @@ namespace GameServer.Application.Models.CardEffects.Utility
             state.ApplyStatusEffect(targetId, lockEffect);
             
             // Create notification
-            var notification = new OutEffectApplied(targetId, "CardLock", lockDuration, card.Name);
+            var notification = new ExtEffectApplied(targetId, "CardLock", lockDuration, card.Name);
             
             return new EffectResult(
                 $"Locked opponent's cards for {lockDuration} turns",
@@ -151,7 +151,7 @@ namespace GameServer.Application.Models.CardEffects.Utility
             int cardsToTransform = Math.Max(1, card.Cost / 2);
             
             // Create notification
-            var notification = new OutEffectApplied(playerId, "TransformCards", cardsToTransform, card.Name);
+            var notification = new ExtEffectApplied(playerId, "TransformCards", cardsToTransform, card.Name);
             
             return new EffectResult(
                 $"Transformed {cardsToTransform} cards in hand",

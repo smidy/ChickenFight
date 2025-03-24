@@ -45,7 +45,7 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Represents a player's current fight status
     /// </summary>
-    public class PlayerFightState
+    public class PlayerFightStateDto
     {
         public string PlayerId { get; }
         public int HitPoints { get; }
@@ -55,7 +55,7 @@ namespace GameServer.Shared.Messages.CardBattle
         public int DiscardPileCount { get; }
         public System.Collections.Generic.List<StatusEffectInfo> StatusEffects { get; }
 
-        public PlayerFightState(
+        public PlayerFightStateDto(
             string playerId,
             int hitPoints,
             int actionPoints,

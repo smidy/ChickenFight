@@ -5,21 +5,21 @@ namespace GameServer.Shared.Messages.Connection
     /// <summary>
     /// Client request for connection confirmation
     /// </summary>
-    public class PlayerIdRequest : ClientMessage, IRequest
+    public class ExtPlayerIdRequest : ExtClientMessage, IExtRequest
     {
-        public PlayerIdRequest() : base() { }
+        public ExtPlayerIdRequest() : base() { }
     }
 
     /// <summary>
     /// Server response with connection confirmation
     /// </summary>
-    public class PlayerIdResponse : ServerMessage, IResponse, IPlayerRelated
+    public class ExtPlayerIdResponse : ExtServerMessage, IExtResponse, IExtPlayerRelated
     {
         public string PlayerId { get; }
         public bool Success => true;
         public string ErrorMessage => string.Empty;
 
-        public PlayerIdResponse(string playerId) : base()
+        public ExtPlayerIdResponse(string playerId) : base()
         {
             PlayerId = playerId;
         }

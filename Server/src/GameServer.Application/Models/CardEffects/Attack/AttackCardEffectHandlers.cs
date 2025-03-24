@@ -1,5 +1,5 @@
+using GameServer.Shared.Messages.CardBattle;
 using Proto;
-using GameServer.Shared.ExternalMessages;
 
 namespace GameServer.Application.Models.CardEffects.Attack
 {
@@ -33,7 +33,7 @@ namespace GameServer.Application.Models.CardEffects.Attack
             state.ApplyDamage(targetId, totalDamage);
             
             // Create notification
-            var notification = new OutEffectApplied(targetId, "Damage", totalDamage, card.Name);
+            var notification = new ExtEffectApplied(targetId, "Damage", totalDamage, card.Name);
             
             return new EffectResult(
                 $"Dealt {totalDamage} direct damage",
@@ -58,7 +58,7 @@ namespace GameServer.Application.Models.CardEffects.Attack
             state.ApplyDamage(targetId, reducedDamage);
             
             // Create notification
-            var notification = new OutEffectApplied(targetId, "AreaDamage", reducedDamage, card.Name);
+            var notification = new ExtEffectApplied(targetId, "AreaDamage", reducedDamage, card.Name);
             
             return new EffectResult(
                 $"Dealt {reducedDamage} area damage",
@@ -81,7 +81,7 @@ namespace GameServer.Application.Models.CardEffects.Attack
             state.ApplyDamage(targetId, damage);
             
             // Create notification
-            var notification = new OutEffectApplied(targetId, "PiercingDamage", damage, card.Name);
+            var notification = new ExtEffectApplied(targetId, "PiercingDamage", damage, card.Name);
             
             return new EffectResult(
                 $"Dealt {damage} piercing damage",
@@ -107,8 +107,8 @@ namespace GameServer.Application.Models.CardEffects.Attack
             state.ApplyHealing(playerId, healing);
             
             // Create notifications
-            var damageNotification = new OutEffectApplied(targetId, "VampiricDamage", reducedDamage, card.Name);
-            var healNotification = new OutEffectApplied(playerId, "VampiricHeal", healing, card.Name);
+            var damageNotification = new ExtEffectApplied(targetId, "VampiricDamage", reducedDamage, card.Name);
+            var healNotification = new ExtEffectApplied(playerId, "VampiricHeal", healing, card.Name);
             
             return new EffectResult(
                 $"Dealt {reducedDamage} vampiric damage and healed for {healing}",
@@ -135,7 +135,7 @@ namespace GameServer.Application.Models.CardEffects.Attack
             state.ApplyDamage(targetId, comboDamage);
             
             // Create notification
-            var notification = new OutEffectApplied(targetId, "ComboDamage", comboDamage, card.Name);
+            var notification = new ExtEffectApplied(targetId, "ComboDamage", comboDamage, card.Name);
             
             return new EffectResult(
                 $"Dealt {comboDamage} combo damage",

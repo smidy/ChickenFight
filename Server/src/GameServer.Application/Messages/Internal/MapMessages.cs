@@ -1,7 +1,7 @@
 using Proto;
 using GameServer.Application.Models;
 using GameServer.Shared.Models;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.Base;
 
 namespace GameServer.Application.Messages.Internal
 {
@@ -11,7 +11,7 @@ public record PlayerAddedToMap(PID PlayerActor,
         PID MapPID,
         string MapId, 
         MapPosition StartPosition, 
-        Shared.ExternalMessages.TilemapData TilemapData,
+        TilemapData TilemapData,
         IReadOnlyDictionary<string, PlayerMapInfo> PlayerInfo);
     public record PlayerAddFailure(PID PlayerActor, string MapId, string Error);
     
@@ -27,5 +27,5 @@ public record PlayerAddedToMap(PID PlayerActor,
     // Map state messages
     public record MapStateUpdate(string MapId, string MapName, int Width, int Height);
 
-    public record BroadcastExternalMessage(ToClientMessage ExternalMessage);
+    public record BroadcastExternalMessage(ExtServerMessage ExternalMessage);
 }

@@ -1,7 +1,9 @@
 using Godot;
 using System;
 using Godot.Collections;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.Base;
+using GameServer.Shared.Messages.Connection;
+using GameServer.Shared.Messages.Map;
 
 public partial class MapSelect : Node2D
 {
@@ -34,7 +36,7 @@ public partial class MapSelect : Node2D
     {
         _statusLabel.Text = "Fetching maps...";
         _mapList.Clear();
-        _network.SendMessage(new InRequestMapList());
+        _network.SendMessage(new ExtMapListRequest());
     }
 
     private void OnMapListReceived(Godot.Collections.Array maps)
@@ -57,7 +59,7 @@ public partial class MapSelect : Node2D
     {
         var mapId = (string)_mapList.GetItemMetadata((int)index);
         _statusLabel.Text = "Requesting to join map...";
-        _network.SendMessage(new InJoinMap(mapId));
+        _network.SendMessage(new ExtJoinMapRequest(mapId));
     }
 
     private void OnJoinMapInitiated(string mapId)

@@ -1,5 +1,6 @@
 using Proto;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.Base;
+using GameServer.Shared.Messages.CardBattle;
 
 namespace GameServer.Application.Models.CardEffects
 {
@@ -21,7 +22,7 @@ namespace GameServer.Application.Models.CardEffects
                 CardType.Defense => ApplyBasicDefense(state, playerId, card),
                 CardType.Utility => ApplyBasicUtility(state, playerId, card),
                 CardType.Special => ApplyBasicSpecial(state, playerId, targetId, card),
-                _ => new EffectResult("Card played", Array.Empty<ToClientMessage>())
+                _ => new EffectResult("Card played", Array.Empty<ExtServerMessage>())
             };
         }
 
@@ -37,7 +38,7 @@ namespace GameServer.Application.Models.CardEffects
             state.ApplyDamage(targetId, damage);
             
             // Create notification
-            var notification = new OutEffectApplied(targetId, "Damage", damage, card.Name);
+            var notification = new ExtEffectApplied(targetId, "Damage", damage, card.Name);
             
             return new EffectResult(
                 $"Dealt {damage} damage",
@@ -57,7 +58,7 @@ namespace GameServer.Application.Models.CardEffects
             state.ApplyHealing(playerId, healing);
             
             // Create notification
-            var notification = new OutEffectApplied(playerId, "Heal", healing, card.Name);
+            var notification = new ExtEffectApplied(playerId, "Heal", healing, card.Name);
             
             return new EffectResult(
                 $"Healed for {healing}",
@@ -78,7 +79,7 @@ namespace GameServer.Application.Models.CardEffects
             playerState.ActionPoints += actionPoints;
             
             // Create notification
-            var notification = new OutEffectApplied(playerId, "ActionPoints", actionPoints, card.Name);
+            var notification = new ExtEffectApplied(playerId, "ActionPoints", actionPoints, card.Name);
             
             return new EffectResult(
                 $"Gained {actionPoints} action points",
@@ -100,8 +101,8 @@ namespace GameServer.Application.Models.CardEffects
             state.ApplyHealing(playerId, healing);
             
             // Create notifications
-            var damageNotification = new OutEffectApplied(targetId, "Damage", damage, card.Name);
-            var healNotification = new OutEffectApplied(playerId, "Heal", healing, card.Name);
+            var damageNotification = new ExtEffectApplied(targetId, "Damage", damage, card.Name);
+            var healNotification = new ExtEffectApplied(playerId, "Heal", healing, card.Name);
             
             return new EffectResult(
                 $"Dealt {damage} damage and healed for {healing}",

@@ -1,10 +1,10 @@
 using Proto;
 using GameServer.Application.Models;
 using GameServer.Application.Messages.Internal;
-using GameServer.Shared.ExternalMessages;
 using GameServer.Application.Models.CardEffects;
 using GameServer.Application.Extensions;
 using GameServer.Shared;
+using GameServer.Shared.Messages.CardBattle;
 
 namespace GameServer.Application.Actors
 {
@@ -146,7 +146,7 @@ namespace GameServer.Application.Actors
                     string effectType = effect.Type == StatusEffectType.DamageOverTime ? "DamageOverTime" : "HealOverTime";
                     this.LogDebug("Applying status effect: {0} with magnitude {1} to player {2}", 
                         effectType, effect.Magnitude, playerId);
-                    context.Send(mapActor, new OutEffectApplied(playerId, effectType, effect.Magnitude, effect.Source));
+                    context.Send(mapActor, new ExtEffectApplied(playerId, effectType, effect.Magnitude, effect.Source));
                 }
             }
 
@@ -156,7 +156,7 @@ namespace GameServer.Application.Actors
             this.LogDebug("Player {0} drew {1} cards", playerId, drawnCards.Count);
 
             // Send turn started notification (without drawn cards)
-            context.Send(msg.PlayerActor, new OutTurnStarted(playerId));
+            context.Send(msg.PlayerActor, new ExtTurnStarted(playerId));
             
             // Send card SVG data for the drawn cards
             var cardSvgData = new Dictionary<string, string>();
@@ -166,11 +166,11 @@ namespace GameServer.Application.Actors
                 
                 // Also send individual card drawn messages with SVG data
                 var cardInfo = new CardInfo(card.Id, card.Name, card.Description, card.Cost);
-                context.Send(msg.PlayerActor, new OutCardDrawn(cardInfo, GetCardSvgData(card.Id)));
+                context.Send(msg.PlayerActor, new ExtCardDrawn(cardInfo, GetCardSvgData(card.Id)));
             }
             
             // Send all card SVGs in one message
-            context.Send(msg.PlayerActor, new OutCardImages(cardSvgData));
+            context.Send(msg.PlayerActor, new ExtCardImages(cardSvgData));
 
             // Send updated fight state (which now has the sole responsibility for informing about hand contents)
             SendFightStateUpdate(context);
@@ -189,7 +189,7 @@ namespace GameServer.Application.Actors
             state.DiscardHand(playerId, players[msg.PlayerActor].Deck);
 
             // Notify clients
-            context.Send(msg.PlayerActor, new OutTurnEnded(playerId));
+            context.Send(msg.PlayerActor, new ExtTurnEnded(playerId));
 
             // Start next player's turn
             PID nextPlayerActor = msg.PlayerActor.Equals(player1Actor) ? player2Actor : player1Actor;
@@ -224,7 +224,7 @@ namespace GameServer.Application.Actors
                 if (!state.CanPlayCard(playerId, card))
                 {
                     this.LogWarning("Player {0} cannot play card {1}: Not enough action points", playerId, msg.CardId);
-                    context.Send(mapActor, new OutCardPlayFailed(msg.CardId, "Not enough action points"));
+                    context.Send(mapActor, new ExtCardPlayFailed(msg.CardId, "Not enough action points"));
                     return Task.CompletedTask;
                 }
 
@@ -239,7 +239,7 @@ namespace GameServer.Application.Actors
                 var cardInfo = new CardInfo(card.Id, card.Name, card.Description, card.Cost);
                 
                 // Send to the map actor (for broadcasting to clients)
-                context.Send(mapActor, new OutCardPlayCompleted(playerId, cardInfo, effect, true));
+                context.Send(mapActor, new ExtCardPlayCompleted(playerId, cardInfo, effect, true));
                 
                 // Get opponent actor
                 PID opponentActor = msg.PlayerActor.Equals(player1Actor) ? player2Actor : player1Actor;
@@ -252,10 +252,10 @@ namespace GameServer.Application.Actors
                 
                 // Send card images to opponent
                 var cardSvgData = new Dictionary<string, string> { { card.Id, svgData } };
-                context.Send(opponentActor, new OutCardImages(cardSvgData));
+                context.Send(opponentActor, new ExtCardImages(cardSvgData));
                 
                 // Send card play completed to opponent directly
-                context.Send(opponentActor, new OutCardPlayCompleted(playerId, cardInfo, effect, true));
+                context.Send(opponentActor, new ExtCardPlayCompleted(playerId, cardInfo, effect, true));
 
                 // Check for game over
                 if (state.IsGameOver)
@@ -273,7 +273,7 @@ namespace GameServer.Application.Actors
             catch (Exception ex)
             {
                 this.LogError(ex, "Error playing card {0} by player {1}: {2}", msg.CardId, playerId, ex.Message);
-                context.Send(mapActor, new OutCardPlayFailed(msg.CardId, ex.Message));
+                context.Send(mapActor, new ExtCardPlayFailed(msg.CardId, ex.Message));
             }
 
             return Task.CompletedTask;
@@ -336,7 +336,7 @@ namespace GameServer.Application.Actors
                 )
             ).ToList();
 
-            var p1State = new OutPlayerFightState(
+            var p1State = new PlayerFightStateDto(
                 players[player1Actor].Id,
                 player1State.HitPoints,
                 player1State.ActionPoints,
@@ -346,7 +346,7 @@ namespace GameServer.Application.Actors
                 p1StatusEffects
             );
 
-            var p2State = new OutPlayerFightState(
+            var p2State = new PlayerFightStateDto(
                 players[player2Actor].Id,
                 player2State.HitPoints,
                 player2State.ActionPoints,
@@ -356,7 +356,7 @@ namespace GameServer.Application.Actors
                 p2StatusEffects
             );
 
-            var outFightStateUpdate = new OutFightStateUpdate(
+            var outFightStateUpdate = new ExtFightStateUpdate(
                 state.CurrentTurnPlayerId,
                 p1State,
                 p2State

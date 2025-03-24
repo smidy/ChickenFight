@@ -7,11 +7,11 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Server notification with SVG data for multiple cards
     /// </summary>
-    public class CardImages : ServerMessage, INotification
+    public class ExtCardImages : ExtServerMessage, IExtNotification
     {
         public Dictionary<string, string> CardSvgData { get; }
 
-        public CardImages(Dictionary<string, string> cardSvgData) : base()
+        public ExtCardImages(Dictionary<string, string> cardSvgData) : base()
         {
             CardSvgData = cardSvgData;
         }
@@ -20,12 +20,12 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Server notification about a newly drawn card
     /// </summary>
-    public class CardDrawn : ServerMessage, INotification
+    public class ExtCardDrawn : ExtServerMessage, IExtNotification
     {
         public CardInfo CardInfo { get; }
         public string SvgData { get; }
 
-        public CardDrawn(CardInfo cardInfo, string svgData) : base()
+        public ExtCardDrawn(CardInfo cardInfo, string svgData) : base()
         {
             CardInfo = cardInfo;
             SvgData = svgData;
@@ -35,16 +35,16 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Server notification with complete fight state update
     /// </summary>
-    public class FightStateUpdate : ServerMessage, INotification
+    public class ExtFightStateUpdate : ExtServerMessage, IExtNotification
     {
         public string CurrentTurnPlayerId { get; }
-        public PlayerFightState PlayerState { get; }
-        public PlayerFightState OpponentState { get; }
+        public PlayerFightStateDto PlayerState { get; }
+        public PlayerFightStateDto OpponentState { get; }
 
-        public FightStateUpdate(
+        public ExtFightStateUpdate(
             string currentTurnPlayerId,
-            PlayerFightState playerState,
-            PlayerFightState opponentState) : base()
+            PlayerFightStateDto playerState,
+            PlayerFightStateDto opponentState) : base()
         {
             CurrentTurnPlayerId = currentTurnPlayerId;
             PlayerState = playerState;
@@ -55,12 +55,12 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Server notification that a turn has started
     /// </summary>
-    public class TurnStarted : ServerMessage, INotification, IPlayerRelated
+    public class ExtTurnStarted : ExtServerMessage, IExtNotification, IExtPlayerRelated
     {
         public string ActivePlayerId { get; }
         public string PlayerId => ActivePlayerId;
 
-        public TurnStarted(string activePlayerId) : base()
+        public ExtTurnStarted(string activePlayerId) : base()
         {
             ActivePlayerId = activePlayerId;
         }
@@ -69,11 +69,11 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Server notification that a turn has ended
     /// </summary>
-    public class TurnEnded : ServerMessage, INotification, IPlayerRelated
+    public class ExtTurnEnded : ExtServerMessage, IExtNotification, IExtPlayerRelated
     {
         public string PlayerId { get; }
 
-        public TurnEnded(string playerId) : base()
+        public ExtTurnEnded(string playerId) : base()
         {
             PlayerId = playerId;
         }
@@ -82,11 +82,11 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Client request to play a card
     /// </summary>
-    public class PlayCardRequest : ClientMessage, IRequest
+    public class ExtPlayCardRequest : ExtClientMessage, IExtRequest
     {
         public string CardId { get; }
 
-        public PlayCardRequest(string cardId) : base()
+        public ExtPlayCardRequest(string cardId) : base()
         {
             CardId = cardId;
         }
@@ -95,11 +95,11 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Server notification that card play process has started
     /// </summary>
-    public class CardPlayInitiated : ServerMessage, INotification
+    public class ExtCardPlayInitiated : ExtServerMessage, IExtNotification
     {
         public string CardId { get; }
 
-        public CardPlayInitiated(string cardId) : base()
+        public ExtCardPlayInitiated(string cardId) : base()
         {
             CardId = cardId;
         }
@@ -108,7 +108,7 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Server notification that card play has completed successfully
     /// </summary>
-    public class CardPlayCompleted : ServerMessage, IResponse, IPlayerRelated
+    public class ExtCardPlayCompleted : ExtServerMessage, IExtResponse, IExtPlayerRelated
     {
         public string PlayerId { get; }
         public CardInfo PlayedCard { get; }
@@ -117,7 +117,7 @@ namespace GameServer.Shared.Messages.CardBattle
         public bool Success => true;
         public string ErrorMessage => string.Empty;
 
-        public CardPlayCompleted(
+        public ExtCardPlayCompleted(
             string playerId,
             CardInfo playedCard,
             string effect,
@@ -133,13 +133,13 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Server notification that card play has failed
     /// </summary>
-    public class CardPlayFailed : ServerMessage, IResponse
+    public class ExtCardPlayFailed : ExtServerMessage, IExtResponse
     {
         public string CardId { get; }
         public bool Success => false;
         public string ErrorMessage { get; }
 
-        public CardPlayFailed(string cardId, string error) : base()
+        public ExtCardPlayFailed(string cardId, string error) : base()
         {
             CardId = cardId;
             ErrorMessage = error;
@@ -149,7 +149,7 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Server notification that a card effect was applied
     /// </summary>
-    public class EffectApplied : ServerMessage, INotification, IPlayerRelated
+    public class ExtEffectApplied : ExtServerMessage, IExtNotification, IExtPlayerRelated
     {
         public string TargetPlayerId { get; }
         public string EffectType { get; }
@@ -157,7 +157,7 @@ namespace GameServer.Shared.Messages.CardBattle
         public string Source { get; }
         public string PlayerId => TargetPlayerId;
 
-        public EffectApplied(
+        public ExtEffectApplied(
             string targetPlayerId,
             string effectType,
             int value,
@@ -173,8 +173,8 @@ namespace GameServer.Shared.Messages.CardBattle
     /// <summary>
     /// Client request to end the current turn
     /// </summary>
-    public class EndTurnRequest : ClientMessage, IRequest
+    public class ExtEndTurnRequest : ExtClientMessage, IExtRequest
     {
-        public EndTurnRequest() : base() { }
+        public ExtEndTurnRequest() : base() { }
     }
 }

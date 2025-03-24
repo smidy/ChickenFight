@@ -125,20 +125,20 @@ class CardBattleEnv(gym.Env):
     
     def _setup_message_handlers(self) -> None:
         """Set up handlers for different message types."""
-        self.message_handler.register_handler("PlayerIdResponse", self._handle_player_id_response)
-        self.message_handler.register_handler("MapListResponse", self._handle_map_list_response)
-        self.message_handler.register_handler("JoinMapCompleted", self._handle_join_map_completed)
-        self.message_handler.register_handler("PlayerPositionChange", self._handle_player_position_change)
-        self.message_handler.register_handler("FightChallengeReceived", self._handle_fight_challenge_received)
-        self.message_handler.register_handler("FightStarted", self._handle_fight_started)
-        self.message_handler.register_handler("FightEnded", self._handle_fight_ended)
-        self.message_handler.register_handler("CardImages", self._handle_card_images)
-        self.message_handler.register_handler("CardDrawn", self._handle_card_drawn)
-        self.message_handler.register_handler("FightStateUpdate", self._handle_fight_state_update)
-        self.message_handler.register_handler("TurnStarted", self._handle_turn_started)
-        self.message_handler.register_handler("TurnEnded", self._handle_turn_ended)
-        self.message_handler.register_handler("CardPlayCompleted", self._handle_card_play_completed)
-        self.message_handler.register_handler("EffectApplied", self._handle_effect_applied)
+        self.message_handler.register_handler("ExtPlayerIdResponse", self._handle_player_id_response)
+        self.message_handler.register_handler("ExtMapListResponse", self._handle_map_list_response)
+        self.message_handler.register_handler("ExtJoinMapCompleted", self._handle_join_map_completed)
+        self.message_handler.register_handler("ExtPlayerPositionChange", self._handle_player_position_change)
+        self.message_handler.register_handler("ExtFightChallengeReceived", self._handle_fight_challenge_received)
+        self.message_handler.register_handler("ExtFightStarted", self._handle_fight_started)
+        self.message_handler.register_handler("ExtFightEnded", self._handle_fight_ended)
+        self.message_handler.register_handler("ExtCardImages", self._handle_card_images)
+        self.message_handler.register_handler("ExtCardDrawn", self._handle_card_drawn)
+        self.message_handler.register_handler("ExtFightStateUpdate", self._handle_fight_state_update)
+        self.message_handler.register_handler("ExtTurnStarted", self._handle_turn_started)
+        self.message_handler.register_handler("ExtTurnEnded", self._handle_turn_ended)
+        self.message_handler.register_handler("ExtCardPlayCompleted", self._handle_card_play_completed)
+        self.message_handler.register_handler("ExtEffectApplied", self._handle_effect_applied)
     
     def connect(self) -> bool:
         """
@@ -159,7 +159,7 @@ class CardBattleEnv(gym.Env):
         response = self.message_handler.send_message(
             PlayerIdRequest(),
             wait_for_response=True,
-            response_type="PlayerIdResponse",
+            response_type="ExtPlayerIdResponse",
             timeout=5.0
         )
         
@@ -196,7 +196,7 @@ class CardBattleEnv(gym.Env):
         response = self.message_handler.send_message(
             MapListRequest(),
             wait_for_response=True,
-            response_type="MapListResponse",
+            response_type="ExtMapListResponse",
             timeout=5.0
         )
         
@@ -236,7 +236,7 @@ class CardBattleEnv(gym.Env):
         response = self.message_handler.send_message(
             JoinMapRequest(map_id=map_id),
             wait_for_response=True,
-            response_type="JoinMapCompleted",
+            response_type="ExtJoinMapCompleted",
             timeout=5.0
         )
         

@@ -1,10 +1,13 @@
 using Proto;
 using GameServer.Application.Models;
 using GameServer.Application.Messages.Internal;
-using GameServer.Shared.ExternalMessages;
 using GameServer.Application.Extensions;
 using GameServer.Shared;
 using GameServer.Shared.Models;
+using GameServer.Shared.Messages.CardBattle;
+using GameServer.Shared.Messages.Map;
+using GameServer.Shared.Messages.Movement;
+using GameServer.Shared.Messages.Fight;
 
 namespace GameServer.Application.Actors
 {
@@ -35,8 +38,8 @@ namespace GameServer.Application.Actors
                 FightChallengeResponse msg => OnFightChallengeResponse(context, msg),
                 FightCompleted msg => OnFightCompleted(context, msg),
                 BroadcastExternalMessage msg => OnBroadcastExternalMessage(context, msg),
-                InPlayCard msg => OnCardMessage(context, msg),
-                InEndTurn msg => OnCardMessage(context, msg),
+                ExtPlayCardRequest msg => OnCardMessage(context, msg),
+                ExtEndTurnRequest msg => OnCardMessage(context, msg),
                 _ => Task.CompletedTask
             };
         }
@@ -58,8 +61,8 @@ namespace GameServer.Application.Actors
             {
                 this.LogInformation("Player {0} added to map at position {1},{2}", playerId, startPosition.X, startPosition.Y);
                 players.Add(msg.PlayerActor, playerId);
-                BroadcastToAllPlayers(context, new OutPlayerJoinedMap(playerId, startPosition));
-                var tilemapData = new GameServer.Shared.ExternalMessages.TilemapData(map.Width, map.Height, map.TileData);
+                BroadcastToAllPlayers(context, new ExtPlayerJoinedMap(playerId, startPosition));
+                var tilemapData = new TilemapData(map.Width, map.Height, map.TileData);
                 
                 // Create a dictionary of player info including positions and fight IDs
                 var playerInfo = new Dictionary<string, PlayerMapInfo>();
@@ -99,7 +102,7 @@ namespace GameServer.Application.Actors
                 map.RemovePlayer(playerId);
                 players.Remove(msg.PlayerActor);
 
-                BroadcastToAllPlayers(context, new OutPlayerLeftMap(playerId));
+                BroadcastToAllPlayers(context, new ExtPlayerLeftMap(playerId));
                 context.Send(msg.Requester, new PlayerRemovedFromMap(this.map.Id, msg.PlayerActor));
             }
             else
@@ -133,7 +136,7 @@ namespace GameServer.Application.Actors
             if (map.TryMovePlayer(playerId, msg.NewPosition))
             {
                 this.LogDebug("Move validated for player {0}", playerId);
-                BroadcastToAllPlayers(context, new OutPlayerPositionChange(playerId, msg.NewPosition));
+                BroadcastToAllPlayers(context, new ExtPlayerPositionChange(playerId, msg.NewPosition));
                 context.Send(msg.Requester, new MoveValidated(msg.PlayerActor, msg.NewPosition));
             }
             else
@@ -230,7 +233,7 @@ namespace GameServer.Application.Actors
             // Broadcast to all players on the map that a fight has started
             this.LogInformation("Broadcasting fight start between players {0} and {1}", 
                 challengerPlayerId, targetPlayerId);
-            BroadcastToAllPlayers(context, new OutFightStarted(challengerPlayerId, targetPlayerId));
+            BroadcastToAllPlayers(context, new ExtFightStarted(challengerPlayerId, targetPlayerId));
 
             return Task.CompletedTask;
         }
@@ -263,7 +266,7 @@ namespace GameServer.Application.Actors
                 }
 
                 // Notify players of fight completion
-                BroadcastToAllPlayers(context, new OutFightEnded(
+                BroadcastToAllPlayers(context, new ExtFightEnded(
                     winnerPlayerId ?? "unknown", 
                     loserPlayerId ?? "unknown", 
                     msg.Reason));

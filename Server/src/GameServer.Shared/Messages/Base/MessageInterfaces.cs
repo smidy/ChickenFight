@@ -3,14 +3,14 @@ namespace GameServer.Shared.Messages.Base
     /// <summary>
     /// Interface for messages that represent requests
     /// </summary>
-    public interface IRequest
+    public interface IExtRequest
     {
     }
 
     /// <summary>
     /// Interface for messages that represent responses to requests
     /// </summary>
-    public interface IResponse
+    public interface IExtResponse
     {
         bool Success { get; }
         string ErrorMessage { get; }
@@ -19,14 +19,14 @@ namespace GameServer.Shared.Messages.Base
     /// <summary>
     /// Interface for messages that represent notifications (no response expected)
     /// </summary>
-    public interface INotification
+    public interface IExtNotification
     {
     }
 
     /// <summary>
     /// Interface for messages related to a specific map
     /// </summary>
-    public interface IMapRelated
+    public interface IExtMapRelated
     {
         string MapId { get; }
     }
@@ -34,7 +34,7 @@ namespace GameServer.Shared.Messages.Base
     /// <summary>
     /// Interface for messages related to a specific player
     /// </summary>
-    public interface IPlayerRelated
+    public interface IExtPlayerRelated
     {
         string PlayerId { get; }
     }

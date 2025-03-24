@@ -3,7 +3,7 @@ namespace GameServer.Shared.Messages.Base
     /// <summary>
     /// Base class for all messages with a Type property that contains the derived class name
     /// </summary>
-    public abstract class MessageBase
+    public abstract class ExtMessageBase
     {
         /// <summary>
         /// The type name of the derived message class
@@ -13,7 +13,7 @@ namespace GameServer.Shared.Messages.Base
         /// <summary>
         /// Base constructor that initializes the Type property with the derived class name
         /// </summary>
-        protected MessageBase()
+        protected ExtMessageBase()
         {
             MessageType = GetType().Name;
         }
@@ -22,16 +22,16 @@ namespace GameServer.Shared.Messages.Base
     /// <summary>
     /// Base class for all messages sent from client to server
     /// </summary>
-    public abstract class ClientMessage : MessageBase
+    public abstract class ExtClientMessage : ExtMessageBase
     {
-        protected ClientMessage() : base() { }
+        protected ExtClientMessage() : base() { }
     }
 
     /// <summary>
     /// Base class for all messages sent from server to client
     /// </summary>
-    public abstract class ServerMessage : MessageBase
+    public abstract class ExtServerMessage : ExtMessageBase
     {
-        protected ServerMessage() : base() { }
+        protected ExtServerMessage() : base() { }
     }
 }

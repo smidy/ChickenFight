@@ -1,5 +1,5 @@
 using Proto;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.Base;
 
 namespace GameServer.Application.Models.CardEffects
 {
@@ -33,9 +33,9 @@ namespace GameServer.Application.Models.CardEffects
         /// <summary>
         /// Notifications to be sent to clients
         /// </summary>
-        public IEnumerable<ToClientMessage> Notifications { get; }
+        public IEnumerable<ExtServerMessage> Notifications { get; }
         
-        public EffectResult(string description, IEnumerable<ToClientMessage> notifications)
+        public EffectResult(string description, IEnumerable<ExtServerMessage> notifications)
         {
             Description = description;
             Notifications = notifications;

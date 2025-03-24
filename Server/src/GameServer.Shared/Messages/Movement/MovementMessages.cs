@@ -6,11 +6,11 @@ namespace GameServer.Shared.Messages.Movement
     /// <summary>
     /// Client request to move player to a new position
     /// </summary>
-    public class PlayerMoveRequest : ClientMessage, IRequest
+    public class ExtPlayerMoveRequest : ExtClientMessage, IExtRequest
     {
         public MapPosition NewPosition { get; }
 
-        public PlayerMoveRequest(MapPosition newPosition) : base()
+        public ExtPlayerMoveRequest(MapPosition newPosition) : base()
         {
             NewPosition = newPosition;
         }
@@ -19,11 +19,11 @@ namespace GameServer.Shared.Messages.Movement
     /// <summary>
     /// Server notification that move process has started
     /// </summary>
-    public class MoveInitiated : ServerMessage, INotification
+    public class ExtMoveInitiated : ExtServerMessage, IExtNotification
     {
         public MapPosition NewPosition { get; }
 
-        public MoveInitiated(MapPosition newPosition) : base()
+        public ExtMoveInitiated(MapPosition newPosition) : base()
         {
             NewPosition = newPosition;
         }
@@ -32,13 +32,13 @@ namespace GameServer.Shared.Messages.Movement
     /// <summary>
     /// Server notification that move has completed successfully
     /// </summary>
-    public class MoveCompleted : ServerMessage, IResponse
+    public class ExtMoveCompleted : ExtServerMessage, IExtResponse
     {
         public MapPosition NewPosition { get; }
         public bool Success => true;
         public string ErrorMessage => string.Empty;
 
-        public MoveCompleted(MapPosition newPosition) : base()
+        public ExtMoveCompleted(MapPosition newPosition) : base()
         {
             NewPosition = newPosition;
         }
@@ -47,13 +47,13 @@ namespace GameServer.Shared.Messages.Movement
     /// <summary>
     /// Server notification that move has failed
     /// </summary>
-    public class MoveFailed : ServerMessage, IResponse
+    public class ExtMoveFailed : ExtServerMessage, IExtResponse
     {
         public MapPosition AttemptedPosition { get; }
         public bool Success => false;
         public string ErrorMessage { get; }
 
-        public MoveFailed(MapPosition attemptedPosition, string error) : base()
+        public ExtMoveFailed(MapPosition attemptedPosition, string error) : base()
         {
             AttemptedPosition = attemptedPosition;
             ErrorMessage = error;
@@ -63,12 +63,12 @@ namespace GameServer.Shared.Messages.Movement
     /// <summary>
     /// Server notification of a player position change
     /// </summary>
-    public class PlayerPositionChange : ServerMessage, INotification, IPlayerRelated
+    public class ExtPlayerPositionChange : ExtServerMessage, IExtNotification, IExtPlayerRelated
     {
         public string PlayerId { get; }
         public MapPosition? Position { get; }
 
-        public PlayerPositionChange(string playerId, MapPosition? position) : base()
+        public ExtPlayerPositionChange(string playerId, MapPosition? position) : base()
         {
             PlayerId = playerId;
             Position = position;

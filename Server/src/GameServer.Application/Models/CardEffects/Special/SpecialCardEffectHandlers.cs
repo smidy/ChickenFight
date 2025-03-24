@@ -1,5 +1,5 @@
 using Proto;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.CardBattle;
 
 namespace GameServer.Application.Models.CardEffects.Special
 {
@@ -63,9 +63,9 @@ namespace GameServer.Application.Models.CardEffects.Special
             state.ApplyStatusEffect(playerId, apBoostEffect);
             
             // Create notifications
-            var damageNotification = new OutEffectApplied(targetId, "UltimateDamage", damage, card.Name);
-            var healNotification = new OutEffectApplied(playerId, "UltimateHeal", healing, card.Name);
-            var boostNotification = new OutEffectApplied(playerId, "UltimatePowerup", duration, card.Name);
+            var damageNotification = new ExtEffectApplied(targetId, "UltimateDamage", damage, card.Name);
+            var healNotification = new ExtEffectApplied(playerId, "UltimateHeal", healing, card.Name);
+            var boostNotification = new ExtEffectApplied(playerId, "UltimatePowerup", duration, card.Name);
             
             return new EffectResult(
                 $"Ultimate attack! Dealt {damage} damage, healed for {healing}, and gained powerful boosts for {duration} turns",
@@ -101,7 +101,7 @@ namespace GameServer.Application.Models.CardEffects.Special
             state.ApplyStatusEffect(targetId, environmentEffect);
             
             // Create notification
-            var notification = new OutEffectApplied("global", "EnvironmentChange", effectPower, card.Name);
+            var notification = new ExtEffectApplied("global", "EnvironmentChange", effectPower, card.Name);
             
             return new EffectResult(
                 $"Changed battle environment for {duration} turns",
@@ -139,8 +139,8 @@ namespace GameServer.Application.Models.CardEffects.Special
             state.ApplyStatusEffect(targetId, summonEffect);
             
             // Create notifications
-            var damageNotification = new OutEffectApplied(targetId, "SummonDamage", summonDamage, card.Name);
-            var summonNotification = new OutEffectApplied(playerId, "SummonCreated", duration, card.Name);
+            var damageNotification = new ExtEffectApplied(targetId, "SummonDamage", summonDamage, card.Name);
+            var summonNotification = new ExtEffectApplied(playerId, "SummonCreated", duration, card.Name);
             
             return new EffectResult(
                 $"Summoned an ally that dealt {summonDamage} damage and will deal {summonDamage} damage each turn for {duration} turns",
@@ -178,8 +178,8 @@ namespace GameServer.Application.Models.CardEffects.Special
             state.ApplyStatusEffect(targetId, curseEffect);
             
             // Create notifications
-            var damageNotification = new OutEffectApplied(targetId, "CurseDamage", curseDamage, card.Name);
-            var curseNotification = new OutEffectApplied(targetId, "CurseApplied", duration, card.Name);
+            var damageNotification = new ExtEffectApplied(targetId, "CurseDamage", curseDamage, card.Name);
+            var curseNotification = new ExtEffectApplied(targetId, "CurseApplied", duration, card.Name);
             
             return new EffectResult(
                 $"Applied a curse that dealt {curseDamage} damage and will deal {curseDamage / 2} damage each turn for {duration} turns",
@@ -249,9 +249,9 @@ namespace GameServer.Application.Models.CardEffects.Special
             state.ApplyStatusEffect(playerId, apBoostEffect);
             
             // Create notifications
-            var damageNotification = new OutEffectApplied(targetId, "FusionDamage", damage, card.Name);
-            var healNotification = new OutEffectApplied(playerId, "FusionHeal", healing, card.Name);
-            var apNotification = new OutEffectApplied(playerId, "FusionActionPoints", actionPoints, card.Name);
+            var damageNotification = new ExtEffectApplied(targetId, "FusionDamage", damage, card.Name);
+            var healNotification = new ExtEffectApplied(playerId, "FusionHeal", healing, card.Name);
+            var apNotification = new ExtEffectApplied(playerId, "FusionActionPoints", actionPoints, card.Name);
             
             return new EffectResult(
                 $"Fusion effect! Dealt {damage} damage, healed for {healing}, gained {actionPoints} action points, " +

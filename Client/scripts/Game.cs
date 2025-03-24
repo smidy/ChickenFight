@@ -1,6 +1,11 @@
 using Godot;
 using System;
-using GameServer.Shared.ExternalMessages;
+using GameServer.Shared.Messages.Base;
+using GameServer.Shared.Messages.Connection;
+using GameServer.Shared.Messages.Map;
+using GameServer.Shared.Messages.Movement;
+using GameServer.Shared.Messages.Fight;
+using GameServer.Shared.Messages.CardBattle;
 using GameServer.Shared.Models;
 
 public partial class Game : Node2D
@@ -191,7 +196,7 @@ public partial class Game : Node2D
             // Remove the half-tile offset before calculating grid position
             var currentGridPos = ((_player.Position - new Vector2(16, 16)) / 32).Round();
             var newPos = currentGridPos + movement;
-            _network.SendMessage(new InPlayerMove(new MapPosition((int)newPos.X, (int)newPos.Y)));
+            _network.SendMessage(new ExtPlayerMoveRequest(new MapPosition((int)newPos.X, (int)newPos.Y)));
         }
     }
 
@@ -199,7 +204,7 @@ public partial class Game : Node2D
     {
         if (id == 0 && _rightClickedPlayerId != null) // Challenge
         {
-            _network.SendMessage(new InFightChallengeSend(_rightClickedPlayerId));
+            _network.SendMessage(new ExtFightChallengeRequest(_rightClickedPlayerId));
             UpdateStatusLabel($"Challenging player {_rightClickedPlayerId}...");
         }
     }
@@ -333,7 +338,7 @@ public partial class Game : Node2D
     {
         UpdateStatusLabel($"Received fight challenge from {challengerId}");
         // Auto-accept for now
-        _network.SendMessage(new InFightChallengeAccepted(challengerId));
+        _network.SendMessage(new ExtFightChallengeAccepted(challengerId));
     }
 
     private void OnFightStarted(string player1Id, string player2Id)
