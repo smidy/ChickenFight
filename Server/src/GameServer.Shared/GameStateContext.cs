@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using GameServer.Shared.Messages.Base;
+﻿using GameServer.Shared.Messages.Base;
 using GameServer.Shared.Messages.CardBattle;
 using GameServer.Shared.Messages.Connection;
 using GameServer.Shared.Messages.Fight;
 using GameServer.Shared.Messages.Map;
 using GameServer.Shared.Messages.Movement;
 using GameServer.Shared.Models;
+using Websocket.Client;
 
 namespace GameServer.Shared
 {
@@ -14,8 +13,10 @@ namespace GameServer.Shared
     /// Client-side game state that keeps track of player, map, fight, and card battle state.
     /// Processes incoming server messages to update the state.
     /// </summary>
-    public class GameState
+    public class GameStateContext :IDisposable
     {
+        private bool disposedValue;
+
         // Player data
         public string PlayerId { get; private set; }
         public MapPosition PlayerPosition { get; private set; }
@@ -56,10 +57,33 @@ namespace GameServer.Shared
         public MapPosition PendingMove { get; private set; }
         public bool IsMoving => PendingMove != null;
 
+        public event Action<ExtServerMessage> OnServerMessage;
+
+        private WebsocketClient websocketClient;
+
         /// <summary>
-        /// Initializes a new instance of the GameState class
+        /// Initializes a new instance of the GameStateContext class
         /// </summary>
-        public GameState() { }
+        public GameStateContext(string serverUrl) 
+        {
+            websocketClient = new WebsocketClient(new Uri(serverUrl));
+            websocketClient.MessageReceived.Subscribe(msg => {
+                var message = (ExtServerMessage)JsonConfig.Deserialize(msg.Text);
+                OnRecieve(message);
+                OnServerMessage?.Invoke(message);
+            });
+        }
+
+        public async Task Connect()
+        {
+            await websocketClient.Start();
+        }
+
+        public bool Send<T>(T message) where T:ExtClientMessage
+        {
+            var serializedMessage = JsonConfig.Serialize(message);
+            return websocketClient.Send(serializedMessage);
+        }
 
         /// <summary>
         /// Processes an incoming server message and updates the game state accordingly
@@ -659,6 +683,28 @@ namespace GameServer.Shared
             {
                 OpponentStatusEffects.Add(effect);
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    websocketClient.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
 
         #endregion

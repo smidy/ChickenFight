@@ -8,7 +8,7 @@
             "name": "Python Debugger: Current File with Arguments",
             "type": "debugpy",
             "request": "launch",
-            "program": "AI/scripts/train.py",
+            "program": "ML/connection_test.py",
             "console": "integratedTerminal",
             "args": []
         }

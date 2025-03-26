@@ -10,7 +10,6 @@ using GameServer.Application.Messages.Internal;
 using GameServer.Shared.Messages.Base;
 using GameServer.Shared.Messages.Map;
 using GameServer.Infrastructure;
-using System.Security.Cryptography;
 
 namespace GameServer.Presentation
 {
@@ -46,20 +45,19 @@ namespace GameServer.Presentation
             this.sessionId = Guid.NewGuid().ToString();
         }
 
-        public override async void OnWsConnected(HttpRequest request)
+        public override void OnWsConnected(HttpRequest request)
         {
             LoggingService.Logger.Information($"WebSocket session connected: {sessionId}");
 
+            //TODO investigate other librarys to handle this async, for now wrap in Task.Run and wait with Result
             // Create player actor immediately on connection
-            var createResponse = await actorSystem.Root.RequestAsync<CreatePlayerResponse>(
+            var createResponse = Task.Run(() => actorSystem.Root.RequestAsync<CreatePlayerResponse>(
                 server.gameActor,
                 new CreatePlayer(sessionId, $"Player_{sessionId}", (ExtServerMessage msg) => SendResponse((dynamic)msg)),
                 TimeSpan.FromMilliseconds(CreatePlayerTimeout)
-            );
-            playerActor = createResponse.PlayerActor;
-            
-            // Connection is now established, but client must request the player ID
-            // by sending an InRequestConnection message
+            )).Result;
+
+            playerActor = createResponse.PlayerActor;           
         }
 
         public override void OnWsDisconnected()
