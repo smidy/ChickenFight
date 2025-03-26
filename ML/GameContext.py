@@ -22,6 +22,8 @@ class GameContext:
         self._websocket = None
         self._server_url = server_url
         self._on_server_message_callbacks = []
+        # Dictionary to store message type specific handler callbacks
+        self._message_type_handlers = {}
         
         # Player data
         self.player_id = None
@@ -88,7 +90,12 @@ class GameContext:
                 ext_server_message = json.loads(message)
                 self.on_receive(ext_server_message)
                 
-                # Notify any registered callbacks
+                # Notify type-specific handlers first
+                message_type = ext_server_message.get("MessageType")
+                if message_type in self._message_type_handlers:
+                    self._message_type_handlers[message_type](ext_server_message)
+                
+                # Then notify any registered callbacks
                 for callback in self._on_server_message_callbacks:
                     callback(ext_server_message)
         except websockets.exceptions.ConnectionClosed:
@@ -116,6 +123,26 @@ class GameContext:
         """
         if callback in self._on_server_message_callbacks:
             self._on_server_message_callbacks.remove(callback)
+            
+    def register_message_handler(self, message_type: str, handler: Callable[[Dict], None]):
+        """
+        Registers a handler function for a specific message type
+        
+        Args:
+            message_type: The type of message to handle (e.g., "ExtPlayerIdResponse")
+            handler: Function that takes the message as its parameter and handles it
+        """
+        self._message_type_handlers[message_type] = handler
+        
+    def unregister_message_handler(self, message_type: str):
+        """
+        Unregisters a previously registered message type handler
+        
+        Args:
+            message_type: The type of message to remove the handler for
+        """
+        if message_type in self._message_type_handlers:
+            del self._message_type_handlers[message_type]
     
     async def send(self, message: Dict):
         """
