@@ -9,6 +9,8 @@ class GameContext:
     Python equivalent of the C# GameStateContext class.
     Client-side game state that keeps track of player, map, fight, and card battle state.
     Processes incoming server messages to update the state.
+    
+    Enhanced with Reinforcement Learning capabilities for A2C training.
     """
     
     def __init__(self, server_url: str):
@@ -678,3 +680,268 @@ class GameContext:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit"""
         await self.close()
+    
+    # RL-specific methods
+    
+    def get_observation(self) -> Dict:
+        """
+        Transform the current game state into an observation for the RL agent.
+        
+        Returns:
+            Dict: Dictionary containing the observation
+        """
+        if not self.is_in_fight:
+            # Return map-level observation if not in fight
+            return {
+                'is_in_fight': False,
+                'player_id': self.player_id,
+                'player_position': self.player_position,
+                'other_players': {
+                    player_id: {
+                        'position': info.get('Position'),
+                        'in_fight': player_id in self.players_in_fight
+                    } for player_id, info in self.other_player_info.items()
+                }
+            }
+        
+        # Return card battle observation if in fight
+        return {
+            'is_in_fight': True,
+            'is_player_turn': self.is_player_turn,
+            'player_id': self.player_id,
+            'opponent_id': self.opponent_id,
+            'player_hit_points': self.player_hit_points,
+            'player_action_points': self.player_action_points,
+            'player_deck_count': self.player_deck_count,
+            'player_discard_pile_count': self.player_discard_pile_count,
+            'opponent_hit_points': self.opponent_hit_points,
+            'opponent_action_points': self.opponent_action_points,
+            'opponent_deck_count': self.opponent_deck_count,
+            'opponent_discard_pile_count': self.opponent_discard_pile_count,
+            'player_cards_in_hand': self.cards_in_hand,
+            'opponent_cards_in_hand_count': len(self.opponent_cards_in_hand),
+            'player_status_effects': self.player_status_effects,
+            'opponent_status_effects': self.opponent_status_effects,
+            'last_played_card': self.last_played_card
+        }
+    
+    def get_valid_actions(self) -> Dict:
+        """
+        Get the valid actions in the current state.
+        
+        Returns:
+            Dict: Dictionary with valid action types and specific actions
+        """
+        if not self.is_in_fight:
+            # Map-level actions
+            available_players = [
+                player_id for player_id, info in self.other_player_info.items()
+                if player_id not in self.players_in_fight
+            ]
+            
+            return {
+                'type': 'map',
+                'can_challenge': len(available_players) > 0,
+                'available_players': available_players
+            }
+        elif not self.is_player_turn:
+            # Opponent's turn, no valid actions
+            return {
+                'type': 'battle',
+                'can_play_card': False,
+                'can_end_turn': False,
+                'playable_cards': []
+            }
+        else:
+            # Card battle actions during player's turn
+            playable_cards = [
+                card for card in self.cards_in_hand
+                if card.get('Cost', 0) <= self.player_action_points
+            ]
+            
+            return {
+                'type': 'battle',
+                'can_play_card': len(playable_cards) > 0,
+                'can_end_turn': True,
+                'playable_cards': playable_cards
+            }
+    
+    def get_reward(self, prev_state: Dict = None) -> float:
+        """
+        Calculate the reward for the current state transition.
+        
+        Args:
+            prev_state: Previous observation for calculating the state transition reward
+            
+        Returns:
+            float: Reward value
+        """
+        if not prev_state:
+            return 0.0
+        
+        reward = 0.0
+        
+        # If fight just ended
+        if prev_state.get('is_in_fight', False) and not self.is_in_fight:
+            # Check if we won or lost
+            winner_id = None
+            loser_id = None
+            
+            # Find the winner and loser in the other_player_info
+            for player_id, info in self.other_player_info.items():
+                if info.get('FightId') == prev_state.get('current_fight_id'):
+                    if player_id == self.player_id:
+                        winner_id = self.player_id
+                        loser_id = prev_state.get('opponent_id')
+                    else:
+                        winner_id = prev_state.get('opponent_id')
+                        loser_id = self.player_id
+            
+            # Assign win/loss reward
+            if winner_id == self.player_id:
+                reward += 1.0  # Major reward for winning
+            elif loser_id == self.player_id:
+                reward -= 1.0  # Major penalty for losing
+        
+        # If in fight, calculate intermediate rewards
+        elif self.is_in_fight and prev_state.get('is_in_fight', False):
+            # Reward for damaging opponent
+            prev_opponent_hp = prev_state.get('opponent_hit_points', 50)
+            damage_dealt = prev_opponent_hp - self.opponent_hit_points
+            if damage_dealt > 0:
+                reward += 0.1 * damage_dealt  # Small reward for dealing damage
+            
+            # Penalty for taking damage
+            prev_player_hp = prev_state.get('player_hit_points', 50)
+            damage_taken = prev_player_hp - self.player_hit_points
+            if damage_taken > 0:
+                reward -= 0.1 * damage_taken  # Small penalty for taking damage
+            
+            # Reward for efficient card play
+            if prev_state.get('player_action_points', 0) > self.player_action_points:
+                # Played a card (action points decreased)
+                if self.last_played_card:
+                    card_cost = self.last_played_card.get('Cost', 0)
+                    # Simple efficiency measure: damage dealt / cost
+                    if card_cost > 0 and damage_dealt > 0:
+                        efficiency = damage_dealt / card_cost
+                        reward += 0.05 * efficiency  # Small reward for efficient card use
+        
+        # If just connected to a map and someone isn't in a fight, small reward
+        elif not prev_state.get('is_in_fight', False) and self.current_map_id and not self.is_in_fight:
+            if any(player_id not in self.players_in_fight for player_id in self.other_player_info):
+                reward += 0.01  # Tiny reward for finding a potential opponent
+        
+        return reward
+    
+    async def challenge_available_player(self) -> bool:
+        """
+        Find a player who is not in a fight and challenge them.
+        
+        Returns:
+            bool: True if a challenge was sent successfully, False otherwise
+        """
+        if self.is_in_fight:
+            return False
+        
+        # Find a player who is not in a fight
+        available_players = [
+            player_id for player_id in self.other_player_info
+            if player_id not in self.players_in_fight
+        ]
+        
+        if not available_players:
+            return False
+        
+        # Challenge the first available player
+        target_id = available_players[0]
+        challenge_request = {
+            "MessageType": "ExtFightChallengeRequest",
+            "TargetId": target_id
+        }
+        
+        return await self.send(challenge_request)
+    
+    async def play_card(self, card_id: str) -> bool:
+        """
+        Play a card from the player's hand.
+        
+        Args:
+            card_id: ID of the card to play
+            
+        Returns:
+            bool: True if the card play request was sent successfully, False otherwise
+        """
+        if not self.is_in_fight or not self.is_player_turn:
+            return False
+        
+        # Check if the card is in the player's hand and has a valid cost
+        card = next((c for c in self.cards_in_hand if c.get('Id') == card_id), None)
+        if not card or card.get('Cost', 0) > self.player_action_points:
+            return False
+        
+        play_card_request = {
+            "MessageType": "ExtPlayCardRequest",
+            "CardId": card_id
+        }
+        
+        return await self.send(play_card_request)
+    
+    async def end_turn(self) -> bool:
+        """
+        End the player's turn.
+        
+        Returns:
+            bool: True if the end turn request was sent successfully, False otherwise
+        """
+        if not self.is_in_fight or not self.is_player_turn:
+            return False
+        
+        end_turn_request = {
+            "MessageType": "ExtEndTurnRequest"
+        }
+        
+        return await self.send(end_turn_request)
+    
+    async def request_player_id(self) -> bool:
+        """
+        Send a request to get a player ID from the server.
+        
+        Returns:
+            bool: True if the request was sent successfully, False otherwise
+        """
+        player_id_request = {
+            "MessageType": "ExtPlayerIdRequest"
+        }
+        
+        return await self.send(player_id_request)
+    
+    async def join_map(self, map_id: str) -> bool:
+        """
+        Join a specific map.
+        
+        Args:
+            map_id: ID of the map to join
+            
+        Returns:
+            bool: True if the join map request was sent successfully, False otherwise
+        """
+        join_map_request = {
+            "MessageType": "ExtJoinMapRequest",
+            "MapId": map_id
+        }
+        
+        return await self.send(join_map_request)
+    
+    async def request_map_list(self) -> bool:
+        """
+        Send a request to get the list of available maps.
+        
+        Returns:
+            bool: True if the request was sent successfully, False otherwise
+        """
+        map_list_request = {
+            "MessageType": "ExtMapListRequest"
+        }
+        
+        return await self.send(map_list_request)
