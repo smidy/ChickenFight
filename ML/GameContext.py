@@ -1,291 +1,265 @@
-import asyncio
 import json
-import websockets
-from typing import Dict, List, Optional, Any, Callable, Union, Tuple
-from enum import Enum
+import threading
+import websocket
+from typing import Dict, List, Any, Optional, Callable, TypeVar, Generic, Union
+
+T = TypeVar('T')
+
+class MapPosition:
+    """Represents a position on a map."""
+    def __init__(self, x: int, y: int):
+        self.x = x
+        self.y = y
+
+class PlayerMapInfo:
+    """Information about a player on a map."""
+    def __init__(self, position: MapPosition, fight_id: Optional[str] = None):
+        self.position = position
+        self.fight_id = fight_id
+
+class CardInfo:
+    """Information about a card."""
+    def __init__(self, id: str, name: str, type: str, subtype: str, cost: int, description: str):
+        self.id = id
+        self.name = name
+        self.type = type
+        self.subtype = subtype
+        self.cost = cost
+        self.description = description
+
+class StatusEffectInfo:
+    """Information about a status effect."""
+    def __init__(self, type: str, value: int, duration: int):
+        self.type = type
+        self.value = value
+        self.duration = duration
+
+class TilemapData:
+    """Represents tilemap data for a map."""
+    def __init__(self, width: int, height: int, tiles: List[List[int]]):
+        self.width = width
+        self.height = height
+        self.tiles = tiles
+
+class PlayerFightStateDto:
+    """Data transfer object for player fight state."""
+    def __init__(self, player_id: str, hit_points: int, action_points: int, 
+                 deck_count: int, discard_pile_count: int, 
+                 hand: List[CardInfo], status_effects: List[StatusEffectInfo]):
+        self.player_id = player_id
+        self.hit_points = hit_points
+        self.action_points = action_points
+        self.deck_count = deck_count
+        self.discard_pile_count = discard_pile_count
+        self.hand = hand
+        self.status_effects = status_effects
 
 class GameContext:
     """
-    Python equivalent of the C# GameStateContext class.
     Client-side game state that keeps track of player, map, fight, and card battle state.
     Processes incoming server messages to update the state.
+    
+    This Python class mirrors the functionality of the C# GameStateContext class.
     """
     
     def __init__(self, server_url: str):
         """
-        Initializes a new instance of the GameContext class
+        Initialize a new instance of the GameContext class.
         
         Args:
             server_url: WebSocket URL of the game server
         """
-        self._disposed = False
-        self._websocket = None
-        self._server_url = server_url
-        self._on_server_message_callbacks = []
-        # Dictionary to store message type specific handler callbacks
-        self._message_type_handlers = {}
-        
         # Player data
-        self.player_id = None
-        self.player_position = None
+        self.player_id: Optional[str] = None
+        self.player_position: Optional[MapPosition] = None
         
         # Map data
-        self.current_map_id = None
-        self.current_tilemap_data = None
+        self.current_map_id: Optional[str] = None
+        self.current_tilemap_data: Optional[TilemapData] = None
         
         # Other players
-        self.other_players = {}  # Dict[str, MapPosition]
-        self.other_player_info = {}  # Dict[str, PlayerMapInfo]
-        self.players_in_fight = {}  # Dict[str, bool]
+        self.other_player_info: Dict[str, PlayerMapInfo] = {}  # Dictionary of player_id -> PlayerMapInfo
+        
+        # Active fights
+        self.active_fights: Dict[str, List[str]] = {}  # Dictionary of fight_id -> list of player_ids
         
         # Fight state
-        self.current_fight_id = None
-        self.opponent_id = None
+        self.current_fight_id: Optional[str] = None
+        self.opponent_id: Optional[str] = None
         
         # Card battle state
-        self.card_svg_data = {}  # Dict[str, str]
-        self.cards_in_hand = []  # List[CardInfo]
-        self.player_hit_points = 50
-        self.player_action_points = 0
-        self.player_deck_count = 0
-        self.player_discard_pile_count = 0
-        self.opponent_hit_points = 50
-        self.opponent_action_points = 0
-        self.opponent_deck_count = 0
-        self.opponent_discard_pile_count = 0
-        self.opponent_cards_in_hand = []  # List[CardInfo]
-        self.player_status_effects = []  # List[StatusEffectInfo]
-        self.opponent_status_effects = []  # List[StatusEffectInfo]
-        self.last_played_card = None
-        self.current_turn_player_id = None
+        self.card_svg_data: Dict[str, str] = {}  # Dictionary of card_id -> svg data
+        self.cards_in_hand: List[CardInfo] = []  # List of CardInfo objects
+        self.player_hit_points: int = 50
+        self.player_action_points: int = 0
+        self.player_deck_count: int = 0
+        self.player_discard_pile_count: int = 0
+        self.opponent_hit_points: int = 50
+        self.opponent_action_points: int = 0
+        self.opponent_deck_count: int = 0
+        self.opponent_discard_pile_count: int = 0
+        self.opponent_cards_in_hand: List[CardInfo] = []  # List of CardInfo objects
+        self.player_status_effects: List[StatusEffectInfo] = []  # List of StatusEffectInfo objects
+        self.opponent_status_effects: List[StatusEffectInfo] = []  # List of StatusEffectInfo objects
+        self.last_played_card: Optional[CardInfo] = None  # CardInfo object
+        self.current_turn_player_id: Optional[str] = None
         
         # Pending operations
-        self.pending_move = None
+        self.pending_move: Optional[MapPosition] = None
         
+        # WebSocket client setup
+        self.server_url = server_url
+        self.websocket = None
+        self.websocket_thread = None
+        
+        # Event callbacks
+        self.on_server_message_callbacks: List[Callable[[Any], None]] = []
+
     @property
     def is_in_fight(self) -> bool:
-        """Returns True if the player is currently in a fight"""
+        """Check if the player is currently in a fight."""
         return self.current_fight_id is not None
     
     @property
     def is_moving(self) -> bool:
-        """Returns True if the player has a pending move"""
+        """Check if the player is currently moving."""
         return self.pending_move is not None
     
     @property
     def is_player_turn(self) -> bool:
-        """Returns True if it's currently the player's turn in a card battle"""
+        """Check if it's currently the player's turn in a card battle."""
         return self.current_turn_player_id == self.player_id
     
     async def connect(self):
-        """Establishes a WebSocket connection to the server"""
-        self._websocket = await websockets.connect(self._server_url)
-        # Set up message listener
-        asyncio.create_task(self._listen_for_messages())
+        """Connect to the WebSocket server."""
+        self.websocket = websocket.WebSocketApp(
+            self.server_url,
+            on_message=self._on_message,
+            on_error=self._on_error,
+            on_close=self._on_close,
+            on_open=self._on_open
+        )
+        
+        # Start the WebSocket connection in a separate thread
+        self.websocket_thread = threading.Thread(target=self.websocket.run_forever)
+        self.websocket_thread.daemon = True
+        self.websocket_thread.start()
     
-    async def _listen_for_messages(self):
-        """Listens for incoming WebSocket messages and processes them"""
+    def _on_open(self, ws):
+        """Handle WebSocket connection opened event."""
+        print("WebSocket connection opened")
+    
+    def _on_message(self, ws, message):
+        """Handle incoming WebSocket messages."""
         try:
-            async for message in self._websocket:
-                ext_server_message = json.loads(message)
-                self.on_receive(ext_server_message)
-                
-                # Notify type-specific handlers first
-                message_type = ext_server_message.get("MessageType")
-                if message_type in self._message_type_handlers:
-                    self._message_type_handlers[message_type](ext_server_message)
-                
-                # Then notify any registered callbacks
-                for callback in self._on_server_message_callbacks:
-                    callback(ext_server_message)
-        except websockets.exceptions.ConnectionClosed:
-            # Handle connection closed
-            print("WebSocket connection closed")
-        except Exception as e:
-            # Handle other errors
-            print(f"Error in WebSocket listener: {e}")
-    
-    def add_server_message_callback(self, callback: Callable):
-        """
-        Adds a callback function that will be called when a server message is received
-        
-        Args:
-            callback: Function that takes a message as its parameter
-        """
-        self._on_server_message_callbacks.append(callback)
-    
-    def remove_server_message_callback(self, callback: Callable):
-        """
-        Removes a previously added callback function
-        
-        Args:
-            callback: Function to remove
-        """
-        if callback in self._on_server_message_callbacks:
-            self._on_server_message_callbacks.remove(callback)
+            # Deserialize the message
+            msg_data = json.loads(message)
+            ext_server_message = msg_data  # In a real implementation, deserialize to proper object
             
-    def register_message_handler(self, message_type: str, handler: Callable[[Dict], None]):
-        """
-        Registers a handler function for a specific message type
-        
-        Args:
-            message_type: The type of message to handle (e.g., "ExtPlayerIdResponse")
-            handler: Function that takes the message as its parameter and handles it
-        """
-        self._message_type_handlers[message_type] = handler
-        
-    def unregister_message_handler(self, message_type: str):
-        """
-        Unregisters a previously registered message type handler
-        
-        Args:
-            message_type: The type of message to remove the handler for
-        """
-        if message_type in self._message_type_handlers:
-            del self._message_type_handlers[message_type]
+            # Process the message
+            self.on_receive(ext_server_message)
+            
+            # Notify callbacks
+            for callback in self.on_server_message_callbacks:
+                callback(ext_server_message)
+        except Exception as e:
+            print(f"Error processing message: {e}")
     
-    async def send(self, message: Dict):
+    def _on_error(self, ws, error):
+        """Handle WebSocket error event."""
+        print(f"WebSocket error: {error}")
+    
+    def _on_close(self, ws, close_status_code, close_msg):
+        """Handle WebSocket connection closed event."""
+        print(f"WebSocket connection closed: {close_status_code} - {close_msg}")
+    
+    def send(self, message: Any) -> bool:
         """
-        Serializes and sends a message to the server
+        Send a message to the server.
         
         Args:
             message: The message to send
             
         Returns:
-            bool: True if the message was sent successfully
+            bool: True if the message was sent successfully, False otherwise
         """
-        if not self._websocket:
-            return False
-        
-        try:
-            serialized_message = json.dumps(message)
-            await self._websocket.send(serialized_message)
-            return True
-        except Exception as e:
-            print(f"Error sending message: {e}")
-            return False
+        if self.websocket and self.websocket.sock and self.websocket.sock.connected:
+            try:
+                serialized_message = json.dumps(message)
+                self.websocket.send(serialized_message)
+                return True
+            except Exception as e:
+                print(f"Error sending message: {e}")
+                return False
+        return False
     
-    def on_receive(self, ext_server_message: Dict):
+    def add_server_message_callback(self, callback: Callable[[Any], None]):
         """
-        Processes an incoming server message and updates the game state accordingly
+        Add a callback for server messages.
+        
+        Args:
+            callback: Function to call when a server message is received
+        """
+        self.on_server_message_callbacks.append(callback)
+    
+    def on_receive(self, ext_server_message: Dict[str, Any]):
+        """
+        Process an incoming server message and update the game state.
         
         Args:
             ext_server_message: The server message to process
+        """
+        # Extract message type
+        message_type = ext_server_message.get("Type")
+        
+        # Map message types to handler methods
+        handlers = {
+            # Connection messages
+            "ExtPlayerIdResponse": self._on_ext_player_id_response,
             
-        Raises:
-            NotImplementedError: When a message type is not handled
-        """
-        message_type = ext_server_message.get("MessageType")
+            # Map messages
+            "ExtMapListResponse": lambda _: None,  # No state change
+            "ExtJoinMapInitiated": self._on_ext_join_map_initiated,
+            "ExtJoinMapCompleted": self._on_ext_join_map_completed,
+            "ExtJoinMapFailed": lambda _: None,  # Handle join map failure
+            "ExtLeaveMapInitiated": self._on_ext_leave_map_initiated,
+            "ExtLeaveMapCompleted": self._on_ext_leave_map_completed,
+            "ExtLeaveMapFailed": lambda _: None,  # Handle leave map failure
+            "ExtPlayerJoinedMap": self._on_ext_player_joined_map,
+            "ExtPlayerLeftMap": self._on_ext_player_left_map,
+            "ExtPlayerPositionChange": self._on_ext_player_position_change,
+            
+            # Movement messages
+            "ExtMoveInitiated": self._on_ext_move_initiated,
+            "ExtMoveCompleted": self._on_ext_move_completed,
+            "ExtMoveFailed": self._on_ext_move_failed,
+            
+            # Fight messages
+            "ExtFightStarted": self._on_ext_fight_started,
+            "ExtFightEnded": self._on_ext_fight_ended,
+            
+            # Card battle messages
+            "ExtCardImages": self._on_ext_card_images,
+            "ExtCardDrawn": self._on_ext_card_drawn,
+            "ExtTurnStarted": self._on_ext_turn_started,
+            "ExtTurnEnded": self._on_ext_turn_ended,
+            "ExtCardPlayInitiated": lambda _: None,  # No state change
+            "ExtCardPlayCompleted": self._on_ext_card_play_completed,
+            "ExtCardPlayFailed": self._on_ext_card_play_failed,
+            "ExtEffectApplied": self._on_ext_effect_applied,
+            "ExtFightStateUpdate": self._on_ext_fight_state_update,
+        }
         
-        # Connection messages
-        if message_type == "ExtPlayerIdResponse":
-            self._on_ext_player_id_response(ext_server_message)
-        
-        # Map messages
-        elif message_type == "ExtMapListResponse":
-            # Map list doesn't affect game state
-            pass
-        elif message_type == "ExtJoinMapInitiated":
-            self._on_ext_join_map_initiated(ext_server_message)
-        elif message_type == "ExtJoinMapCompleted":
-            self._on_ext_join_map_completed(ext_server_message)
-        elif message_type == "ExtJoinMapFailed":
-            # Handle join map failure
-            pass
-        elif message_type == "ExtLeaveMapInitiated":
-            self._on_ext_leave_map_initiated(ext_server_message)
-        elif message_type == "ExtLeaveMapCompleted":
-            self._on_ext_leave_map_completed(ext_server_message)
-        elif message_type == "ExtLeaveMapFailed":
-            # Handle leave map failure
-            pass
-        elif message_type == "ExtPlayerJoinedMap":
-            self._on_ext_player_joined_map(ext_server_message)
-        elif message_type == "ExtPlayerLeftMap":
-            self._on_ext_player_left_map(ext_server_message)
-        elif message_type == "ExtPlayerPositionChange":
-            self._on_ext_player_position_change(ext_server_message)
-        
-        # Movement messages
-        elif message_type == "ExtMoveInitiated":
-            self._on_ext_move_initiated(ext_server_message)
-        elif message_type == "ExtMoveCompleted":
-            self._on_ext_move_completed(ext_server_message)
-        elif message_type == "ExtMoveFailed":
-            self._on_ext_move_failed(ext_server_message)
-        
-        # Fight messages
-        elif message_type == "ExtFightChallengeReceived":
-            # Challenge received doesn't affect state until accepted
-            pass
-        elif message_type == "ExtFightStarted":
-            self._on_ext_fight_started(ext_server_message)
-        elif message_type == "ExtFightEnded":
-            self._on_ext_fight_ended(ext_server_message)
-        
-        # Card battle messages
-        elif message_type == "ExtCardImages":
-            self._on_ext_card_images(ext_server_message)
-        elif message_type == "ExtCardDrawn":
-            self._on_ext_card_drawn(ext_server_message)
-        elif message_type == "ExtTurnStarted":
-            self._on_ext_turn_started(ext_server_message)
-        elif message_type == "ExtTurnEnded":
-            self._on_ext_turn_ended(ext_server_message)
-        elif message_type == "ExtCardPlayInitiated":
-            # Initiated doesn't affect state until completed
-            pass
-        elif message_type == "ExtCardPlayCompleted":
-            self._on_ext_card_play_completed(ext_server_message)
-        elif message_type == "ExtCardPlayFailed":
-            self._on_ext_card_play_failed(ext_server_message)
-        elif message_type == "ExtEffectApplied":
-            self._on_ext_effect_applied(ext_server_message)
-        elif message_type == "ExtFightStateUpdate":
-            self._on_ext_fight_state_update(ext_server_message)
-        
+        # Call the appropriate handler
+        handler = handlers.get(message_type)
+        if handler:
+            handler(ext_server_message)
         else:
-            raise NotImplementedError(f"Message type {message_type} not handled")
+            print(f"Message type {message_type} not handled")
     
-    def reset(self):
-        """Resets the game state to its initial values"""
-        # Reset map data
-        self.current_map_id = None
-        self.current_tilemap_data = None
-        
-        # Reset player data
-        self.player_position = None
-        self.pending_move = None
-        
-        # Reset other players
-        self.other_players.clear()
-        self.other_player_info.clear()
-        self.players_in_fight.clear()
-        
-        # Reset fight state
-        self.current_fight_id = None
-        self.opponent_id = None
-        
-        # Reset card battle state
-        self.card_svg_data.clear()
-        self.cards_in_hand.clear()
-        self.player_hit_points = 50
-        self.player_action_points = 0
-        self.player_deck_count = 0
-        self.player_discard_pile_count = 0
-        self.opponent_hit_points = 50
-        self.opponent_action_points = 0
-        self.opponent_deck_count = 0
-        self.opponent_discard_pile_count = 0
-        self.opponent_cards_in_hand.clear()
-        self.player_status_effects.clear()
-        self.opponent_status_effects.clear()
-        self.last_played_card = None
-        self.current_turn_player_id = None
-    
-    def add_player(self, player_id: str, player_info: Dict):
+    def add_player(self, player_id: str, player_info: PlayerMapInfo):
         """
-        Adds a player to the list of other players
+        Add a player to the list of other players.
         
         Args:
             player_id: The ID of the player to add
@@ -295,83 +269,72 @@ class GameContext:
             # Store the player info
             self.other_player_info[player_id] = player_info
             
-            # Extract position for backward compatibility
-            self.other_players[player_id] = player_info["Position"]
-            
-            # If the player is in a fight, add them to the players_in_fight dictionary
-            if player_info.get("FightId"):
-                self.players_in_fight[player_id] = True
+            # If the player is in a fight, add them to the active_fights dictionary
+            if player_info.fight_id:
+                if player_info.fight_id not in self.active_fights:
+                    self.active_fights[player_info.fight_id] = []
+                self.active_fights[player_info.fight_id].append(player_id)
     
-    def update_player_position(self, player_id: str, position: Dict):
+    def update_player_position(self, player_id: str, position: MapPosition):
         """
-        Updates the position of a player in the list of other players
+        Update the position of a player in the list of other players.
         
         Args:
             player_id: The ID of the player to update
             position: The new position of the player
         """
-        if player_id != self.player_id and player_id in self.other_players:
-            self.other_players[player_id] = position
-            
-            # Also update the position in the PlayerMapInfo
-            if player_id in self.other_player_info:
-                current_info = self.other_player_info[player_id]
-                updated_info = {
-                    "Position": position,
-                    "FightId": current_info.get("FightId")
-                }
-                self.other_player_info[player_id] = updated_info
+        if player_id != self.player_id and player_id in self.other_player_info:
+            # Update the player's position
+            old_info = self.other_player_info[player_id]
+            self.other_player_info[player_id] = PlayerMapInfo(position, old_info.fight_id)
     
     def remove_player(self, player_id: str):
         """
-        Removes a player from the list of other players
+        Remove a player from the list of other players.
         
         Args:
             player_id: The ID of the player to remove
         """
-        self.other_players.pop(player_id, None)
         self.other_player_info.pop(player_id, None)
-        self.players_in_fight.pop(player_id, None)
     
-    # Connection Message Handlers
+    #region Connection Message Handlers
     
-    def _on_ext_player_id_response(self, msg: Dict):
-        """Handler for ExtPlayerIdResponse message"""
+    def _on_ext_player_id_response(self, msg: Dict[str, Any]):
+        """Handle the player ID response message."""
         self.player_id = msg.get("PlayerId")
     
-    # Map Message Handlers
+    #endregion
     
-    def _on_ext_join_map_initiated(self, msg: Dict):
-        """Handler for ExtJoinMapInitiated message"""
-        # Store the map ID
+    #region Map Message Handlers
+    
+    def _on_ext_join_map_initiated(self, msg: Dict[str, Any]):
+        """Handle the join map initiated message."""
         self.current_map_id = msg.get("MapId")
     
-    def _on_ext_join_map_completed(self, msg: Dict):
-        """Handler for ExtJoinMapCompleted message"""
+    def _on_ext_join_map_completed(self, msg: Dict[str, Any]):
+        """Handle the join map completed message."""
         # Set map data
         self.current_map_id = msg.get("MapId")
-        self.current_tilemap_data = msg.get("TilemapData")
+        self.current_tilemap_data = msg.get("TilemapData")  # Assuming TilemapData can be deserialized
         
         # Set player position
-        self.player_position = msg.get("Position")
+        self.player_position = msg.get("Position")  # Assuming Position can be deserialized
         
         # Add other players
-        self.other_players.clear()
         self.other_player_info.clear()
-        self.players_in_fight.clear()
         
         player_info = msg.get("PlayerInfo", {})
-        for key, value in player_info.items():
-            if key != self.player_id:
-                self.add_player(key, value)
+        for player_id, info in player_info.items():
+            if player_id != self.player_id:
+                self.add_player(player_id, info)  # Assuming PlayerMapInfo can be deserialized
     
-    def _on_ext_leave_map_initiated(self, msg: Dict):
-        """Handler for ExtLeaveMapInitiated message"""
+    def _on_ext_leave_map_initiated(self, msg: Dict[str, Any]):
+        """Handle the leave map initiated message."""
         # No state changes needed
         pass
     
-    def _on_ext_leave_map_completed(self, msg: Dict):
-        """Handler for ExtLeaveMapCompleted message"""
+    def _on_ext_leave_map_completed(self, msg: Dict[str, Any]):
+        """Handle the leave map completed message."""
         # Clear map data
         self.current_map_id = None
         self.current_tilemap_data = None
@@ -380,36 +343,31 @@ class GameContext:
         self.player_position = None
         
         # Clear other players
-        self.other_players.clear()
         self.other_player_info.clear()
-        self.players_in_fight.clear()
     
-    def _on_ext_player_joined_map(self, msg: Dict):
-        """Handler for ExtPlayerJoinedMap message"""
+    def _on_ext_player_joined_map(self, msg: Dict[str, Any]):
+        """Handle the player joined map message."""
         player_id = msg.get("PlayerId")
-        position = msg.get("Position")
+        position = msg.get("Position")  # Assuming Position can be deserialized
         
         if player_id != self.player_id and position is not None:
             # Create player info
-            player_info = {
-                "Position": position,
-                "FightId": None
-            }
+            player_info = PlayerMapInfo(position)
             
             # Add player to collections
             self.add_player(player_id, player_info)
     
-    def _on_ext_player_left_map(self, msg: Dict):
-        """Handler for ExtPlayerLeftMap message"""
+    def _on_ext_player_left_map(self, msg: Dict[str, Any]):
+        """Handle the player left map message."""
         player_id = msg.get("PlayerId")
         
         if player_id != self.player_id:
             self.remove_player(player_id)
     
-    def _on_ext_player_position_change(self, msg: Dict):
-        """Handler for ExtPlayerPositionChange message"""
+    def _on_ext_player_position_change(self, msg: Dict[str, Any]):
+        """Handle the player position change message."""
         player_id = msg.get("PlayerId")
-        position = msg.get("Position")
+        position = msg.get("Position")  # Assuming Position can be deserialized
         
         if player_id == self.player_id and position is not None:
             # Update player position
@@ -418,56 +376,49 @@ class GameContext:
             # Update other player position
             self.update_player_position(player_id, position)
     
-    # Movement Message Handlers
+    #endregion
     
-    def _on_ext_move_initiated(self, msg: Dict):
-        """Handler for ExtMoveInitiated message"""
-        self.pending_move = msg.get("NewPosition")
+    #region Movement Message Handlers
     
-    def _on_ext_move_completed(self, msg: Dict):
-        """Handler for ExtMoveCompleted message"""
-        self.player_position = msg.get("NewPosition")
+    def _on_ext_move_initiated(self, msg: Dict[str, Any]):
+        """Handle the move initiated message."""
+        self.pending_move = msg.get("NewPosition")  # Assuming NewPosition can be deserialized
+    
+    def _on_ext_move_completed(self, msg: Dict[str, Any]):
+        """Handle the move completed message."""
+        self.player_position = msg.get("NewPosition")  # Assuming NewPosition can be deserialized
         self.pending_move = None
     
-    def _on_ext_move_failed(self, msg: Dict):
-        """Handler for ExtMoveFailed message"""
+    def _on_ext_move_failed(self, msg: Dict[str, Any]):
+        """Handle the move failed message."""
         self.pending_move = None
     
-    # Fight Message Handlers
+    #endregion
     
-    def _on_ext_fight_started(self, msg: Dict):
-        """Handler for ExtFightStarted message"""
+    #region Fight Message Handlers
+    
+    def _on_ext_fight_started(self, msg: Dict[str, Any]):
+        """Handle the fight started message."""
+        fight_id = msg.get("FightId")
         player1_id = msg.get("Player1Id")
         player2_id = msg.get("Player2Id")
         
-        # Generate a fight ID
-        fight_id = f"fight_{player1_id}_{player2_id}"
-        
-        # Mark both players as in a fight
-        self.players_in_fight[player1_id] = True
-        self.players_in_fight[player2_id] = True
+        # Add the fight to active fights
+        self.active_fights[fight_id] = [player1_id, player2_id]
         
         # Update the fight ID in other_player_info for both players
         if player1_id in self.other_player_info:
-            current_info = self.other_player_info[player1_id]
-            updated_info = {
-                "Position": current_info.get("Position"),
-                "FightId": fight_id
-            }
-            self.other_player_info[player1_id] = updated_info
+            old_info = self.other_player_info[player1_id]
+            self.other_player_info[player1_id] = PlayerMapInfo(old_info.position, fight_id)
         
         if player2_id in self.other_player_info:
-            current_info = self.other_player_info[player2_id]
-            updated_info = {
-                "Position": current_info.get("Position"),
-                "FightId": fight_id
-            }
-            self.other_player_info[player2_id] = updated_info
+            old_info = self.other_player_info[player2_id]
+            self.other_player_info[player2_id] = PlayerMapInfo(old_info.position, fight_id)
         
         # Set fight state for the main player if they're involved
         if player1_id == self.player_id or player2_id == self.player_id:
             self.current_fight_id = fight_id
-            self.opponent_id = player2_id if player1_id == self.player_id else player1_id
+            self.opponent_id = player1_id if player2_id == self.player_id else player2_id
             
             # Reset card battle state for new fight
             self.card_svg_data.clear()
@@ -485,43 +436,25 @@ class GameContext:
             self.opponent_status_effects.clear()
             self.current_turn_player_id = None
     
-    def _on_ext_fight_ended(self, msg: Dict):
-        """Handler for ExtFightEnded message"""
+    def _on_ext_fight_ended(self, msg: Dict[str, Any]):
+        """Handle the fight ended message."""
+        fight_id = msg.get("FightId")
         winner_id = msg.get("WinnerId")
         loser_id = msg.get("LoserId")
-        reason = msg.get("Reason")
         
-        # Special handling for disconnection
-        if reason == "Player disconnected":
-            # Remove the disconnected player from the players_in_fight dictionary
-            self.players_in_fight.pop(loser_id, None)
-            
-            # Also remove from other_players and other_player_info
-            self.other_players.pop(loser_id, None)
-            self.other_player_info.pop(loser_id, None)
-        else:
-            # Normal cleanup for both players
-            self.players_in_fight.pop(winner_id, None)
-            self.players_in_fight.pop(loser_id, None)
-            
-            # Clear fight IDs in other_player_info
-            if winner_id in self.other_player_info:
-                current_info = self.other_player_info[winner_id]
-                updated_info = {
-                    "Position": current_info.get("Position"),
-                    "FightId": None
-                }
-                self.other_player_info[winner_id] = updated_info
-            
-            if loser_id in self.other_player_info:
-                current_info = self.other_player_info[loser_id]
-                updated_info = {
-                    "Position": current_info.get("Position"),
-                    "FightId": None
-                }
-                self.other_player_info[loser_id] = updated_info
+        # Remove the fight from active fights
+        self.active_fights.pop(fight_id, None)
         
-        # Reset fight state if the main player was involved
+        # Clear fight IDs in other_player_info
+        if winner_id in self.other_player_info:
+            old_info = self.other_player_info[winner_id]
+            self.other_player_info[winner_id] = PlayerMapInfo(old_info.position, None)
+        
+        if loser_id in self.other_player_info:
+            old_info = self.other_player_info[loser_id]
+            self.other_player_info[loser_id] = PlayerMapInfo(old_info.position, None)
+        
+        # Reset fight state if the player was involved
         if winner_id == self.player_id or loser_id == self.player_id:
             self.current_fight_id = None
             self.opponent_id = None
@@ -542,19 +475,20 @@ class GameContext:
             self.opponent_status_effects.clear()
             self.current_turn_player_id = None
     
-    # Card Battle Message Handlers
+    #endregion
     
-    def _on_ext_card_images(self, msg: Dict):
-        """Handler for ExtCardImages message"""
+    #region Card Battle Message Handlers
+    
+    def _on_ext_card_images(self, msg: Dict[str, Any]):
+        """Handle the card images message."""
         card_svg_data = msg.get("CardSvgData", {})
-        for key, value in card_svg_data.items():
-            self.card_svg_data[key] = value
+        for card_id, svg_data in card_svg_data.items():
+            self.card_svg_data[card_id] = svg_data
     
-    def _on_ext_card_drawn(self, msg: Dict):
-        """Handler for ExtCardDrawn message"""
+    def _on_ext_card_drawn(self, msg: Dict[str, Any]):
+        """Handle the card drawn message."""
         # Only update the SVG data cache, don't modify the hand
-        card_info = msg.get("CardInfo", {})
-        card_id = card_info.get("Id")
+        card_id = msg.get("CardInfo", {}).get("Id")
         svg_data = msg.get("SvgData")
         
         if card_id and svg_data:
@@ -562,14 +496,14 @@ class GameContext:
         
         # Hand updates are now handled by _on_ext_fight_state_update
     
-    def _on_ext_turn_started(self, msg: Dict):
-        """Handler for ExtTurnStarted message"""
+    def _on_ext_turn_started(self, msg: Dict[str, Any]):
+        """Handle the turn started message."""
         self.current_turn_player_id = msg.get("ActivePlayerId")
         
         # Card handling is now managed by _on_ext_fight_state_update
     
-    def _on_ext_turn_ended(self, msg: Dict):
-        """Handler for ExtTurnEnded message"""
+    def _on_ext_turn_ended(self, msg: Dict[str, Any]):
+        """Handle the turn ended message."""
         player_id = msg.get("PlayerId")
         
         if player_id == self.player_id:
@@ -585,29 +519,31 @@ class GameContext:
             # Clear opponent's hand as it's moved to discard pile
             self.opponent_cards_in_hand.clear()
     
-    def _on_ext_card_play_completed(self, msg: Dict):
-        """Handler for ExtCardPlayCompleted message"""
+    def _on_ext_card_play_completed(self, msg: Dict[str, Any]):
+        """Handle the card play completed message."""
         player_id = msg.get("PlayerId")
-        played_card = msg.get("PlayedCard", {})
-        card_id = played_card.get("Id")
+        played_card = msg.get("PlayedCard")  # Assuming PlayedCard can be deserialized
         
-        # Store the last played card
-        self.last_played_card = played_card
-        
-        if player_id == self.player_id:
-            # Remove the card from the player's hand
-            self.cards_in_hand = [card for card in self.cards_in_hand if card.get("Id") != card_id]
-        else:
-            # Remove the card from the opponent's hand
-            self.opponent_cards_in_hand = [card for card in self.opponent_cards_in_hand if card.get("Id") != card_id]
+        if played_card:
+            card_id = played_card.get("Id")
+            
+            # Store the last played card
+            self.last_played_card = played_card
+            
+            if player_id == self.player_id:
+                # Remove the card from the player's hand
+                self.cards_in_hand = [card for card in self.cards_in_hand if card.id != card_id]
+            else:
+                # Remove the card from the opponent's hand
+                self.opponent_cards_in_hand = [card for card in self.opponent_cards_in_hand if card.id != card_id]
     
-    def _on_ext_card_play_failed(self, msg: Dict):
-        """Handler for ExtCardPlayFailed message"""
+    def _on_ext_card_play_failed(self, msg: Dict[str, Any]):
+        """Handle the card play failed message."""
         # Handle card play failure (log or other handling)
         pass
     
-    def _on_ext_effect_applied(self, msg: Dict):
-        """Handler for ExtEffectApplied message"""
+    def _on_ext_effect_applied(self, msg: Dict[str, Any]):
+        """Handle the effect applied message."""
         target_player_id = msg.get("TargetPlayerId")
         effect_type = msg.get("EffectType")
         value = msg.get("Value", 0)
@@ -624,14 +560,15 @@ class GameContext:
             elif effect_type == "Heal":
                 self.opponent_hit_points = min(50, self.opponent_hit_points + value)
     
-    def _on_ext_fight_state_update(self, msg: Dict):
-        """Handler for ExtFightStateUpdate message"""
+    def _on_ext_fight_state_update(self, msg: Dict[str, Any]):
+        """Handle the fight state update message."""
         self.current_turn_player_id = msg.get("CurrentTurnPlayerId")
         
-        # Determine which state belongs to the player and which to the opponent
+        # Get player and opponent states
         player_state = msg.get("PlayerState", {})
         opponent_state = msg.get("OpponentState", {})
         
+        # Determine which state belongs to the player and which to the opponent
         player_state_id = player_state.get("PlayerId")
         opponent_state_id = opponent_state.get("PlayerId")
         
@@ -643,65 +580,40 @@ class GameContext:
             self._set_player_state(opponent_state)
             self._set_opponent_state(player_state)
     
-    def _set_player_state(self, state: Dict):
-        """
-        Sets the player's state from a player fight state DTO
-        
-        Args:
-            state: The player state data from the server
-        """
+    def _set_player_state(self, state: Dict[str, Any]):
+        """Set the player's state in a card battle."""
         self.player_hit_points = state.get("HitPoints", 50)
         self.player_action_points = state.get("ActionPoints", 0)
         self.player_deck_count = state.get("DeckCount", 0)
         self.player_discard_pile_count = state.get("DiscardPileCount", 0)
         
         # Update player hand
-        self.cards_in_hand.clear()
-        hand = state.get("Hand", [])
-        for card in hand:
-            self.cards_in_hand.append(card)
+        self.cards_in_hand = state.get("Hand", [])  # Assuming CardInfo objects can be deserialized
         
         # Update player status effects
-        self.player_status_effects.clear()
-        status_effects = state.get("StatusEffects", [])
-        for effect in status_effects:
-            self.player_status_effects.append(effect)
+        self.player_status_effects = state.get("StatusEffects", [])  # Assuming StatusEffectInfo objects can be deserialized
     
-    def _set_opponent_state(self, state: Dict):
-        """
-        Sets the opponent's state from a player fight state DTO
-        
-        Args:
-            state: The opponent state data from the server
-        """
+    def _set_opponent_state(self, state: Dict[str, Any]):
+        """Set the opponent's state in a card battle."""
         self.opponent_hit_points = state.get("HitPoints", 50)
         self.opponent_action_points = state.get("ActionPoints", 0)
         self.opponent_deck_count = state.get("DeckCount", 0)
         self.opponent_discard_pile_count = state.get("DiscardPileCount", 0)
         
         # Update opponent hand
-        self.opponent_cards_in_hand.clear()
-        hand = state.get("Hand", [])
-        for card in hand:
-            self.opponent_cards_in_hand.append(card)
+        self.opponent_cards_in_hand = state.get("Hand", [])  # Assuming CardInfo objects can be deserialized
         
         # Update opponent status effects
-        self.opponent_status_effects.clear()
-        status_effects = state.get("StatusEffects", [])
-        for effect in status_effects:
-            self.opponent_status_effects.append(effect)
+        self.opponent_status_effects = state.get("StatusEffects", [])  # Assuming StatusEffectInfo objects can be deserialized
     
-    async def close(self):
-        """Closes the WebSocket connection and cleans up resources"""
-        if not self._disposed and self._websocket:
-            await self._websocket.close()
-            self._websocket = None
-            self._disposed = True
+    #endregion
     
-    async def __aenter__(self):
-        """Async context manager entry"""
-        return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit"""
-        await self.close()
+    def dispose(self):
+        """Dispose of resources."""
+        if self.websocket:
+            self.websocket.close()
+            self.websocket = None
+        
+        if self.websocket_thread and self.websocket_thread.is_alive():
+            self.websocket_thread.join(timeout=1.0)
+            self.websocket_thread = None
