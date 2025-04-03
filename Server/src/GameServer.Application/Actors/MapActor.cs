@@ -233,7 +233,7 @@ namespace GameServer.Application.Actors
             // Broadcast to all players on the map that a fight has started
             this.LogInformation("Broadcasting fight start between players {0} and {1}", 
                 challengerPlayerId, targetPlayerId);
-            BroadcastToAllPlayers(context, new ExtFightStarted(challengerPlayerId, targetPlayerId));
+            BroadcastToAllPlayers(context, new ExtFightStarted(fightActor.Id, challengerPlayerId, targetPlayerId));
 
             return Task.CompletedTask;
         }
@@ -267,6 +267,7 @@ namespace GameServer.Application.Actors
 
                 // Notify players of fight completion
                 BroadcastToAllPlayers(context, new ExtFightEnded(
+                    msg.FightId.Id,
                     winnerPlayerId ?? "unknown", 
                     loserPlayerId ?? "unknown", 
                     msg.Reason));

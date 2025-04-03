@@ -198,9 +198,6 @@ public partial class NetworkManager : Node
                     break;
 
                 // Fight messages
-                case ExtFightChallengeReceived msg:
-                    EmitSignal(SignalName.FightChallengeReceived, msg.ChallengerId);
-                    break;
                 case ExtFightStarted msg:
                     EmitSignal(SignalName.FightStarted, msg.Player1Id, msg.Player2Id);
                     break;
@@ -389,8 +386,6 @@ public partial class NetworkManager : Node
     public delegate void ConnectionLostEventHandler();
 
     // Fight signals
-    [Signal]
-    public delegate void FightChallengeReceivedEventHandler(string challengerId);
     [Signal]
     public delegate void FightStartedEventHandler(string player1Id, string player2Id);
     [Signal]

@@ -15,42 +15,19 @@ namespace GameServer.Shared.Messages.Fight
         }
     }
 
-    /// <summary>
-    /// Server notification that a fight challenge was received
-    /// </summary>
-    public class ExtFightChallengeReceived : ExtServerMessage, IExtNotification
-    {
-        public string ChallengerId { get; }
-
-        public ExtFightChallengeReceived(string challengerId) : base()
-        {
-            ChallengerId = challengerId;
-        }
-    }
-
-    /// <summary>
-    /// Client request to accept a fight challenge
-    /// </summary>
-    public class ExtFightChallengeAccepted : ExtClientMessage, IExtRequest
-    {
-        public string TargetId { get; }
-
-        public ExtFightChallengeAccepted(string targetId) : base()
-        {
-            TargetId = targetId;
-        }
-    }
 
     /// <summary>
     /// Server notification that a fight has started
     /// </summary>
     public class ExtFightStarted : ExtServerMessage, IExtNotification
     {
+        public string FightId { get; }
         public string Player1Id { get; }
         public string Player2Id { get; }
 
-        public ExtFightStarted(string player1Id, string player2Id) : base()
+        public ExtFightStarted(string fightId, string player1Id, string player2Id) : base()
         {
+            FightId = fightId;
             Player1Id = player1Id;
             Player2Id = player2Id;
         }
@@ -61,12 +38,14 @@ namespace GameServer.Shared.Messages.Fight
     /// </summary>
     public class ExtFightEnded : ExtServerMessage, IExtNotification
     {
+        public string FightId { get; }
         public string WinnerId { get; }
         public string LoserId { get; }
         public string Reason { get; }
 
-        public ExtFightEnded(string winnerId, string loserId, string reason) : base()
+        public ExtFightEnded(string fightId, string winnerId, string loserId, string reason) : base()
         {
+            FightId = fightId;
             WinnerId = winnerId;
             LoserId = loserId;
             Reason = reason;

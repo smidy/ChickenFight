@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameClient", "GameClient.cs
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameServer.Shared", "..\Server\src\GameServer.Shared\GameServer.Shared.csproj", "{57B9CFF4-F3F9-455E-96B5-457BB30CD1A4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameServer.Shared.Tests", "..\Server\GameServer.Shared.Tests\GameServer.Shared.Tests.csproj", "{17A125D0-D2EC-4DED-8A50-6BE2938B0163}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,12 @@ Global
 		{57B9CFF4-F3F9-455E-96B5-457BB30CD1A4}.ExportDebug|Any CPU.Build.0 = Debug|Any CPU
 		{57B9CFF4-F3F9-455E-96B5-457BB30CD1A4}.ExportRelease|Any CPU.ActiveCfg = Release|Any CPU
 		{57B9CFF4-F3F9-455E-96B5-457BB30CD1A4}.ExportRelease|Any CPU.Build.0 = Release|Any CPU
+		{17A125D0-D2EC-4DED-8A50-6BE2938B0163}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17A125D0-D2EC-4DED-8A50-6BE2938B0163}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17A125D0-D2EC-4DED-8A50-6BE2938B0163}.ExportDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17A125D0-D2EC-4DED-8A50-6BE2938B0163}.ExportDebug|Any CPU.Build.0 = Debug|Any CPU
+		{17A125D0-D2EC-4DED-8A50-6BE2938B0163}.ExportRelease|Any CPU.ActiveCfg = Release|Any CPU
+		{17A125D0-D2EC-4DED-8A50-6BE2938B0163}.ExportRelease|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

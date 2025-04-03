@@ -5,7 +5,7 @@ namespace GameServer.Shared.Models
     /// </summary>
     public class PlayerMapInfo
     {
-        public MapPosition Position { get; }
+        public MapPosition Position { get; set; }
         public string? FightId { get; }
         
         public PlayerMapInfo(MapPosition position, string? fightId = null)

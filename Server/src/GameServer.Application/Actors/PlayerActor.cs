@@ -167,10 +167,6 @@ namespace GameServer.Application.Actors
             currentFight = msg.FightActor;
             // Update player's fight state
             player.EnterFight(msg.FightActor.Id);
-            
-            // Determine opponent ID
-            //var opponentId = msg.Player1.Id == player.Id ? msg.Player2.Id : msg.Player1.Id;
-            //await _sendToClient(new OutFightStarted(opponentId));
         }
 
         /// <summary>
@@ -184,19 +180,6 @@ namespace GameServer.Application.Actors
             player.LeaveFight();
                         
             this.LogInformation("Fight completed. Winner: {0}. Reason: {1}", msg.WinnerActor.Id, msg.Reason);
-            
-            // Send fight ended message to client
-            await _sendToClient(new ExtFightEnded(msg.WinnerActor.Id, msg.LoserActor.Id, msg.Reason));
-        }
-
-        /// <summary>
-        /// Forwards the OutFightEnded message to the client.
-        /// This is used when the fight ended message is received from another source.
-        /// </summary>
-        private async Task OnFightEnded(IContext context, ExtFightEnded msg)
-        {
-            this.LogInformation("Fight ended notification. Winner: {0}", msg.WinnerId);
-            await _sendToClient(msg);
         }
 
         private async Task OnPlayerRemovedFromMap(IContext context, PlayerRemovedFromMap msg)

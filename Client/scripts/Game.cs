@@ -61,7 +61,6 @@ public partial class Game : Node2D
         _network.PlayerLeftMap += OnPlayerLeft;
 
         // Connect fight signals
-        _network.FightChallengeReceived += OnFightChallengeReceived;
         _network.FightStarted += OnFightStarted;
         _network.FightEnded += OnFightEnded;
 
@@ -334,13 +333,6 @@ public partial class Game : Node2D
         }
     }
 
-    private void OnFightChallengeReceived(string challengerId)
-    {
-        UpdateStatusLabel($"Received fight challenge from {challengerId}");
-        // Auto-accept for now
-        _network.SendMessage(new ExtFightChallengeAccepted(challengerId));
-    }
-
     private void OnFightStarted(string player1Id, string player2Id)
     {
         UpdateStatusLabel();
@@ -476,7 +468,6 @@ public partial class Game : Node2D
         _network.PlayerJoinedMap -= OnPlayerJoined;
         _network.PlayerPositionChanged -= OnPlayerPositionChanged;
         _network.PlayerLeftMap -= OnPlayerLeft;
-        _network.FightChallengeReceived -= OnFightChallengeReceived;
         _network.FightStarted -= OnFightStarted;
         _network.FightEnded -= OnFightEnded;
 
