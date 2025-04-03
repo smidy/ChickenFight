@@ -34,7 +34,7 @@ namespace GameServer.Application.Actors
             this.isActive = true;
 
             // Initialize fight state
-            state = new FightState(player1Actor.Id, player2Actor.Id);
+            state = new FightState(player1, player2);
             players = new Dictionary<PID, Player>
             {
                 { this.player1Actor, player1 },
@@ -151,8 +151,7 @@ namespace GameServer.Application.Actors
             }
 
             // Draw cards for active player
-            var player = players[msg.PlayerActor];
-            var drawnCards = state.DrawCards(playerId, player.Deck);
+            var drawnCards = state.DrawCards(playerId);
             this.LogDebug("Player {0} drew {1} cards", playerId, drawnCards.Count);
 
             // Send turn started notification (without drawn cards)
@@ -186,7 +185,7 @@ namespace GameServer.Application.Actors
             this.LogInformation("Ending turn for player: {0}", playerId);
             
             // Discard the player's hand at the end of their turn
-            state.DiscardHand(playerId, players[msg.PlayerActor].Deck);
+            state.DiscardHand(playerId);
 
             // Notify clients
             context.Send(msg.PlayerActor, new ExtTurnEnded(playerId));
@@ -341,8 +340,8 @@ namespace GameServer.Application.Actors
                 player1State.HitPoints,
                 player1State.ActionPoints,
                 player1State.Hand.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList(),
-                players[player1Actor].Deck.RemainingCards,
-                players[player1Actor].Deck.DiscardPile.Count,
+                player1State.RemainingCards,
+                player1State.DiscardPile.Count,
                 p1StatusEffects
             );
 
@@ -351,8 +350,8 @@ namespace GameServer.Application.Actors
                 player2State.HitPoints,
                 player2State.ActionPoints,
                 player2State.Hand.Select(c => new CardInfo(c.Id, c.Name, c.Description, c.Cost)).ToList(),
-                players[player2Actor].Deck.RemainingCards,
-                players[player2Actor].Deck.DiscardPile.Count,
+                player2State.RemainingCards,
+                player2State.DiscardPile.Count,
                 p2StatusEffects
             );
 

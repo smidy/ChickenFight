@@ -33,13 +33,13 @@ namespace GameServer.Application.Models
         /// </summary>
         /// <param name="player1Id">ID of the first player (starts the fight)</param>
         /// <param name="player2Id">ID of the second player</param>
-        public FightState(string player1Id, string player2Id)
+        public FightState(Player player1, Player player2)
         {
-            CurrentTurnPlayerId = player1Id; // Player 1 starts
+            CurrentTurnPlayerId = player1.Id; // Player 1 starts
             PlayerStates = new Dictionary<string, PlayerFightState>
             {
-                { player1Id, new PlayerFightState(STARTING_HP) },
-                { player2Id, new PlayerFightState(STARTING_HP) }
+                { player1.Id, new PlayerFightState(STARTING_HP, player1.Deck) },
+                { player2.Id, new PlayerFightState(STARTING_HP, player2.Deck) }
             };
         }
 
@@ -83,11 +83,11 @@ namespace GameServer.Application.Models
         /// Draws cards for the specified player up to their maximum hand size
         /// </summary>
         /// <returns>List of cards that were drawn</returns>
-        public List<Card> DrawCards(string playerId, Deck deck)
+        public List<Card> DrawCards(string playerId)
         {
             var state = PlayerStates[playerId];
             var cardsToDraw = Math.Min(CARDS_PER_TURN, MAX_HAND_SIZE - state.Hand.Count);
-            var drawnCards = deck.DrawCards(cardsToDraw);
+            var drawnCards = state.DrawCards(cardsToDraw);
             state.Hand.AddRange(drawnCards);
             return drawnCards;
         }
@@ -132,13 +132,12 @@ namespace GameServer.Application.Models
         /// Discards all cards from a player's hand to their discard pile
         /// </summary>
         /// <param name="playerId">ID of the player whose hand to discard</param>
-        /// <param name="deck">The player's deck to discard cards to</param>
-        public void DiscardHand(string playerId, Deck deck)
+        public void DiscardHand(string playerId)
         {
             var state = PlayerStates[playerId];
             foreach (var card in state.Hand.ToList())
             {
-                deck.DiscardCard(card);
+                state.DiscardCard(card);
             }
             state.Hand.Clear();
         }
@@ -248,10 +247,15 @@ namespace GameServer.Application.Models
 
     /// <summary>
     /// Tracks an individual player's state during a fight, including their
-    /// current HP, action points, cards in hand, and active status effects
+    /// current HP, action points, cards in hand, active status effects,
+    /// and deck management for the fight session
     /// </summary>
     public class PlayerFightState
     {
+        private readonly List<Card> _cards;
+        private readonly List<Card> _discardPile;
+        private readonly Random _random;
+        
         /// <summary>Current health points of the player</summary>
         public int HitPoints { get; set; }
         
@@ -266,17 +270,30 @@ namespace GameServer.Application.Models
         
         /// <summary>Status effects currently affecting the player</summary>
         public List<StatusEffect> ActiveEffects { get; }
-
+        
+        /// <summary>Read-only access to the player's current deck of cards</summary>
+        public IReadOnlyList<Card> Cards => _cards.AsReadOnly();
+        
+        /// <summary>Read-only access to the player's discard pile</summary>
+        public IReadOnlyList<Card> DiscardPile => _discardPile.AsReadOnly();
+        
+        /// <summary>Number of cards remaining in the player's deck</summary>
+        public int RemainingCards => _cards.Count;
+      
         /// <summary>
-        /// Initializes a new player state with starting HP and empty hand
+        /// Initializes a new player state with starting HP and a deck copied from the provided template
         /// </summary>
-        public PlayerFightState(int startingHp)
+        public PlayerFightState(int startingHp, Deck deckTemplate)
         {
             HitPoints = startingHp;
             MaxHitPoints = startingHp;
             ActionPoints = 0;
             Hand = new List<Card>();
             ActiveEffects = new List<StatusEffect>();
+            _cards = new List<Card>(deckTemplate.Cards); // Copy the cards from the template
+            _discardPile = new List<Card>();
+            _random = new Random();
+            Shuffle(); // Shuffle the new deck
         }
         
         /// <summary>
@@ -313,6 +330,70 @@ namespace GameServer.Application.Models
                     ActiveEffects.Remove(effect);
                 }
             }
+        }
+        
+        /// <summary>
+        /// Draws a specified number of cards from the player's deck
+        /// </summary>
+        /// <param name="count">Number of cards to draw</param>
+        /// <returns>List of cards that were drawn</returns>
+        public List<Card> DrawCards(int count)
+        {
+            var drawnCards = new List<Card>();
+            
+            for (int i = 0; i < count; i++)
+            {
+                // If deck is empty, shuffle discard pile back in
+                if (!_cards.Any())
+                {
+                    if (!_discardPile.Any())
+                        break;
+                        
+                    ShuffleDiscardIntoDeck();
+                }
+                
+                // Draw top card
+                var card = _cards[0];
+                _cards.RemoveAt(0);
+                drawnCards.Add(card);
+            }
+            
+            return drawnCards;
+        }
+        
+        /// <summary>
+        /// Adds a card to the player's discard pile
+        /// </summary>
+        /// <param name="card">The card to discard</param>
+        public void DiscardCard(Card card)
+        {
+            _discardPile.Add(card);
+        }
+        
+        /// <summary>
+        /// Shuffles the player's deck
+        /// </summary>
+        public void Shuffle()
+        {
+            var n = _cards.Count;
+            while (n > 1)
+            {
+                n--;
+                var k = _random.Next(n + 1);
+                var temp = _cards[k];
+                _cards[k] = _cards[n];
+                _cards[n] = temp;
+            }
+        }
+        
+        /// <summary>
+        /// Moves all cards from the discard pile back into the deck and shuffles
+        /// </summary>
+        public void ShuffleDiscardIntoDeck()
+        {
+            _cards.AddRange(_discardPile);
+            _discardPile.Clear();
+            Shuffle();
         }
     }
 }
